@@ -1,0 +1,30 @@
+# Flutter generated and build directories
+build/
+.dart_tool/
+.packages
+.pub-cache/
+.flutter-plugins
+.flutter-plugins-dependencies
+.metadata
+
+# Flutter platform folders
+android/
+ios/
+linux/
+macos/
+windows/
+web/
+
+# Generated files
+*.iml
+*.g.dart
+
+# Bot Telegram / backend
+node_modules/
+dist/
+__pycache__/
+*.env
+*.db
+
+# Misc
+.env
