@@ -1,6 +1,6 @@
 # NgonNest
 
-NgonNest est une application mobile de gestion de commandes pour les restaurants, conçue pour fonctionner en mode hors‑ligne et faciliter l'expansion régionale et internationale. Ce dépôt GitHub constitue la **référence unique (Single Source of Truth)** du projet, centralisant tout le code source, la documentation technique et fonctionnelle, ainsi que les tickets de suivi【【5【53【535510735933765†screenshot】
+NgonNest est une application mobile de gestion de commandes pour les restaurants, conçue pour fonctionner en mode hors‑ligne et faciliter l'expansion régionale et internationale. Ce dépôt GitHub constitue la **référence unique (Single Source of Truth)** du projet, centralisant tout le code source, la documentation technique et fonctionnelle, ainsi que les tickets.d
 
 - `code/flutter/` – contient l'application mobile Flutter. Un fichier `.gitkeep` est présent pour conserver l'arborescence.
 - `code/telegram_bot/` – contiendra le code du bot Telegram qui permet de créer automatiquement des issues GitHub depuis l'application【845134010872208†screenshot】.
