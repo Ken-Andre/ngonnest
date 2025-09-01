@@ -10,9 +10,9 @@ NgonNest aide les foyers à suivre leurs biens (consommables et durables), à an
 
 ## Parcours utilisateurs
 
-1. **Onboarding** : à la première utilisation, l’utilisateur renseigne le nombre de personnes (1–10), le type de logement (maison, appartement, chambre…), la langue (français, anglais, ewondo, duala) et le budget mensuel estimé (facultatif). Ces données créent une entrée dans la table `foyer`.
+1. **Onboarding** : à la première utilisation, l’utilisateur renseigne le nombre de personnes (1–10), le type de logement (maison, appartement, chambre…), la langue (français, anglais) et le budget mensuel estimé (facultatif). Ces données créent une entrée dans la table `foyer`.
 
-2. **Ajout d’un consommable** : l’utilisateur choisit une catégorie, saisit un nom, la quantité initiale, la date d’achat (facultative), l’unité (pièce/g/ml) et la méthode de prévision :  
+2. **Ajout d’un consommable** : l’utilisateur choisit une catégorie, saisit un nom, la quantité initiale, la date d’achat (facultative) sous forme de calendrier ou sous formes d'estimation j:m:y du temps qu'il a deja vecu, l’unité (pièce/g/ml) et la méthode de prévision :  
    – **fréquence** : nombre de jours entre les achats (`frequence_achat_jours`).  
    – **débit** : consommation journalière (`consommation_jour`) avec taille du conditionnement.
    L’application calcule automatiquement la date de rupture prévue (`date_rupture_prev`) et planifie une alerte trois jours avant.
@@ -41,7 +41,7 @@ NgonNest aide les foyers à suivre leurs biens (consommables et durables), à an
 ## Règles métiers
 
 - `nb_personnes` entre 1 et 10.  
-- `langue` ∈ {fr, en, ewo, dua}.  
+- `langue` ∈ {fr, en}.  
 - Pour les consommables :
   – Si `methode_prevision = frequence`, `frequence_achat_jours ≥ 1`.  
   – Si `methode_prevision = debit`, `consommation_jour > 0` et `taille_conditionnement > 0`.  
@@ -56,7 +56,7 @@ NgonNest aide les foyers à suivre leurs biens (consommables et durables), à an
 - **SQLite** via `sqflite` pour la persistance locale (tables `foyer` et `objet`).  
 - **Repository pattern** et services (`AlertService`, `PredictionService`) pour isoler la logique métier.  
 - **Notifications locales** via `flutter_local_notifications`.  
-- **Internationalisation** (français, anglais, ewondo, duala) dès le MVP.
+- **Internationalisation** (français, anglais) dès le MVP.
 
 ## Critères d’acceptation (Sprint 1)
 

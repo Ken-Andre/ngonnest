@@ -1,0 +1,135 @@
+enum TypeObjet { consommable, durable }
+enum MethodePrevision { frequence, debit }
+
+class Objet {
+  final int? id;
+  final int idFoyer;
+  final String nom;
+  final String categorie;
+  final TypeObjet type;
+  final DateTime? dateAchat;
+  final int? dureeViePrevJours;
+  final DateTime? dateRupturePrev;
+  final double quantiteInitiale;
+  final double quantiteRestante;
+  final String unite;
+  final double? tailleConditionnement;
+  final double? prixUnitaire;
+  final MethodePrevision? methodePrevision;
+  final int? frequenceAchatJours;
+  final double? consommationJour;
+  final int seuilAlerteJours;
+  final double seuilAlerteQuantite;
+
+  Objet({
+    this.id,
+    required this.idFoyer,
+    required this.nom,
+    required this.categorie,
+    required this.type,
+    this.dateAchat,
+    this.dureeViePrevJours,
+    this.dateRupturePrev,
+    required this.quantiteInitiale,
+    required this.quantiteRestante,
+    required this.unite,
+    this.tailleConditionnement,
+    this.prixUnitaire,
+    this.methodePrevision,
+    this.frequenceAchatJours,
+    this.consommationJour,
+    this.seuilAlerteJours = 3,
+    this.seuilAlerteQuantite = 1,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'id_foyer': idFoyer,
+      'nom': nom,
+      'categorie': categorie,
+      'type': type.name,
+      'date_achat': dateAchat?.toIso8601String(),
+      'duree_vie_prev_jours': dureeViePrevJours,
+      'date_rupture_prev': dateRupturePrev?.toIso8601String(),
+      'quantite_initiale': quantiteInitiale,
+      'quantite_restante': quantiteRestante,
+      'unite': unite,
+      'taille_conditionnement': tailleConditionnement,
+      'prix_unitaire': prixUnitaire,
+      'methode_prevision': methodePrevision?.name,
+      'frequence_achat_jours': frequenceAchatJours,
+      'consommation_jour': consommationJour,
+      'seuil_alerte_jours': seuilAlerteJours,
+      'seuil_alerte_quantite': seuilAlerteQuantite,
+    };
+  }
+
+  factory Objet.fromMap(Map<String, dynamic> map) {
+    return Objet(
+      id: map['id'],
+      idFoyer: map['id_foyer'],
+      nom: map['nom'],
+      categorie: map['categorie'],
+      type: TypeObjet.values.firstWhere((e) => e.name == map['type']),
+      dateAchat: map['date_achat'] != null ? DateTime.parse(map['date_achat']) : null,
+      dureeViePrevJours: map['duree_vie_prev_jours'],
+      dateRupturePrev: map['date_rupture_prev'] != null ? DateTime.parse(map['date_rupture_prev']) : null,
+      quantiteInitiale: map['quantite_initiale'],
+      quantiteRestante: map['quantite_restante'],
+      unite: map['unite'],
+      tailleConditionnement: map['taille_conditionnement'],
+      prixUnitaire: map['prix_unitaire'],
+      methodePrevision: map['methode_prevision'] != null 
+          ? MethodePrevision.values.firstWhere((e) => e.name == map['methode_prevision'])
+          : null,
+      frequenceAchatJours: map['frequence_achat_jours'],
+      consommationJour: map['consommation_jour'],
+      seuilAlerteJours: map['seuil_alerte_jours'] ?? 3,
+      seuilAlerteQuantite: map['seuil_alerte_quantite'] ?? 1,
+    );
+  }
+
+  Objet copyWith({
+    int? id,
+    int? idFoyer,
+    String? nom,
+    String? categorie,
+    TypeObjet? type,
+    DateTime? dateAchat,
+    int? dureeViePrevJours,
+    DateTime? dateRupturePrev,
+    double? quantiteInitiale,
+    double? quantiteRestante,
+    String? unite,
+    double? tailleConditionnement,
+    double? prixUnitaire,
+    MethodePrevision? methodePrevision,
+    int? frequenceAchatJours,
+    double? consommationJour,
+    int? seuilAlerteJours,
+    double? seuilAlerteQuantite,
+  }) {
+    return Objet(
+      id: id ?? this.id,
+      idFoyer: idFoyer ?? this.idFoyer,
+      nom: nom ?? this.nom,
+      categorie: categorie ?? this.categorie,
+      type: type ?? this.type,
+      dateAchat: dateAchat ?? this.dateAchat,
+      dureeViePrevJours: dureeViePrevJours ?? this.dureeViePrevJours,
+      dateRupturePrev: dateRupturePrev ?? this.dateRupturePrev,
+      quantiteInitiale: quantiteInitiale ?? this.quantiteInitiale,
+      quantiteRestante: quantiteRestante ?? this.quantiteRestante,
+      unite: unite ?? this.unite,
+      tailleConditionnement: tailleConditionnement ?? this.tailleConditionnement,
+      prixUnitaire: prixUnitaire ?? this.prixUnitaire,
+      methodePrevision: methodePrevision ?? this.methodePrevision,
+      frequenceAchatJours: frequenceAchatJours ?? this.frequenceAchatJours,
+      consommationJour: consommationJour ?? this.consommationJour,
+      seuilAlerteJours: seuilAlerteJours ?? this.seuilAlerteJours,
+      seuilAlerteQuantite: seuilAlerteQuantite ?? this.seuilAlerteQuantite,
+    );
+  }
+}
+
