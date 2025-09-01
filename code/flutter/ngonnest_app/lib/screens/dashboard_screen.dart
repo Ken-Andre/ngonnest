@@ -1,7 +1,8 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../models/household_profile.dart';
 import '../services/household_service.dart';
-import '../services/quick_actions_service.dart';
+import '../theme/app_theme.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -13,6 +14,32 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   HouseholdProfile? _profile;
   bool _isLoading = true;
+  bool _offlineMode = true;
+  int _selectedTabIndex = 0;
+
+  // Mock data for demonstration
+  final int _totalItems = 5;
+  final int _expiringSoon = 2;
+  final int _urgentAlerts = 1;
+
+  final List<Map<String, dynamic>> _mockNotifications = [
+    {
+      'id': 1,
+      'type': 'low-stock',
+      'title': 'Stock faible',
+      'message': 'Papier toilette presque épuisé',
+      'urgency': 'high',
+      'read': false,
+    },
+    {
+      'id': 2,
+      'type': 'expiry',
+      'title': 'Expiration proche',
+      'message': 'Huile de palme expire dans 2 semaines',
+      'urgency': 'medium',
+      'read': false,
+    },
+  ];
 
   @override
   void initState() {
@@ -37,187 +64,232 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
+      return Scaffold(
+        backgroundColor: AppTheme.neutralLightGrey,
+        body: const Center(
+          child: CupertinoActivityIndicator(radius: 20),
         ),
       );
     }
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        title: const Text('NgonNest'),
-        backgroundColor: Theme.of(context).primaryColor,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications),
-            onPressed: () {
-              // TODO: Show notifications
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Aucune notification pour le moment'),
-                  duration: Duration(seconds: 2),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: _loadProfile,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Welcome section
-              _buildWelcomeSection(),
-              const SizedBox(height: 24),
-              
-              // Quick actions
-              _buildQuickActionsSection(),
-              const SizedBox(height: 24),
-              
-              // Alerts section
-              _buildAlertsSection(),
-              const SizedBox(height: 24),
-              
-              // Household info
-              if (_profile != null) _buildHouseholdInfoSection(),
-              
-              const SizedBox(height: 24),
-              
-              // Recent items (placeholder)
-              _buildRecentItemsSection(),
-            ],
-          ),
+      backgroundColor: AppTheme.neutralLightGrey,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header
+            _buildHeader(),
+            
+            // Content
+            Expanded(
+              child: _selectedTabIndex == 0
+                  ? _buildDashboardContent()
+                  : _buildPlaceholderContent(),
+            ),
+            
+            // Bottom navigation
+            _buildBottomNavigation(),
+            
+            // Status bar
+            _buildStatusBar(),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildWelcomeSection() {
+  Widget _buildHeader() {
     return Container(
-      width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Theme.of(context).primaryColor,
-            Theme.of(context).primaryColor.withOpacity(0.8),
+            AppTheme.primaryGreen,
+            AppTheme.primaryGreen.withOpacity(0.8),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Text(
-            'Bonjour ! 👋',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Bonjour ! 👋',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Bienvenue dans votre espace personnel NgonNest',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.white.withOpacity(0.9),
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            'Bienvenue dans votre espace personnel NgonNest',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: Colors.white.withOpacity(0.9),
-            ),
+          Row(
+            children: [
+              // Dark mode toggle placeholder
+              CupertinoButton(
+                padding: EdgeInsets.zero,
+                onPressed: () {
+                  // TODO: Implement dark mode toggle
+                },
+                child: Icon(
+                  CupertinoIcons.moon,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Notification button
+              CupertinoButton(
+                padding: EdgeInsets.zero,
+                onPressed: () {
+                  _showNotificationsSheet();
+                },
+                child: Stack(
+                  children: [
+                    Icon(
+                      CupertinoIcons.bell,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                    if (_mockNotifications.where((n) => !n['read']).isNotEmpty)
+                      Positioned(
+                        right: 0,
+                        top: 0,
+                        child: Container(
+                          width: 12,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryRed,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildQuickActionsSection() {
-    final actions = QuickActionsService.getQuickActions(context);
-    
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Actions rapides',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+  Widget _buildDashboardContent() {
+    return RefreshIndicator(
+      onRefresh: _loadProfile,
+      color: AppTheme.primaryGreen,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Quick stats
+            _buildQuickStats(),
+            const SizedBox(height: 24),
+            
+            // Alerts section
+            _buildAlertsSection(),
+            const SizedBox(height: 24),
+            
+            // Quick actions
+            _buildQuickActionsSection(),
+            const SizedBox(height: 24),
+            
+            // Household info
+            if (_profile != null) _buildHouseholdInfoSection(),
+            const SizedBox(height: 24),
+            
+            // Recent items placeholder
+            _buildRecentItemsSection(),
+          ],
         ),
-        const SizedBox(height: 16),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: 1.2,
-          ),
-          itemCount: actions.length,
-          itemBuilder: (context, index) {
-            final action = actions[index];
-            return _buildQuickActionCard(action);
-          },
-        ),
-      ],
+      ),
     );
   }
 
-  Widget _buildQuickActionCard(QuickAction action) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: InkWell(
-        onTap: action.onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: action.color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+  Widget _buildQuickStats() {
+    final stats = [
+      {
+        'icon': CupertinoIcons.cube_box,
+        'value': _totalItems.toString(),
+        'label': 'Articles totaux',
+        'color': AppTheme.primaryGreen,
+      },
+      {
+        'icon': CupertinoIcons.time,
+        'value': _expiringSoon.toString(),
+        'label': 'À surveiller',
+        'color': AppTheme.primaryOrange,
+      },
+      {
+        'icon': CupertinoIcons.exclamationmark_triangle,
+        'value': _urgentAlerts.toString(),
+        'label': 'Urgences',
+        'color': AppTheme.primaryRed,
+      },
+    ];
+
+    return Row(
+      children: stats.map((stat) {
+        final isLast = stat == stats.last;
+        return Expanded(
+          child: Container(
+            margin: EdgeInsets.only(right: isLast ? 0 : 12),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
                 ),
-                child: Icon(
-                  action.icon,
-                  size: 32,
-                  color: action.color,
+              ],
+            ),
+            child: Column(
+              children: [
+                Icon(
+                  stat['icon'] as IconData,
+                  size: 28,
+                  color: stat['color'] as Color,
                 ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                action.title,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
+                const SizedBox(height: 8),
+                Text(
+                  stat['value'] as String,
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.neutralBlack,
+                  ),
                 ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                action.subtitle,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.grey[600],
+                const SizedBox(height: 4),
+                Text(
+                  stat['label'] as String,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.neutralGrey,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      }).toList(),
     );
   }
 
@@ -227,7 +299,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[300]!),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -235,47 +313,225 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Row(
             children: [
               Icon(
-                Icons.warning_amber_rounded,
-                color: Colors.orange[600],
+                CupertinoIcons.exclamationmark_triangle,
+                color: AppTheme.primaryOrange,
                 size: 24,
               ),
               const SizedBox(width: 12),
               Text(
-                'Alertes',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                'Notifications',
+                style: TextStyle(
+                  fontSize: 20,
                   fontWeight: FontWeight.w600,
+                  color: AppTheme.neutralBlack,
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.check_circle_outline,
-                  color: Colors.green[600],
-                  size: 20,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
+              const Spacer(),
+              if (_mockNotifications.length > 2)
+                CupertinoButton(
+                  padding: EdgeInsets.zero,
+                  onPressed: _showNotificationsSheet,
                   child: Text(
-                    'Aucune alerte urgente pour le moment',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.grey[700],
+                    'Tout (${_mockNotifications.length})',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppTheme.primaryGreen,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
-              ],
-            ),
+            ],
           ),
+          const SizedBox(height: 16),
+          
+          // Show alerts or empty state
+          if (_mockNotifications.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryGreen.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    CupertinoIcons.checkmark_circle,
+                    color: AppTheme.primaryGreen,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Aucune alerte urgente pour le moment',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppTheme.primaryGreen,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            ..._mockNotifications.take(2).map((notification) {
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: _getNotificationColor(notification['urgency']).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: _getNotificationColor(notification['urgency']).withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      _getNotificationIcon(notification['type']),
+                      color: _getNotificationColor(notification['urgency']),
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            notification['title'],
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.neutralBlack,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            notification['message'],
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: AppTheme.neutralGrey,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (!notification['read'])
+                      CupertinoButton(
+                        padding: EdgeInsets.zero,
+                        onPressed: () {
+                          setState(() {
+                            notification['read'] = true;
+                          });
+                        },
+                        child: Icon(
+                          CupertinoIcons.checkmark_circle,
+                          color: AppTheme.neutralGrey,
+                          size: 18,
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            }).toList(),
         ],
       ),
+    );
+  }
+
+  Widget _buildQuickActionsSection() {
+    final actions = [
+      {
+        'title': 'Inventaire',
+        'subtitle': 'Voir mes produits',
+        'icon': CupertinoIcons.cube_box,
+        'color': AppTheme.primaryGreen,
+        'onTap': () => _navigateToTab(1),
+      },
+      {
+        'title': 'Ajouter',
+        'subtitle': 'Nouveau produit',
+        'icon': CupertinoIcons.add_circled,
+        'color': AppTheme.primaryOrange,
+        'onTap': () => _navigateToTab(2),
+      },
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Actions rapides',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.neutralBlack,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: actions.map((action) {
+            final isLast = action == actions.last;
+            return Expanded(
+              child: Container(
+                margin: EdgeInsets.only(right: isLast ? 0 : 12),
+                child: CupertinoButton(
+                  padding: EdgeInsets.zero,
+                  onPressed: action['onTap'] as VoidCallback,
+                  child: Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 50,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: (action['color'] as Color).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            action['icon'] as IconData,
+                            size: 24,
+                            color: action['color'] as Color,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          action['title'] as String,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.neutralBlack,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          action['subtitle'] as String,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: AppTheme.neutralGrey,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
     );
   }
 
@@ -285,7 +541,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[300]!),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -293,15 +555,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Row(
             children: [
               Icon(
-                Icons.home,
-                color: Theme.of(context).primaryColor,
+                CupertinoIcons.house,
+                color: AppTheme.primaryGreen,
                 size: 24,
               ),
               const SizedBox(width: 12),
               Text(
                 'Informations du foyer',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                style: TextStyle(
+                  fontSize: 20,
                   fontWeight: FontWeight.w600,
+                  color: AppTheme.neutralBlack,
                 ),
               ),
             ],
@@ -324,14 +588,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
         children: [
           Text(
             label,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Colors.grey[600],
+            style: TextStyle(
+              fontSize: 16,
+              color: AppTheme.neutralGrey,
             ),
           ),
           Text(
             value,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            style: TextStyle(
+              fontSize: 16,
               fontWeight: FontWeight.w600,
+              color: AppTheme.neutralBlack,
             ),
           ),
         ],
@@ -345,7 +612,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[300]!),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -353,15 +626,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Row(
             children: [
               Icon(
-                Icons.history,
-                color: Theme.of(context).primaryColor,
+                CupertinoIcons.clock,
+                color: AppTheme.primaryGreen,
                 size: 24,
               ),
               const SizedBox(width: 12),
               Text(
                 'Articles récents',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                style: TextStyle(
+                  fontSize: 20,
                   fontWeight: FontWeight.w600,
+                  color: AppTheme.neutralBlack,
                 ),
               ),
             ],
@@ -370,23 +645,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.grey[50],
+              color: AppTheme.neutralLightGrey,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
               children: [
                 Icon(
-                  Icons.inventory_2_outlined,
-                  color: Colors.grey[600],
+                  CupertinoIcons.cube_box,
+                  color: AppTheme.neutralGrey,
                   size: 20,
                 ),
                 const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Aucun article ajouté pour le moment',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.grey[700],
-                    ),
+                Text(
+                  'Aucun article ajouté pour le moment',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: AppTheme.neutralGrey,
                   ),
                 ),
               ],
@@ -395,5 +669,263 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildPlaceholderContent() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            CupertinoIcons.cube_box,
+            size: 64,
+            color: AppTheme.neutralGrey,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Fonctionnalité en cours de développement',
+            style: TextStyle(
+              fontSize: 18,
+              color: AppTheme.neutralGrey,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomNavigation() {
+    final tabs = [
+      {'icon': CupertinoIcons.house, 'label': 'Accueil'},
+      {'icon': CupertinoIcons.cube_box, 'label': 'Inventaire'},
+      {'icon': CupertinoIcons.add, 'label': 'Ajouter'},
+      {'icon': CupertinoIcons.bell, 'label': 'Alertes'},
+      {'icon': CupertinoIcons.gear, 'label': 'Paramètres'},
+    ];
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: tabs.asMap().entries.map((entry) {
+            final index = entry.key;
+            final tab = entry.value;
+            final isSelected = _selectedTabIndex == index;
+
+            return Expanded(
+              child: CupertinoButton(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                onPressed: () => _navigateToTab(index),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      tab['icon'] as IconData,
+                      size: 24,
+                      color: isSelected ? AppTheme.primaryGreen : AppTheme.neutralGrey,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      tab['label'] as String,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isSelected ? AppTheme.primaryGreen : AppTheme.neutralGrey,
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      color: _offlineMode 
+          ? AppTheme.primaryYellow.withOpacity(0.2)
+          : AppTheme.primaryGreen.withOpacity(0.2),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            _offlineMode ? CupertinoIcons.wifi_slash : CupertinoIcons.wifi,
+            size: 16,
+            color: _offlineMode ? AppTheme.primaryOrange : AppTheme.primaryGreen,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            _offlineMode 
+                ? 'Hors ligne - Données sauvegardées localement'
+                : 'Connecté - Synchronisation des données',
+            style: TextStyle(
+              fontSize: 12,
+              color: _offlineMode ? AppTheme.primaryOrange : AppTheme.primaryGreen,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _navigateToTab(int index) {
+    setState(() {
+      _selectedTabIndex = index;
+    });
+    
+    // TODO: Implement actual navigation
+    if (index != 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Navigation vers ${_getTabName(index)} en cours de développement'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  String _getTabName(int index) {
+    switch (index) {
+      case 1: return 'Inventaire';
+      case 2: return 'Ajouter produit';
+      case 3: return 'Alertes';
+      case 4: return 'Paramètres';
+      default: return 'Accueil';
+    }
+  }
+
+  void _showNotificationsSheet() {
+    showCupertinoModalPopup<void>(
+      context: context,
+      builder: (BuildContext context) => Container(
+        height: 400,
+        padding: const EdgeInsets.only(top: 6.0),
+        margin: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        color: CupertinoColors.systemBackground.resolveFrom(context),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Notifications',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.neutralBlack,
+                      ),
+                    ),
+                    CupertinoButton(
+                      padding: EdgeInsets.zero,
+                      child: Text('Fermer'),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: _mockNotifications.length,
+                  itemBuilder: (context, index) {
+                    final notification = _mockNotifications[index];
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: _getNotificationColor(notification['urgency']).withOpacity(0.3),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            _getNotificationIcon(notification['type']),
+                            color: _getNotificationColor(notification['urgency']),
+                            size: 20,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  notification['title'],
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppTheme.neutralBlack,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  notification['message'],
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: AppTheme.neutralGrey,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Color _getNotificationColor(String urgency) {
+    switch (urgency) {
+      case 'high':
+        return AppTheme.primaryRed;
+      case 'medium':
+        return AppTheme.primaryOrange;
+      case 'low':
+        return AppTheme.primaryGreen;
+      default:
+        return AppTheme.neutralGrey;
+    }
+  }
+
+  IconData _getNotificationIcon(String type) {
+    switch (type) {
+      case 'low-stock':
+        return CupertinoIcons.exclamationmark_triangle;
+      case 'expiry':
+        return CupertinoIcons.time;
+      case 'reminder':
+        return CupertinoIcons.bell;
+      default:
+        return CupertinoIcons.info_circle;
+    }
   }
 }

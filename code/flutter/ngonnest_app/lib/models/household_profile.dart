@@ -77,24 +77,28 @@ class LogementType {
 class Language {
   static const String francais = 'fr';
   static const String anglais = 'en';
-  static const String ewondo = 'ewo';
-  static const String duala = 'dua';
-  
-  static const List<String> values = [francais, anglais, ewondo, duala];
-  
+
+  static const List<String> values = [francais, anglais];
+
   static String getDisplayName(String value) {
     switch (value) {
       case francais:
         return 'Français';
       case anglais:
         return 'English';
-      case ewondo:
-        return 'Ewondo';
-      case duala:
-        return 'Duala';
       default:
-        return value;
+        return 'Français'; // Default to French
+    }
+  }
+
+  static String getFlag(String value) {
+    switch (value) {
+      case francais:
+        return '🇫🇷';
+      case anglais:
+        return '🇬🇧';
+      default:
+        return '🇫🇷';
     }
   }
 }
-

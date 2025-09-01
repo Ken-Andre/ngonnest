@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  // Primary colors inspired by Cameroonian flag (green, red, yellow)
-  static const Color primaryGreen = Color(0xFF007A3D);
-  static const Color primaryRed = Color(0xFFCE1126);
-  static const Color primaryYellow = Color(0xFFFCD116);
+  // Primary colors matching mobile prototype (CSS colors)
+  static const Color primaryGreen = Color(0xFF027B3A);
+  static const Color primaryOrange = Color(0xFFE58800);
+  static const Color primaryRed = Color(0xFFC62828);
+  static const Color primaryYellow = Color(0xFFFDD835);
   
   // Neutral colors for accessibility
   static const Color neutralBlack = Color(0xFF1A1A1A);
@@ -389,4 +390,3 @@ class AppTheme {
     );
   }
 }
-
