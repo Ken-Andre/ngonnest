@@ -186,6 +186,28 @@ GITHUB_REPO=Ken-Andre/ngonnest
 - GitHub API rate limits gérés ✓
 - Validation formulaires complexes ✓
 
+### **Améliorations et Corrections Post-Sprint 2 (Suite)**
+- **Stabilité et Robustesse du Bot Telegram :**
+  - Correction de l'erreur d'importation `dotenv`.
+  - Résolution de l' `AttributeError` dans `main.py` par refonte de la logique pour utiliser des appels directs à l'API Telegram.
+  - Intégration améliorée de la création d'issues GitHub pour les feedbacks et les bugs.
+- **Optimisation et Correction de l'Application Mobile Flutter :**
+  - **`RenderFlex` overflow :** Identification et résolution des débordements dans `add_product_screen.dart` et `dashboard_screen.dart`.
+  - **`SQLite no such table: alertes` :** Vérification de la logique de création de table et confirmation que l'erreur était liée à une base de données obsolète. Recommandation d'une reconstruction.
+  - **Mises à jour des dépendances Flutter :** `flutter_lints` et `sqflite` ont été mis à jour.
+  - **Dépendance Android `desugar_jdk_libs` :** La version a été mise à jour à `2.1.4` dans `android/app/build.gradle.kts`.
+  - **Implémentation complète du Mode Sombre :**
+    - Introduction de `ThemeModeNotifier` pour la gestion de l'état persistant du thème.
+    - `main.dart` et les vues ont été adaptés pour utiliser des couleurs thématiques.
+    - Le thème du Splash Screen est désormais fixe (vert) comme demandé.
+    - L'icône de bascule du mode sombre dans le tableau de bord est maintenant dynamique.
+  - **Refactorisation de l'Onboarding (`onboarding_screen.dart`) :**
+    - Suppression des "Magic Strings" pour les tailles de foyer, remplacées par des valeurs entières directes.
+    - La création et la sauvegarde du `HouseholdProfile` sont déléguées au `HouseholdService`.
+  - **Injection de dépendances (`DatabaseService`) :** Le `DatabaseService` est maintenant injecté via `Provider` et utilisé dans `dashboard_screen.dart`, `inventory_screen.dart`, et `add_product_screen.dart`.
+  - **Refactorisation de la logique métier (`add_product_screen.dart`) :** La logique de création d'objets et de génération d'alertes a été centralisée dans `DatabaseService` via `insertObjetWithAlerts`.
+  - **Correction de la transition Splash Screen/Dashboard :** Le "flash blanc" indésirable a été éliminé en assurant une couleur d'arrière-plan cohérente pendant le chargement du tableau de bord.
+
 ### **À documenter pour PO**
 - GITHUB_TOKEN requis pour bot
 - Setup notifications Android
@@ -193,12 +215,11 @@ GITHUB_REPO=Ken-Andre/ngonnest
 
 ## 📈 Progress MVP
 
-**Sprint 2 résultat :** 100% user stories complétées
+**Sprint 2 résultat :** 100% user stories complétées, avec des améliorations significatives en termes de robustesse, maintenabilité et expérience utilisateur.
 
 - **Sprint 1 (core app)** : ✅ Terminé
 - **Sprint 2 (inventaire + notifications)** : ✅ Terminé
-- **Semaine 5-8** : Tests utilisateur, optimisations
-- **Semaine 9-12** : Bêta utilisateurs externes
+- **Prochaines étapes** : Tests utilisateur approfondis, optimisations futures, et préparation pour la bêta.
 
 ## 🎉 Conclusion
 

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:provider/provider.dart';
 import '../models/objet.dart';
 import '../services/database_service.dart';
+import '../services/household_service.dart';
+import '../theme/app_theme.dart';
 
 class AddProductScreen extends StatefulWidget {
   const AddProductScreen({super.key});
@@ -12,8 +15,8 @@ class AddProductScreen extends StatefulWidget {
 
 class _AddProductScreenState extends State<AddProductScreen> {
   final _formKey = GlobalKey<FormState>();
-  final DatabaseService _databaseService = DatabaseService();
-
+  late DatabaseService _databaseService;
+  
   bool _isConsumable = true;
   int? _foyerId;
   bool _isLoading = true;
@@ -37,12 +40,16 @@ class _AddProductScreenState extends State<AddProductScreen> {
   @override
   void initState() {
     super.initState();
-    _loadFoyer();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _databaseService = context.read<DatabaseService>();
+      _loadFoyerId();
+    });
   }
 
-  Future<void> _loadFoyer() async {
+  Future<void> _loadFoyerId() async {
+    setState(() => _isLoading = true);
     try {
-      final foyer = await _databaseService.getFoyer();
+      final foyer = await HouseholdService.getHouseholdProfile();
       if (foyer != null) {
         setState(() {
           _foyerId = foyer.id;
@@ -67,6 +74,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
             backgroundColor: Colors.red,
           ),
         );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
       }
     }
   }
@@ -105,10 +116,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
         seuilAlerteQuantite: 1.0,
       );
 
-      await _databaseService.insertObjet(objet);
-
-      // Generate alerts for this product
-      await _databaseService.generateAlerts(_foyerId!);
+      await _databaseService.insertObjetWithAlerts(objet, _foyerId!);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -148,22 +156,22 @@ class _AddProductScreenState extends State<AddProductScreen> {
     }
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Theme.of(context).colorScheme.background, // Use theme color
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.surface, // Use theme color
         elevation: 0,
         leading: CupertinoButton(
           padding: EdgeInsets.zero,
           onPressed: () => Navigator.of(context).pop(),
-          child: const Icon(
+          child: Icon(
             CupertinoIcons.back,
-            color: Colors.black87,
+            color: Theme.of(context).colorScheme.onSurface, // Use theme color
           ),
         ),
         title: Text(
           'Ajouter un produit',
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            color: Colors.black87,
+            color: Theme.of(context).colorScheme.onSurface, // Use theme color
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -181,9 +189,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 margin: const EdgeInsets.only(bottom: 24),
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.surface, // Use theme color
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey[200]!),
+                  border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.5)), // Use theme color
                 ),
                 child: Row(
                   children: [
@@ -212,17 +220,19 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 margin: const EdgeInsets.only(bottom: 24),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.surface, // Use theme color
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey[200]!),
+                  border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.5)), // Use theme color
                 ),
                 child: TextFormField(
                   controller: _productNameController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     hintText: 'Ex: Savon artisanal, Aspirateur...',
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.zero,
+                    hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
                   ),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
                       return 'Le nom du produit est obligatoire';
@@ -266,15 +276,15 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 margin: const EdgeInsets.only(bottom: 24),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.surface, // Use theme color
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey[200]!),
+                  border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.5)), // Use theme color
                 ),
                 child: Row(
                   children: [
                     Icon(
                       _isConsumable ? CupertinoIcons.cube_box : CupertinoIcons.tv,
-                      color: Colors.grey[600],
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7), // Use theme color
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -285,7 +295,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
                           hintText: _isConsumable ? 'Ex: 5' : 'Ex: 1',
                           border: InputBorder.none,
                           contentPadding: EdgeInsets.zero,
+                          hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
                         ),
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'La quantité est obligatoire';
@@ -301,7 +313,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                     const SizedBox(width: 8),
                     Text(
                       _isConsumable ? 'pièces' : 'unités',
-                      style: TextStyle(color: Colors.grey[600]),
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)), // Use theme color
                     ),
                   ],
                 ),
@@ -314,26 +326,28 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   margin: const EdgeInsets.only(bottom: 24),
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.surface, // Use theme color
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey[200]!),
+                    border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.5)), // Use theme color
                   ),
                   child: Row(
                     children: [
                       Icon(
                         CupertinoIcons.time,
-                        color: Colors.grey[600],
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7), // Use theme color
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: TextFormField(
                           controller: _frequencyController,
                           keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             hintText: 'Ex: 30 jours pour du savon',
                             border: InputBorder.none,
                             contentPadding: EdgeInsets.zero,
+                            hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
                           ),
+                          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'La fréquence est obligatoire';
@@ -352,7 +366,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                       const SizedBox(width: 8),
                       Text(
                         'jours',
-                        style: TextStyle(color: Colors.grey[600]),
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)), // Use theme color
                       ),
                     ],
                   ),
@@ -366,9 +380,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   margin: const EdgeInsets.only(bottom: 24),
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.surface, // Use theme color
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey[200]!),
+                    border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.5)), // Use theme color
                   ),
                   child: CupertinoButton(
                     padding: EdgeInsets.zero,
@@ -377,7 +391,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                       children: [
                         Icon(
                           CupertinoIcons.calendar,
-                          color: _expiryDate == null ? Colors.grey[400] : Colors.grey[600],
+                          color: _expiryDate == null ? Theme.of(context).colorScheme.outline : Theme.of(context).colorScheme.onSurface.withOpacity(0.7), // Use theme color
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -386,7 +400,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                                 ? 'Sélectionner une date'
                                 : '${_expiryDate!.day}/${_expiryDate!.month}/${_expiryDate!.year}',
                             style: TextStyle(
-                              color: _expiryDate == null ? Colors.grey[500] : Colors.black87,
+                              color: _expiryDate == null ? Theme.of(context).colorScheme.onSurface.withOpacity(0.5) : Theme.of(context).colorScheme.onSurface, // Use theme color
                               fontSize: 16,
                             ),
                           ),
@@ -394,9 +408,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
                         if (_expiryDate != null)
                           GestureDetector(
                             onTap: () => setState(() => _expiryDate = null),
-                            child: const Icon(
+                            child: Icon(
                               CupertinoIcons.xmark_circle_fill,
-                              color: Colors.red,
+                              color: Theme.of(context).colorScheme.error, // Use theme color
                               size: 20,
                             ),
                           ),
@@ -413,9 +427,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   margin: const EdgeInsets.only(bottom: 32),
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.surface, // Use theme color
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey[200]!),
+                    border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.5)), // Use theme color
                   ),
                   child: CupertinoButton(
                     padding: EdgeInsets.zero,
@@ -424,7 +438,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                       children: [
                         Icon(
                           CupertinoIcons.calendar,
-                          color: _purchaseDate == null ? Colors.grey[400] : Colors.grey[600],
+                          color: _purchaseDate == null ? Theme.of(context).colorScheme.outline : Theme.of(context).colorScheme.onSurface.withOpacity(0.7), // Use theme color
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -433,7 +447,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                                 ? 'Sélectionner une date'
                                 : '${_purchaseDate!.day}/${_purchaseDate!.month}/${_purchaseDate!.year}',
                             style: TextStyle(
-                              color: _purchaseDate == null ? Colors.grey[500] : Colors.black87,
+                              color: _purchaseDate == null ? Theme.of(context).colorScheme.onSurface.withOpacity(0.5) : Theme.of(context).colorScheme.onSurface, // Use theme color
                               fontSize: 16,
                             ),
                           ),
@@ -441,9 +455,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
                         if (_purchaseDate != null)
                           GestureDetector(
                             onTap: () => setState(() => _purchaseDate = null),
-                            child: const Icon(
+                            child: Icon(
                               CupertinoIcons.xmark_circle_fill,
-                              color: Colors.red,
+                              color: Theme.of(context).colorScheme.error, // Use theme color
                               size: 20,
                             ),
                           ),
@@ -458,7 +472,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 width: double.infinity,
                 child: CupertinoButton(
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  color: const Color(0xFF22C55E),
+                  color: Theme.of(context).colorScheme.primary, // Use theme color
                   borderRadius: BorderRadius.circular(12),
                   onPressed: _isSaving ? null : _saveProduct,
                   child: _isSaving
@@ -472,9 +486,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
                         )
                       : Text(
                           'Enregistrer le produit',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
+                            color: Theme.of(context).colorScheme.onPrimary, // Use theme color
                           ),
                         ),
                 ),
@@ -491,10 +506,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
       padding: const EdgeInsets.only(bottom: 12),
       child: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w600,
-          color: Colors.black87,
+          color: Theme.of(context).colorScheme.onSurface, // Use theme color
         ),
       ),
     );
@@ -514,10 +529,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
         child: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: selected ? const Color(0xFFDCFCE7) : Colors.transparent,
+            color: selected ? Theme.of(context).colorScheme.primary.withOpacity(0.1) : Colors.transparent, // Use theme color
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: selected ? const Color(0xFF22C55E) : Colors.grey[300]!,
+              color: selected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outline.withOpacity(0.5), // Use theme color
               width: selected ? 2 : 1,
             ),
           ),
@@ -526,7 +541,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
             children: [
               Icon(
                 icon,
-                color: selected ? const Color(0xFF22C55E) : Colors.grey[600],
+                color: selected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface.withOpacity(0.7), // Use theme color
                 size: 20,
               ),
               const SizedBox(height: 2),
@@ -535,7 +550,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: selected ? const Color(0xFF22C55E) : Colors.black87,
+                  color: selected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface, // Use theme color
                 ),
               ),
               const SizedBox(height: 2),
@@ -543,7 +558,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 subtitle,
                 style: TextStyle(
                   fontSize: 10,
-                  color: selected ? const Color(0xFF22C55E) : Colors.grey[600],
+                  color: selected ? Theme.of(context).colorScheme.primary.withOpacity(0.8) : Theme.of(context).colorScheme.onSurface.withOpacity(0.7), // Use theme color
                 ),
                 textAlign: TextAlign.center,
                 maxLines: 2,
@@ -563,10 +578,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
       child: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF22C55E) : Colors.white,
+          color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.surface, // Use theme color
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? const Color(0xFF22C55E) : Colors.grey[300]!,
+            color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outline.withOpacity(0.5), // Use theme color
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -584,7 +599,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: isSelected ? Colors.white : Colors.black87,
+                  color: isSelected ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.onSurface, // Use theme color
                 ),
               ),
             ],
@@ -603,9 +618,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
       builder: (context, child) {
         return Theme(
           data: ThemeData.light().copyWith(
-            primaryColor: const Color(0xFF22C55E),
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xFF22C55E),
+            primaryColor: Theme.of(context).colorScheme.primary, // Use theme color
+            colorScheme: ColorScheme.light(
+              primary: Theme.of(context).colorScheme.primary, // Use theme color
             ),
           ),
           child: child!,

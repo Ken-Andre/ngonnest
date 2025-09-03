@@ -2,7 +2,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/household_profile.dart';
+import '../models/alert.dart';
 import '../services/household_service.dart';
+import '../services/database_service.dart'; // Import DatabaseService
 import '../theme/app_theme.dart';
 import 'add_product_screen.dart';
 import '../theme/theme_mode_notifier.dart';
@@ -16,51 +18,51 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   HouseholdProfile? _profile;
+  late DatabaseService _databaseService;
   bool _isLoading = true;
   bool _offlineMode = false;
   int _selectedTabIndex = 0;
 
-  // Mock data for demonstration
-  final int _totalItems = 5;
-  final int _expiringSoon = 2;
-  final int _urgentAlerts = 1;
+  // Real data for demonstration
+  int _totalItems = 0;
+  int _expiringSoon = 0;
+  int _urgentAlerts = 0;
 
-  final List<Map<String, dynamic>> _mockNotifications = [
-    {
-      'id': 1,
-      'type': 'low-stock',
-      'title': 'Stock faible',
-      'message': 'Papier toilette presque épuisé',
-      'urgency': 'high',
-      'read': false,
-    },
-    {
-      'id': 2,
-      'type': 'expiry',
-      'title': 'Expiration proche',
-      'message': 'Huile de palme expire dans 2 semaines',
-      'urgency': 'medium',
-      'read': false,
-    },
-  ];
+  List<Alert> _notifications = [];
 
   @override
   void initState() {
     super.initState();
-    _loadProfile();
+    // _databaseService is available after initState, in didChangeDependencies
+    // but we need it here, so we'll fetch it in a post-frame callback.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _databaseService = context.read<DatabaseService>();
+      _loadDashboardData();
+    });
   }
 
-  Future<void> _loadProfile() async {
+  Future<void> _loadDashboardData() async {
+    setState(() => _isLoading = true);
     try {
       final profile = await HouseholdService.getHouseholdProfile();
-      setState(() {
-        _profile = profile;
-        _isLoading = false;
-      });
+      if (profile != null) {
+        final totalItems = await _databaseService.getTotalObjetCount(profile.id!);
+        final expiringSoon = await _databaseService.getExpiringSoonObjetCount(profile.id!); // This needs to be implemented or adapted
+        final alerts = await _databaseService.getAlerts(idFoyer: profile.id!, unreadOnly: true);
+
+        setState(() {
+          _profile = profile;
+          _totalItems = totalItems;
+          _expiringSoon = expiringSoon;
+          _urgentAlerts = alerts.length;
+          _notifications = alerts;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
+      // Handle error, e.g., show a snackbar
+      print('Error loading dashboard data: $e');
+    } finally {
+      setState(() => _isLoading = false);
     }
   }
 
@@ -68,8 +70,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        backgroundColor: Theme.of(context).colorScheme.background,
-        body: const Center(child: CupertinoActivityIndicator(radius: 20)),
+        backgroundColor: AppTheme.primaryGreen, // Match splash screen background during loading
+        body: const Center(child: CupertinoActivityIndicator(radius: 20, color: Colors.white)),
       );
     }
 
@@ -169,7 +171,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       color: Theme.of(context).colorScheme.onPrimary,
                       size: 24,
                     ),
-                    if (_mockNotifications.where((n) => !n['read']).isNotEmpty)
+                    if (_notifications.isNotEmpty)
                       Positioned(
                         right: 0,
                         top: 0,
@@ -194,7 +196,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildDashboardContent() {
     return RefreshIndicator(
-      onRefresh: _loadProfile,
+      onRefresh: _loadDashboardData,
       color: Theme.of(context).colorScheme.primary,
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -336,12 +338,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
               const Spacer(),
-              if (_mockNotifications.length > 2)
+              if (_notifications.length > 2)
                 CupertinoButton(
                   padding: EdgeInsets.zero,
                   onPressed: _showNotificationsSheet,
                   child: Text(
-                    'Tout (${_mockNotifications.length})',
+                    'Tout (${_notifications.length})',
                     style: TextStyle(
                       fontSize: 14,
                       color: Theme.of(context).colorScheme.primary,
@@ -354,7 +356,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const SizedBox(height: 16),
 
           // Show alerts or empty state
-          if (_mockNotifications.isEmpty)
+          if (_notifications.isEmpty)
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -369,29 +371,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     size: 20,
                   ),
                   const SizedBox(width: 12),
-                  Text(
-                    'Aucune alerte urgente pour le moment',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Theme.of(context).colorScheme.primary,
+                  Expanded(
+                    child: Text(
+                      'Aucune alerte urgente pour le moment',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                     ),
                   ),
                 ],
               ),
             )
           else
-            ..._mockNotifications.take(2).map((notification) {
+            ..._notifications.take(2).map((notification) {
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: _getNotificationColor(
-                    notification['urgency'],
+                    notification.urgences,
                   ).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: _getNotificationColor(
-                      notification['urgency'],
+                      notification.urgences,
                     ).withOpacity(0.3),
                     width: 1,
                   ),
@@ -399,8 +403,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: Row(
                   children: [
                     Icon(
-                      _getNotificationIcon(notification['type']),
-                      color: _getNotificationColor(notification['urgency']),
+                      _getNotificationIcon(notification.typeAlerte),
+                      color: _getNotificationColor(notification.urgences),
                       size: 20,
                     ),
                     const SizedBox(width: 12),
@@ -409,7 +413,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            notification['title'],
+                            notification.titre,
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
@@ -418,7 +422,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            notification['message'],
+                            notification.message,
                             style: TextStyle(
                               fontSize: 14,
                               color: Theme.of(
@@ -429,13 +433,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ],
                       ),
                     ),
-                    if (!notification['read'])
+                    if (!notification.lu)
                       CupertinoButton(
                         padding: EdgeInsets.zero,
                         onPressed: () {
-                          setState(() {
-                            notification['read'] = true;
-                          });
+                          _markNotificationAsRead(notification);
                         },
                         child: Icon(
                           CupertinoIcons.checkmark_circle,
@@ -852,7 +854,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     // If product was added successfully, refresh the inventory data
     if (result == true) {
-      _loadProfile(); // Refresh dashboard data
+      _loadDashboardData(); // Refresh dashboard data
     }
   }
 
@@ -913,9 +915,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               Expanded(
                 child: ListView.builder(
-                  itemCount: _mockNotifications.length,
+                  itemCount: _notifications.length,
                   itemBuilder: (context, index) {
-                    final notification = _mockNotifications[index];
+                    final notification = _notifications[index];
                     return Container(
                       margin: const EdgeInsets.symmetric(
                         horizontal: 16,
@@ -927,16 +929,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: _getNotificationColor(
-                            notification['urgency'],
+                            notification.urgences,
                           ).withOpacity(0.3),
                         ),
                       ),
                       child: Row(
                         children: [
                           Icon(
-                            _getNotificationIcon(notification['type']),
+                            _getNotificationIcon(notification.typeAlerte),
                             color: _getNotificationColor(
-                              notification['urgency'],
+                              notification.urgences,
                             ),
                             size: 20,
                           ),
@@ -946,7 +948,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  notification['title'],
+                                  notification.titre,
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
@@ -957,7 +959,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  notification['message'],
+                                  notification.message,
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: Theme.of(
@@ -968,6 +970,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               ],
                             ),
                           ),
+                          if (!notification.lu)
+                            CupertinoButton(
+                              padding: EdgeInsets.zero,
+                              onPressed: () {
+                                _markNotificationAsRead(notification);
+                              },
+                              child: Icon(
+                                CupertinoIcons.checkmark_circle,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withOpacity(0.7),
+                                size: 18,
+                              ),
+                            ),
                         ],
                       ),
                     );
@@ -981,27 +997,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Color _getNotificationColor(String urgency) {
+  Future<void> _markNotificationAsRead(Alert notification) async {
+    await _databaseService.markAlertAsRead(notification.id!);
+    _loadDashboardData(); // Refresh alerts after marking as read
+  }
+
+  Color _getNotificationColor(AlertUrgency urgency) {
     switch (urgency) {
-      case 'high':
+      case AlertUrgency.high:
         return AppTheme.primaryRed;
-      case 'medium':
+      case AlertUrgency.medium:
         return AppTheme.primaryOrange;
-      case 'low':
+      case AlertUrgency.low:
         return AppTheme.primaryGreen;
       default:
         return Theme.of(context).colorScheme.onSurface.withOpacity(0.7);
     }
   }
 
-  IconData _getNotificationIcon(String type) {
+  IconData _getNotificationIcon(AlertType type) {
     switch (type) {
-      case 'low-stock':
+      case AlertType.stockFaible:
         return CupertinoIcons.exclamationmark_triangle;
-      case 'expiry':
+      case AlertType.expirationProche:
         return CupertinoIcons.time;
-      case 'reminder':
+      case AlertType.reminder:
         return CupertinoIcons.bell;
+      case AlertType.system:
+        return CupertinoIcons.info_circle;
       default:
         return CupertinoIcons.info_circle;
     }

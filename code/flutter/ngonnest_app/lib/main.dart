@@ -6,6 +6,7 @@ import 'screens/onboarding_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'services/household_service.dart';
 import 'services/notification_service.dart';
+import 'services/database_service.dart'; // Import DatabaseService
 import 'theme/app_theme.dart';
 import 'theme/theme_mode_notifier.dart'; // Import the new file
 import 'screens/preferences_screen.dart';
@@ -19,8 +20,11 @@ void main() async {
   final initialThemeMode = await ThemeModeNotifier.loadThemeMode();
 
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => ThemeModeNotifier(initialThemeMode),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => ThemeModeNotifier(initialThemeMode)),
+        Provider<DatabaseService>(create: (context) => DatabaseService()), // Provide DatabaseService
+      ],
       child: const MyApp(),
     ),
   );

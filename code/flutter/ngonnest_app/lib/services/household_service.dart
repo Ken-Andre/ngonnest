@@ -31,6 +31,21 @@ class HouseholdService {
     }
   }
 
+  // Create and save household profile from raw data
+  static Future<int> createAndSaveHouseholdProfile(
+      int nbPersonnes,
+      int nbPieces,
+      String typeLogement,
+      String langue,) async {
+    final profile = HouseholdProfile(
+      nbPersonnes: nbPersonnes,
+      nbPieces: nbPieces,
+      typeLogement: typeLogement,
+      langue: langue,
+    );
+    return await saveHouseholdProfile(profile);
+  }
+
   // Get household profile
   static Future<HouseholdProfile?> getHouseholdProfile() async {
     final db = await database;

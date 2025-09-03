@@ -107,6 +107,37 @@ class DatabaseService {
     );
   }
 
+  // Get total object count
+  Future<int> getTotalObjetCount(int idFoyer) async {
+    final db = await database;
+    final count = Sqflite.firstIntValue(await db.rawQuery('SELECT COUNT(*) FROM objet WHERE id_foyer = ?', [idFoyer]));
+    return count ?? 0;
+  }
+
+  // Get expiring soon object count
+  Future<int> getExpiringSoonObjetCount(int idFoyer) async {
+    final db = await database;
+    final now = DateTime.now();
+    final warningDate = now.add(const Duration(days: 5));
+
+    final count = Sqflite.firstIntValue(await db.rawQuery('''
+      SELECT COUNT(*) FROM objet 
+      WHERE id_foyer = ? 
+      AND (
+        (type = 'consommable' AND quantite_restante <= seuil_alerte_quantite)
+        OR (type = 'consommable' AND date_rupture_prev IS NOT NULL AND date_rupture_prev <= ?)
+        OR (type = 'durable' AND date_achat IS NOT NULL AND duree_vie_prev_jours IS NOT NULL 
+            AND date(?, '+' || duree_vie_prev_jours || ' days') <= ?)
+      )
+    ''', [
+      idFoyer,
+      now.add(const Duration(days: 3)).toIso8601String(),
+      now.toIso8601String(),
+      now.add(const Duration(days: 3)).toIso8601String(),
+    ]));
+    return count ?? 0;
+  }
+
   // Get objects with alerts (for dashboard)
   Future<List<Objet>> getObjetsWithAlerts(int idFoyer) async {
     final db = await database;
@@ -233,6 +264,16 @@ class DatabaseService {
       where: 'id = ?',
       whereArgs: [id],
     );
+  }
+
+  // Insert objet and generate associated alerts
+  Future<int> insertObjetWithAlerts(Objet objet, int idFoyer) async {
+    final db = await database;
+    final objetId = await db.insert('objet', objet.toMap());
+    if (objetId > 0) {
+      await generateAlerts(idFoyer); // Generate alerts after inserting the object
+    }
+    return objetId;
   }
 
   Future<int> markAlertAsRead(int id) async {

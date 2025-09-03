@@ -19,10 +19,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   String _selectedHousingType = '';
   bool _isLoading = false;
 
-  final List<Map<String, String>> _householdSizes = [
-    {'id': 'small', 'label': 'Petit (1-2 personnes)', 'icon': '👤', 'count': '2'},
-    {'id': 'medium', 'label': 'Moyen (3-4 personnes)', 'icon': '👥', 'count': '4'},
-    {'id': 'large', 'label': 'Grand (5+ personnes)', 'icon': '👨‍👩‍👧‍👦', 'count': '6'},
+  final List<Map<String, dynamic>> _householdSizes = [
+    {'id': 'small', 'label': 'Petit (1-2 personnes)', 'icon': '👤', 'personCount': 2},
+    {'id': 'medium', 'label': 'Moyen (3-4 personnes)', 'icon': '👥', 'personCount': 4},
+    {'id': 'large', 'label': 'Grand (5+ personnes)', 'icon': '👨‍👩‍👧‍👦', 'personCount': 6},
   ];
 
   @override
@@ -57,15 +57,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final nbPersonnes = _getPersonCountFromSize(_selectedHouseholdSize);
-      final profile = HouseholdProfile(
-        nbPersonnes: nbPersonnes,
-        nbPieces: nbPersonnes <= 2 ? 2 : nbPersonnes <= 4 ? 3 : 4,
-        typeLogement: _selectedHousingType,
-        langue: _selectedLanguage,
-      );
+      final selectedSizeData = _householdSizes.firstWhere((size) => size['id'] == _selectedHouseholdSize);
+      final nbPersonnes = selectedSizeData['personCount'] as int;
+      final nbPieces = nbPersonnes <= 2 ? 2 : nbPersonnes <= 4 ? 3 : 4;
 
-      await HouseholdService.saveHouseholdProfile(profile);
+      await HouseholdService.createAndSaveHouseholdProfile(
+        nbPersonnes,
+        nbPieces,
+        _selectedHousingType,
+        _selectedLanguage,
+      );
 
       if (mounted) {
         Navigator.of(context).pushReplacementNamed('/dashboard');
@@ -83,19 +84,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       if (mounted) {
         setState(() => _isLoading = false);
       }
-    }
-  }
-
-  int _getPersonCountFromSize(String size) {
-    switch (size) {
-      case 'small':
-        return 2;
-      case 'medium':
-        return 4;
-      case 'large':
-        return 6;
-      default:
-        return 2;
     }
   }
 
@@ -370,7 +358,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  Widget _buildHouseholdSizeOption(Map<String, String> size) {
+  Widget _buildHouseholdSizeOption(Map<String, dynamic> size) {
     final isSelected = _selectedHouseholdSize == size['id'];
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -427,7 +415,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Recommandé pour ${size['count']} personnes',
+                      'Recommandé pour ${size['personCount']} personnes',
                       style: TextStyle(
                         fontSize: 16,
                         color: isSelected 

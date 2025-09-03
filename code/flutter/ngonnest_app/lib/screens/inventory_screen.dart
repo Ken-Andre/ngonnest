@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/objet.dart';
 import '../models/foyer.dart';
 import '../services/database_service.dart';
@@ -11,7 +12,7 @@ class InventoryScreen extends StatefulWidget {
 }
 
 class _InventoryScreenState extends State<InventoryScreen> {
-  final _databaseService = DatabaseService();
+  late DatabaseService _databaseService;
   List<Objet> _consommables = [];
   List<Objet> _durables = [];
   bool _isLoading = true;
@@ -19,7 +20,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
   @override
   void initState() {
     super.initState();
-    _loadInventory();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _databaseService = context.read<DatabaseService>();
+      _loadInventory();
+    });
   }
 
   Future<void> _loadInventory() async {
