@@ -1,6 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 import '../models/foyer.dart';
 import '../models/objet.dart';
+import '../models/alert.dart';
 import '../db.dart';
 
 class DatabaseService {
@@ -169,10 +170,145 @@ class DatabaseService {
     return budget;
   }
 
+  // Alert operations (US-2.1 & US-2.4)
+  Future<List<Alert>> getAlerts({int? idFoyer, bool? unreadOnly}) async {
+    final db = await database;
+    String whereClause = '';
+    List<dynamic> whereArgs = [];
+
+    if (idFoyer != null) {
+      // Join with objet table to filter by foyer
+      final sql = '''
+        SELECT a.* FROM alertes a
+        INNER JOIN objet o ON a.id_objet = o.id
+        WHERE o.id_foyer = ?
+        ${unreadOnly == true ? 'AND a.lu = 0' : ''}
+        ORDER BY a.date_creation DESC
+      ''';
+      final List<Map<String, dynamic>> maps = await db.rawQuery(sql, [idFoyer]);
+      return List.generate(maps.length, (i) => Alert.fromMap(maps[i]));
+    } else {
+      if (unreadOnly == true) {
+        whereClause = 'lu = 0';
+      }
+      final List<Map<String, dynamic>> maps = await db.query(
+        'alertes',
+        where: whereClause.isEmpty ? null : whereClause,
+        orderBy: 'date_creation DESC',
+      );
+      return List.generate(maps.length, (i) => Alert.fromMap(maps[i]));
+    }
+  }
+
+  Future<Alert?> getAlert(int id) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'alertes',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    if (maps.isEmpty) return null;
+    return Alert.fromMap(maps.first);
+  }
+
+  Future<int> insertAlert(Alert alert) async {
+    final db = await database;
+    return await db.insert('alertes', alert.toMap());
+  }
+
+  Future<int> updateAlert(Alert alert) async {
+    final db = await database;
+    return await db.update(
+      'alertes',
+      alert.toMap(),
+      where: 'id = ?',
+      whereArgs: [alert.id],
+    );
+  }
+
+  Future<int> deleteAlert(int id) async {
+    final db = await database;
+    return await db.delete(
+      'alertes',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<int> markAlertAsRead(int id) async {
+    final db = await database;
+    return await db.update(
+      'alertes',
+      {
+        'lu': 1,
+        'date_lecture': DateTime.now().toIso8601String(),
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<int> deleteAllReadAlerts(int idFoyer) async {
+    final db = await database;
+    final sql = '''
+      DELETE FROM alertes
+      WHERE lu = 1 AND id_objet IN (
+        SELECT id FROM objet WHERE id_foyer = ?
+      )
+    ''';
+    return await db.rawDelete(sql, [idFoyer]);
+  }
+
+  // Generate alerts for low stock and expiry (US-2.4)
+  Future<void> generateAlerts(int idFoyer) async {
+    final db = await database;
+    final now = DateTime.now();
+    final warningDate = now.add(const Duration(days: 5));
+
+    // Generate low stock alerts
+    await db.rawInsert('''
+      INSERT INTO alertes (id_objet, type_alerte, titre, message, urgences, date_creation, lu, resolu)
+      SELECT
+        o.id,
+        'stock_faible',
+        'Stock faible',
+        o.nom || ' est en rupture de stock (quantité restante: ' || o.quantite_restante || ')',
+        CASE WHEN o.quantite_restante <= 1 THEN 'high' ELSE 'medium' END,
+        ?,
+        0,
+        0
+      FROM objet o
+      LEFT JOIN alertes a ON a.id_objet = o.id AND a.type_alerte = 'stock_faible' AND a.resolu = 0
+      WHERE o.id_foyer = ?
+        AND o.type = 'consommable'
+        AND o.quantite_restante <= o.seuil_alerte_quantite
+        AND a.id IS NULL
+    ''', [now.toIso8601String(), idFoyer]);
+
+    // Generate expiry alerts
+    await db.rawInsert('''
+      INSERT INTO alertes (id_objet, type_alerte, titre, message, urgences, date_creation, lu, resolu)
+      SELECT
+        o.id,
+        'expiration_proche',
+        'Expiration proche',
+        o.nom || ' expire bientôt (le ' || date(o.date_rupture_prev) || ')',
+        CASE WHEN date(o.date_rupture_prev) <= date(?) THEN 'high' ELSE 'medium' END,
+        ?,
+        0,
+        0
+      FROM objet o
+      LEFT JOIN alertes a ON a.id_objet = o.id AND a.type_alerte = 'expiration_proche' AND a.resolu = 0
+      WHERE o.id_foyer = ?
+        AND o.date_rupture_prev IS NOT NULL
+        AND date(o.date_rupture_prev) <= date(?)
+        AND a.id IS NULL
+    ''', [now.add(const Duration(days: 2)).toIso8601String(), now.toIso8601String(), idFoyer, warningDate.toIso8601String()]);
+  }
+
   // Close database
   Future<void> close() async {
     final db = await database;
     await db.close();
   }
 }
-

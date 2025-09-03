@@ -1,13 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'services/household_service.dart';
+import 'services/notification_service.dart';
 import 'theme/app_theme.dart';
+import 'theme/theme_mode_notifier.dart'; // Import the new file
 import 'screens/preferences_screen.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize notifications
+  await NotificationService.initialize();
+
+  final initialThemeMode = await ThemeModeNotifier.loadThemeMode();
+
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => ThemeModeNotifier(initialThemeMode),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -15,12 +31,13 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeMode = context.watch<ThemeModeNotifier>().themeMode;
     return MaterialApp(
       title: 'NgonNest',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system,
+      themeMode: themeMode,
       home: const SplashScreen(),
       routes: {
         '/onboarding': (context) => const OnboardingScreen(),

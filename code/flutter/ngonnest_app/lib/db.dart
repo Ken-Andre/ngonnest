@@ -1,9 +1,13 @@
 import 'package:sqflite/sqflite.dart';
+import 'package:path/path.dart';
 
 Future<Database> initDatabase() async {
+  final databasesPath = await getDatabasesPath();
+  final path = join(databasesPath, 'ngonnest.db');
+
   return openDatabase(
-    'ngonnest.db',
-    version: 1,
+    path,
+    version: 2, // Increment version to trigger migration
     onCreate: (db, version) async {
       // Table foyer
       await db.execute('''
@@ -42,6 +46,37 @@ Future<Database> initDatabase() async {
         )
       ''');
 
+      // Table alertes (pour les notifications - US-2.1)
+      await db.execute('''
+        CREATE TABLE alertes (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          id_objet INTEGER,
+          type_alerte TEXT NOT NULL CHECK (type_alerte IN ('stock_faible', 'expiration_proche', 'reminder', 'system')),
+          titre TEXT NOT NULL,
+          message TEXT NOT NULL,
+          urgences TEXT NOT NULL CHECK (urgences IN ('low', 'medium', 'high')) DEFAULT 'medium',
+          date_creation TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          date_lecture TEXT,
+          lu INTEGER NOT NULL DEFAULT 0,
+          resolu INTEGER NOT NULL DEFAULT 0,
+          FOREIGN KEY (id_objet) REFERENCES objet (id) ON DELETE CASCADE
+        )
+      ''');
+
+      // Table budget (pour gérer le budget des catégories)
+      await db.execute('''
+        CREATE TABLE budget (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          id_foyer INTEGER NOT NULL,
+          categorie TEXT NOT NULL,
+          montant_alloue REAL NOT NULL,
+          montant_depense REAL NOT NULL DEFAULT 0,
+          date_mise_a_jour TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (id_foyer) REFERENCES foyer (id) ON DELETE CASCADE,
+          UNIQUE(id_foyer, categorie)
+        )
+      ''');
+
       // Table reachat_log (optionnel dans le MVP)
       await db.execute('''
         CREATE TABLE reachat_log (
@@ -53,6 +88,30 @@ Future<Database> initDatabase() async {
           FOREIGN KEY (id_objet) REFERENCES objet (id)
         )
       ''');
+    },
+    onUpgrade: (db, oldVersion, newVersion) async {
+      // Handle database migrations
+      if (oldVersion < 2) {
+        // Migration from version 1 to 2: Ensure alertes table exists
+        final tables = await db.rawQuery("SELECT name FROM sqlite_master WHERE type='table' AND name='alertes'");
+        if (tables.isEmpty) {
+          await db.execute('''
+            CREATE TABLE alertes (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              id_objet INTEGER,
+              type_alerte TEXT NOT NULL CHECK (type_alerte IN ('stock_faible', 'expiration_proche', 'reminder', 'system')),
+              titre TEXT NOT NULL,
+              message TEXT NOT NULL,
+              urgences TEXT NOT NULL CHECK (urgences IN ('low', 'medium', 'high')) DEFAULT 'medium',
+              date_creation TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+              date_lecture TEXT,
+              lu INTEGER NOT NULL DEFAULT 0,
+              resolu INTEGER NOT NULL DEFAULT 0,
+              FOREIGN KEY (id_objet) REFERENCES objet (id) ON DELETE CASCADE
+            )
+          ''');
+        }
+      }
     },
   );
 }

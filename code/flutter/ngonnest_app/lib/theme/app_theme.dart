@@ -349,13 +349,32 @@ class AppTheme {
         ),
       ),
       
-      // Card theme for dark mode
-      cardTheme: CardThemeData(
-        color: const Color(0xFF1E1E1E),
-        elevation: 4,
-        shadowColor: neutralBlack.withOpacity(0.3),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+      // Elevated button theme for dark mode
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: primaryGreen,
+          foregroundColor: neutralWhite,
+          elevation: 4,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          textStyle: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+      
+      // Text button theme for dark mode
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: primaryGreen,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          textStyle: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
       
@@ -386,6 +405,59 @@ class AppTheme {
           fontSize: 16,
           color: neutralLightGrey,
         ),
+      ),
+      
+      // Card theme for dark mode
+      cardTheme: CardThemeData(
+        color: const Color(0xFF1E1E1E),
+        elevation: 4,
+        shadowColor: neutralBlack.withOpacity(0.3),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+      ),
+      
+      // Icon theme for dark mode
+      iconTheme: const IconThemeData(
+        color: neutralWhite, // Changed to neutralWhite for dark mode visibility
+        size: 24,
+      ),
+      
+      // Floating action button theme for dark mode
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        backgroundColor: primaryGreen,
+        foregroundColor: neutralWhite,
+        elevation: 8,
+      ),
+      
+      // Bottom navigation bar theme for dark mode
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        backgroundColor: Color(0xFF1E1E1E),
+        selectedItemColor: primaryGreen,
+        unselectedItemColor: neutralLightGrey,
+        type: BottomNavigationBarType.fixed,
+        elevation: 8,
+        selectedLabelStyle: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+        ),
+        unselectedLabelStyle: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.normal,
+        ),
+      ),
+      
+      // Divider theme for dark mode
+      dividerTheme: const DividerThemeData(
+        color: neutralGrey,
+        thickness: 1,
+        space: 1,
+      ),
+      
+      // Progress indicator theme for dark mode
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: primaryGreen,
+        linearTrackColor: Color(0xFF1E1E1E),
       ),
     );
   }

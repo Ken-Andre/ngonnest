@@ -15,7 +15,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
   List<Objet> _consommables = [];
   List<Objet> _durables = [];
   bool _isLoading = true;
-  Foyer? _foyer;
 
   @override
   void initState() {
@@ -37,7 +36,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
         );
         
         setState(() {
-          _foyer = foyer;
           _consommables = consommables;
           _durables = durables;
           _isLoading = false;
@@ -398,4 +396,3 @@ class _InventoryScreenState extends State<InventoryScreen> {
     return '${date.day}/${date.month}/${date.year}';
   }
 }
-

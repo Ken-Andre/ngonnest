@@ -1,0 +1,359 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/timezone.dart' as tz;
+import '../models/alert.dart';
+
+class NotificationService {
+  static final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
+
+  static Future<void> initialize() async {
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+
+    const DarwinInitializationSettings initializationSettingsIOS =
+        DarwinInitializationSettings(
+          requestAlertPermission: true,
+          requestBadgePermission: true,
+          requestSoundPermission: true,
+        );
+
+    const InitializationSettings initializationSettings = InitializationSettings(
+      android: initializationSettingsAndroid,
+      iOS: initializationSettingsIOS,
+    );
+
+    await _flutterLocalNotificationsPlugin.initialize(
+      initializationSettings,
+      onDidReceiveNotificationResponse: _onDidReceiveNotificationResponse,
+    );
+
+    // Request permissions for iOS
+    await _flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()
+        ?.requestPermissions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+  }
+
+  static Future<void> _onDidReceiveNotificationResponse(NotificationResponse notificationResponse) async {
+    final String? payload = notificationResponse.payload;
+    if (payload != null) {
+      print('Notification payload: $payload');
+    }
+  }
+
+  static Future<void> showLowStockNotification({
+    required int id,
+    required String productName,
+    required int remainingQuantity,
+    required String category,
+  }) async {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+          'low_stock_channel',
+          'Stock faible',
+          channelDescription: 'Notifications pour les produits en rupture de stock',
+          importance: Importance.high,
+          priority: Priority.high,
+          showWhen: true,
+          icon: '@mipmap/ic_launcher',
+          color: Color(0xFFFFA500), // Orange
+        );
+
+    const DarwinNotificationDetails iOSPlatformChannelSpecifics =
+        DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        );
+
+    const NotificationDetails platformChannelSpecifics = NotificationDetails(
+      android: androidPlatformChannelSpecifics,
+      iOS: iOSPlatformChannelSpecifics,
+    );
+
+    await _flutterLocalNotificationsPlugin.show(
+      id,
+      'Stock faible',
+      '$productName - Plus que $remainingQuantity article(s) en stock',
+      platformChannelSpecifics,
+      payload: 'low_stock_$id',
+    );
+  }
+
+  static Future<void> showExpiryNotification({
+    required int id,
+    required String productName,
+    required String expiryDate,
+    required String category,
+  }) async {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+          'expiry_channel',
+          'Expiration proche',
+          channelDescription: 'Notifications pour les produits proche de la date d\'expiration',
+          importance: Importance.high,
+          priority: Priority.high,
+          showWhen: true,
+          icon: '@mipmap/ic_launcher',
+          color: Color(0xFFFF4444), // Red
+        );
+
+    const DarwinNotificationDetails iOSPlatformChannelSpecifics =
+        DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        );
+
+    const NotificationDetails platformChannelSpecifics = NotificationDetails(
+      android: androidPlatformChannelSpecifics,
+      iOS: iOSPlatformChannelSpecifics,
+    );
+
+    await _flutterLocalNotificationsPlugin.show(
+      id,
+      'Expiration proche',
+      '$productName expire bientôt ($expiryDate)',
+      platformChannelSpecifics,
+      payload: 'expiry_$id',
+    );
+  }
+
+  static Future<void> showScheduledNotification({
+    required int id,
+    required String title,
+    required String body,
+    required DateTime scheduledDate,
+  }) async {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+          'scheduled_channel',
+          'Rappels programmés',
+          channelDescription: 'Notifications de rappels programmées',
+          importance: Importance.defaultImportance,
+          priority: Priority.defaultPriority,
+          showWhen: true,
+          icon: '@mipmap/ic_launcher',
+        );
+
+    const DarwinNotificationDetails iOSPlatformChannelSpecifics =
+        DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        );
+
+    const NotificationDetails platformChannelSpecifics = NotificationDetails(
+      android: androidPlatformChannelSpecifics,
+      iOS: iOSPlatformChannelSpecifics,
+    );
+
+    // Convert to TZDateTime for proper timezone handling
+    final tz.TZDateTime tzScheduledDate = tz.TZDateTime.from(scheduledDate, tz.local);
+
+    await _flutterLocalNotificationsPlugin.zonedSchedule(
+      id,
+      title,
+      body,
+      tzScheduledDate,
+      platformChannelSpecifics,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      matchDateTimeComponents: DateTimeComponents.dateAndTime,
+    );
+  }
+
+  static Future<void> showReminderNotification({
+    required int id,
+    required String reminderTitle,
+    required String message,
+  }) async {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+          'reminder_channel',
+          'Rappels',
+          channelDescription: 'Notifications de rappels personnalisés',
+          importance: Importance.defaultImportance,
+          priority: Priority.defaultPriority,
+          showWhen: true,
+          icon: '@mipmap/ic_launcher',
+          color: Color(0xFF22C55E), // Green
+        );
+
+    const DarwinNotificationDetails iOSPlatformChannelSpecifics =
+        DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        );
+
+    const NotificationDetails platformChannelSpecifics = NotificationDetails(
+      android: androidPlatformChannelSpecifics,
+      iOS: iOSPlatformChannelSpecifics,
+    );
+
+    await _flutterLocalNotificationsPlugin.show(
+      id,
+      reminderTitle,
+      message,
+      platformChannelSpecifics,
+      payload: 'reminder_$id',
+    );
+  }
+
+  static Future<void> scheduleRecurringReminder({
+    required int id,
+    required String title,
+    required String body,
+    required int intervalDays,
+    required DateTime startDate,
+  }) async {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+          'recurring_reminder_channel',
+          'Rappels récurrents',
+          channelDescription: 'Notifications de rappels récurrents',
+          importance: Importance.defaultImportance,
+          priority: Priority.defaultPriority,
+          showWhen: true,
+          icon: '@mipmap/ic_launcher',
+        );
+
+    const DarwinNotificationDetails iOSPlatformChannelSpecifics =
+        DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        );
+
+    const NotificationDetails platformChannelSpecifics = NotificationDetails(
+      android: androidPlatformChannelSpecifics,
+      iOS: iOSPlatformChannelSpecifics,
+    );
+
+    // Convert to TZDateTime for proper timezone handling
+    final tz.TZDateTime tzScheduledDate = tz.TZDateTime.from(startDate, tz.local);
+
+    // Schedule the first reminder
+    await _flutterLocalNotificationsPlugin.zonedSchedule(
+      id,
+      title,
+      body,
+      tzScheduledDate,
+      platformChannelSpecifics,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      matchDateTimeComponents: DateTimeComponents.time,
+    );
+
+    // You can extend this to handle multiple recurring notifications
+    // by scheduling multiple notifications at different intervals
+  }
+
+  static Future<void> cancelNotification(int id) async {
+    await _flutterLocalNotificationsPlugin.cancel(id);
+  }
+
+  static Future<void> cancelAllNotifications() async {
+    await _flutterLocalNotificationsPlugin.cancelAll();
+  }
+
+  static Future<List<PendingNotificationRequest>> getPendingNotifications() async {
+    return await _flutterLocalNotificationsPlugin.pendingNotificationRequests();
+  }
+
+  // Helper method to create product-specific notifications from alerts
+  static Future<void> processAlertForNotification(Alert alert) async {
+    switch (alert.typeAlerte) {
+      case AlertType.stockFaible:
+        final productInfo = _extractProductInfoFromMessage(alert.message);
+        await showLowStockNotification(
+          id: alert.id ?? DateTime.now().millisecondsSinceEpoch,
+          productName: productInfo['name'] ?? 'Produit',
+          remainingQuantity: productInfo['quantity'] ?? 0,
+          category: productInfo['category'] ?? 'Inconnu',
+        );
+        break;
+
+      case AlertType.expirationProche:
+        final expiryInfo = _extractExpiryInfoFromMessage(alert.message);
+        await showExpiryNotification(
+          id: alert.id ?? DateTime.now().millisecondsSinceEpoch,
+          productName: expiryInfo['name'] ?? 'Produit',
+          expiryDate: expiryInfo['date'] ?? 'Bientôt',
+          category: expiryInfo['category'] ?? 'Inconnu',
+        );
+        break;
+
+      case AlertType.reminder:
+        await showReminderNotification(
+          id: alert.id ?? DateTime.now().millisecondsSinceEpoch,
+          reminderTitle: alert.titre,
+          message: alert.message,
+        );
+        break;
+
+      case AlertType.system:
+        await showReminderNotification(
+          id: alert.id ?? DateTime.now().millisecondsSinceEpoch,
+          reminderTitle: alert.titre,
+          message: alert.message,
+        );
+        break;
+    }
+  }
+
+  static Map<String, dynamic> _extractProductInfoFromMessage(String message) {
+    // Simple extraction - in production, you'd use more sophisticated parsing
+    // This is a basic implementation for demo purposes
+
+    String productName = '';
+    int quantity = 0;
+    String category = 'Inconnu';
+
+    // Look for patterns like "Savon est en rupture de stock (quantité restante: 1)"
+    if (message.contains('quantité restante:')) {
+      final nameMatch = RegExp(r'^([^]+?) est en').firstMatch(message);
+      if (nameMatch != null) {
+        productName = nameMatch.group(1) ?? '';
+      }
+
+      final quantityMatch = RegExp(r'quantité restante: (\d+)').firstMatch(message);
+      if (quantityMatch != null) {
+        quantity = int.tryParse(quantityMatch.group(1) ?? '0') ?? 0;
+      }
+    }
+
+    return {
+      'name': productName,
+      'quantity': quantity,
+      'category': category,
+    };
+  }
+
+  static Map<String, dynamic> _extractExpiryInfoFromMessage(String message) {
+    // Simple extraction for expiry messages
+    String productName = '';
+    String expiryDate = '';
+
+    if (message.contains('expire bientôt')) {
+      final nameMatch = RegExp(r'^([^]+?) expire' ).firstMatch(message);
+      if (nameMatch != null) {
+        productName = nameMatch.group(1)?.trim() ?? '';
+      }
+
+      final dateMatch = RegExp(r'le ([^)]+)').firstMatch(message);
+      if (dateMatch != null) {
+        expiryDate = dateMatch.group(1)?.trim() ?? '';
+      }
+    }
+
+    return {
+      'name': productName,
+      'date': expiryDate,
+      'category': 'Inconnu',
+    };
+  }
+}

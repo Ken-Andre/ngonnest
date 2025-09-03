@@ -1,8 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/household_profile.dart';
 import '../services/household_service.dart';
 import '../theme/app_theme.dart';
+import 'add_product_screen.dart';
+import '../theme/theme_mode_notifier.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -65,31 +68,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        backgroundColor: AppTheme.neutralLightGrey,
-        body: const Center(
-          child: CupertinoActivityIndicator(radius: 20),
-        ),
+        backgroundColor: Theme.of(context).colorScheme.background,
+        body: const Center(child: CupertinoActivityIndicator(radius: 20)),
       );
     }
 
     return Scaffold(
-      backgroundColor: AppTheme.neutralLightGrey,
+      backgroundColor: Theme.of(context).colorScheme.background,
       body: SafeArea(
         child: Column(
           children: [
             // Header
             _buildHeader(),
-            
+
             // Content
             Expanded(
               child: _selectedTabIndex == 0
                   ? _buildDashboardContent()
                   : _buildPlaceholderContent(),
             ),
-            
+
             // Bottom navigation
             _buildBottomNavigation(),
-            
+
             // Status bar
             _buildStatusBar(),
           ],
@@ -104,8 +105,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppTheme.primaryGreen,
-            AppTheme.primaryGreen.withOpacity(0.8),
+            Theme.of(context).colorScheme.primary,
+            Theme.of(context).colorScheme.primary.withOpacity(0.8),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -122,7 +123,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onPrimary,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -130,7 +131,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   'Bienvenue dans votre espace personnel NgonNest',
                   style: TextStyle(
                     fontSize: 16,
-                    color: Colors.white.withOpacity(0.9),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onPrimary.withOpacity(0.9),
                   ),
                 ),
               ],
@@ -138,15 +141,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           Row(
             children: [
-              // Dark mode toggle placeholder
+              // Dark mode toggle
               CupertinoButton(
                 padding: EdgeInsets.zero,
                 onPressed: () {
-                  // TODO: Implement dark mode toggle
+                  context.read<ThemeModeNotifier>().toggleTheme();
                 },
                 child: Icon(
                   CupertinoIcons.moon,
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.onPrimary,
                   size: 24,
                 ),
               ),
@@ -161,7 +164,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   children: [
                     Icon(
                       CupertinoIcons.bell,
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onPrimary,
                       size: 24,
                     ),
                     if (_mockNotifications.where((n) => !n['read']).isNotEmpty)
@@ -172,7 +175,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           width: 12,
                           height: 12,
                           decoration: BoxDecoration(
-                            color: AppTheme.primaryRed,
+                            color: Theme.of(context).colorScheme.error,
                             borderRadius: BorderRadius.circular(6),
                           ),
                         ),
@@ -190,7 +193,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildDashboardContent() {
     return RefreshIndicator(
       onRefresh: _loadProfile,
-      color: AppTheme.primaryGreen,
+      color: Theme.of(context).colorScheme.primary,
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -199,19 +202,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
             // Quick stats
             _buildQuickStats(),
             const SizedBox(height: 24),
-            
+
             // Alerts section
             _buildAlertsSection(),
             const SizedBox(height: 24),
-            
+
             // Quick actions
             _buildQuickActionsSection(),
             const SizedBox(height: 24),
-            
+
             // Household info
             if (_profile != null) _buildHouseholdInfoSection(),
             const SizedBox(height: 24),
-            
+
             // Recent items placeholder
             _buildRecentItemsSection(),
           ],
@@ -226,19 +229,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
         'icon': CupertinoIcons.cube_box,
         'value': _totalItems.toString(),
         'label': 'Articles totaux',
-        'color': AppTheme.primaryGreen,
+        'color': Theme.of(context).colorScheme.primary,
       },
       {
         'icon': CupertinoIcons.time,
         'value': _expiringSoon.toString(),
         'label': 'À surveiller',
-        'color': AppTheme.primaryOrange,
+        'color': Theme.of(context).colorScheme.secondary,
       },
       {
         'icon': CupertinoIcons.exclamationmark_triangle,
         'value': _urgentAlerts.toString(),
         'label': 'Urgences',
-        'color': AppTheme.primaryRed,
+        'color': Theme.of(context).colorScheme.error,
       },
     ];
 
@@ -250,11 +253,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
             margin: EdgeInsets.only(right: isLast ? 0 : 12),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -273,7 +278,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: AppTheme.neutralBlack,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -281,7 +286,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   stat['label'] as String,
                   style: TextStyle(
                     fontSize: 12,
-                    color: AppTheme.neutralGrey,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.7),
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -297,11 +304,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -314,7 +321,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             children: [
               Icon(
                 CupertinoIcons.exclamationmark_triangle,
-                color: AppTheme.primaryOrange,
+                color: Theme.of(context).colorScheme.secondary,
                 size: 24,
               ),
               const SizedBox(width: 12),
@@ -323,7 +330,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
-                  color: AppTheme.neutralBlack,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               const Spacer(),
@@ -335,7 +342,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     'Tout (${_mockNotifications.length})',
                     style: TextStyle(
                       fontSize: 14,
-                      color: AppTheme.primaryGreen,
+                      color: Theme.of(context).colorScheme.primary,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -343,20 +350,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          
+
           // Show alerts or empty state
           if (_mockNotifications.isEmpty)
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppTheme.primaryGreen.withOpacity(0.1),
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
                 children: [
                   Icon(
                     CupertinoIcons.checkmark_circle,
-                    color: AppTheme.primaryGreen,
+                    color: Theme.of(context).colorScheme.primary,
                     size: 20,
                   ),
                   const SizedBox(width: 12),
@@ -364,7 +371,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     'Aucune alerte urgente pour le moment',
                     style: TextStyle(
                       fontSize: 16,
-                      color: AppTheme.primaryGreen,
+                      color: Theme.of(context).colorScheme.primary,
                     ),
                   ),
                 ],
@@ -376,10 +383,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: _getNotificationColor(notification['urgency']).withOpacity(0.1),
+                  color: _getNotificationColor(
+                    notification['urgency'],
+                  ).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: _getNotificationColor(notification['urgency']).withOpacity(0.3),
+                    color: _getNotificationColor(
+                      notification['urgency'],
+                    ).withOpacity(0.3),
                     width: 1,
                   ),
                 ),
@@ -400,7 +411,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: AppTheme.neutralBlack,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -408,7 +419,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             notification['message'],
                             style: TextStyle(
                               fontSize: 14,
-                              color: AppTheme.neutralGrey,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withOpacity(0.7),
                             ),
                           ),
                         ],
@@ -424,7 +437,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         },
                         child: Icon(
                           CupertinoIcons.checkmark_circle,
-                          color: AppTheme.neutralGrey,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withOpacity(0.7),
                           size: 18,
                         ),
                       ),
@@ -443,15 +458,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
         'title': 'Inventaire',
         'subtitle': 'Voir mes produits',
         'icon': CupertinoIcons.cube_box,
-        'color': AppTheme.primaryGreen,
+        'color': Theme.of(context).colorScheme.primary,
         'onTap': () => _navigateToTab(1),
       },
       {
         'title': 'Ajouter',
         'subtitle': 'Nouveau produit',
         'icon': CupertinoIcons.add_circled,
-        'color': AppTheme.primaryOrange,
-        'onTap': () => _navigateToTab(2),
+        'color': Theme.of(context).colorScheme.secondary,
+        'onTap': () => _navigateToAddProduct(),
       },
     ];
 
@@ -463,7 +478,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w600,
-            color: AppTheme.neutralBlack,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         const SizedBox(height: 16),
@@ -479,11 +494,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withOpacity(0.05),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -510,7 +527,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: AppTheme.neutralBlack,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -519,7 +536,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           action['subtitle'] as String,
                           style: TextStyle(
                             fontSize: 14,
-                            color: AppTheme.neutralGrey,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withOpacity(0.7),
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -539,11 +558,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -556,7 +575,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             children: [
               Icon(
                 CupertinoIcons.house,
-                color: AppTheme.primaryGreen,
+                color: Theme.of(context).colorScheme.primary,
                 size: 24,
               ),
               const SizedBox(width: 12),
@@ -565,7 +584,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
-                  color: AppTheme.neutralBlack,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
             ],
@@ -573,7 +592,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const SizedBox(height: 16),
           _buildInfoRow('Personnes', '${_profile!.nbPersonnes}'),
           _buildInfoRow('Pièces', '${_profile!.nbPieces}'),
-          _buildInfoRow('Type de logement', LogementType.getDisplayName(_profile!.typeLogement)),
+          _buildInfoRow(
+            'Type de logement',
+            LogementType.getDisplayName(_profile!.typeLogement),
+          ),
           _buildInfoRow('Langue', Language.getDisplayName(_profile!.langue)),
         ],
       ),
@@ -590,7 +612,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             label,
             style: TextStyle(
               fontSize: 16,
-              color: AppTheme.neutralGrey,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
             ),
           ),
           Text(
@@ -598,7 +620,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: AppTheme.neutralBlack,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ],
@@ -610,11 +632,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -627,7 +649,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             children: [
               Icon(
                 CupertinoIcons.clock,
-                color: AppTheme.primaryGreen,
+                color: Theme.of(context).colorScheme.primary,
                 size: 24,
               ),
               const SizedBox(width: 12),
@@ -636,7 +658,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
-                  color: AppTheme.neutralBlack,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
             ],
@@ -645,14 +667,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppTheme.neutralLightGrey,
+              color: Theme.of(context).colorScheme.background,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
               children: [
                 Icon(
                   CupertinoIcons.cube_box,
-                  color: AppTheme.neutralGrey,
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onBackground.withOpacity(0.7),
                   size: 20,
                 ),
                 const SizedBox(width: 12),
@@ -660,7 +684,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   'Aucun article ajouté pour le moment',
                   style: TextStyle(
                     fontSize: 16,
-                    color: AppTheme.neutralGrey,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onBackground.withOpacity(0.7),
                   ),
                 ),
               ],
@@ -679,14 +705,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Icon(
             CupertinoIcons.cube_box,
             size: 64,
-            color: AppTheme.neutralGrey,
+            color: Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
           ),
           const SizedBox(height: 16),
           Text(
             'Fonctionnalité en cours de développement',
             style: TextStyle(
               fontSize: 18,
-              color: AppTheme.neutralGrey,
+              color: Theme.of(
+                context,
+              ).colorScheme.onBackground.withOpacity(0.7),
             ),
           ),
         ],
@@ -705,10 +733,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
             blurRadius: 10,
             offset: const Offset(0, -4),
           ),
@@ -732,15 +760,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Icon(
                       tab['icon'] as IconData,
                       size: 24,
-                      color: isSelected ? AppTheme.primaryGreen : AppTheme.neutralGrey,
+                      color: isSelected
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withOpacity(0.7),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       tab['label'] as String,
                       style: TextStyle(
                         fontSize: 12,
-                        color: isSelected ? AppTheme.primaryGreen : AppTheme.neutralGrey,
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                        color: isSelected
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withOpacity(0.7),
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.normal,
                       ),
                     ),
                   ],
@@ -756,25 +794,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildStatusBar() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      color: _offlineMode 
-          ? AppTheme.primaryYellow.withOpacity(0.2)
-          : AppTheme.primaryGreen.withOpacity(0.2),
+      color: _offlineMode
+          ? Theme.of(context).colorScheme.tertiary.withOpacity(0.2)
+          : Theme.of(context).colorScheme.primary.withOpacity(0.2),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
             _offlineMode ? CupertinoIcons.wifi_slash : CupertinoIcons.wifi,
             size: 16,
-            color: _offlineMode ? AppTheme.primaryOrange : AppTheme.primaryGreen,
+            color: _offlineMode
+                ? Theme.of(context).colorScheme.secondary
+                : Theme.of(context).colorScheme.primary,
           ),
           const SizedBox(width: 8),
           Text(
-            _offlineMode 
+            _offlineMode
                 ? 'Hors ligne - Données sauvegardées localement'
                 : 'Connecté - Synchronisation des données',
             style: TextStyle(
               fontSize: 12,
-              color: _offlineMode ? AppTheme.primaryOrange : AppTheme.primaryGreen,
+              color: _offlineMode
+                  ? Theme.of(context).colorScheme.onSecondary
+                  : Theme.of(context).colorScheme.onPrimary,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -787,25 +829,43 @@ class _DashboardScreenState extends State<DashboardScreen> {
     setState(() {
       _selectedTabIndex = index;
     });
-    
+
     // TODO: Implement actual navigation
     if (index != 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Navigation vers ${_getTabName(index)} en cours de développement'),
+          content: Text(
+            'Navigation vers ${_getTabName(index)} en cours de développement',
+          ),
           duration: const Duration(seconds: 2),
         ),
       );
     }
   }
 
+  Future<void> _navigateToAddProduct() async {
+    final result = await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (context) => const AddProductScreen()));
+
+    // If product was added successfully, refresh the inventory data
+    if (result == true) {
+      _loadProfile(); // Refresh dashboard data
+    }
+  }
+
   String _getTabName(int index) {
     switch (index) {
-      case 1: return 'Inventaire';
-      case 2: return 'Ajouter produit';
-      case 3: return 'Alertes';
-      case 4: return 'Paramètres';
-      default: return 'Accueil';
+      case 1:
+        return 'Inventaire';
+      case 2:
+        return 'Ajouter produit';
+      case 3:
+        return 'Alertes';
+      case 4:
+        return 'Paramètres';
+      default:
+        return 'Accueil';
     }
   }
 
@@ -818,7 +878,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         margin: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
-        color: CupertinoColors.systemBackground.resolveFrom(context),
+        color: Theme.of(context).colorScheme.surface,
         child: SafeArea(
           top: false,
           child: Column(
@@ -833,12 +893,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w600,
-                        color: AppTheme.neutralBlack,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     CupertinoButton(
                       padding: EdgeInsets.zero,
-                      child: Text('Fermer'),
+                      child: Text(
+                        'Fermer',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
                       onPressed: () => Navigator.pop(context),
                     ),
                   ],
@@ -850,20 +915,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   itemBuilder: (context, index) {
                     final notification = _mockNotifications[index];
                     return Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 4,
+                      ),
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.surface,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: _getNotificationColor(notification['urgency']).withOpacity(0.3),
+                          color: _getNotificationColor(
+                            notification['urgency'],
+                          ).withOpacity(0.3),
                         ),
                       ),
                       child: Row(
                         children: [
                           Icon(
                             _getNotificationIcon(notification['type']),
-                            color: _getNotificationColor(notification['urgency']),
+                            color: _getNotificationColor(
+                              notification['urgency'],
+                            ),
                             size: 20,
                           ),
                           const SizedBox(width: 12),
@@ -876,7 +948,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
-                                    color: AppTheme.neutralBlack,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface,
                                   ),
                                 ),
                                 const SizedBox(height: 4),
@@ -884,7 +958,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   notification['message'],
                                   style: TextStyle(
                                     fontSize: 14,
-                                    color: AppTheme.neutralGrey,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface.withOpacity(0.7),
                                   ),
                                 ),
                               ],
@@ -912,7 +988,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       case 'low':
         return AppTheme.primaryGreen;
       default:
-        return AppTheme.neutralGrey;
+        return Theme.of(context).colorScheme.onSurface.withOpacity(0.7);
     }
   }
 
