@@ -17,7 +17,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   HouseholdProfile? _profile;
   bool _isLoading = true;
-  bool _offlineMode = true;
+  bool _offlineMode = false;
   int _selectedTabIndex = 0;
 
   // Mock data for demonstration
@@ -148,7 +148,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   context.read<ThemeModeNotifier>().toggleTheme();
                 },
                 child: Icon(
-                  CupertinoIcons.moon,
+                  Theme.of(context).brightness == Brightness.dark
+                      ? CupertinoIcons.moon_fill
+                      : CupertinoIcons.sun_max_fill,
                   color: Theme.of(context).colorScheme.onPrimary,
                   size: 24,
                 ),
