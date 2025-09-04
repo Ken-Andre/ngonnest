@@ -572,20 +572,20 @@ class _AddProductScreenState extends State<AddProductScreen> {
   }
 
   Widget _buildCategoryCard(Map<String, String> category, bool isSelected) {
-    return CupertinoButton(
-      padding: EdgeInsets.zero,
-      onPressed: () => setState(() => _selectedCategory = category['id']!),
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.surface, // Use theme color
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outline.withOpacity(0.5), // Use theme color
-            width: isSelected ? 2 : 1,
+    return Expanded(
+      child: CupertinoButton(
+        padding: EdgeInsets.zero,
+        onPressed: () => setState(() => _selectedCategory = category['id']!),
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.surface, // Use theme color
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outline.withOpacity(0.5), // Use theme color
+              width: isSelected ? 2 : 1,
+            ),
           ),
-        ),
-        child: Expanded(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
