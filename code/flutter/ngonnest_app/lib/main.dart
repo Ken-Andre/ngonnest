@@ -5,6 +5,10 @@ import 'package:provider/provider.dart';
 import 'package:workmanager/workmanager.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/dashboard_screen.dart';
+import 'screens/add_product_screen.dart';
+import 'screens/inventory_screen.dart';
+import 'screens/budget_screen.dart';
+import 'screens/settings_screen.dart';
 import 'services/household_service.dart';
 import 'services/notification_service.dart';
 import 'services/database_service.dart'; // Import DatabaseService
@@ -72,6 +76,10 @@ class MyApp extends StatelessWidget {
         '/onboarding': (context) => const OnboardingScreen(),
         '/preferences': (context) => const PreferencesScreen(),
         '/dashboard': (context) => const DashboardScreen(),
+        '/add-product': (context) => const AddProductScreen(),
+        '/inventory': (context) => const InventoryScreen(),
+        '/budget': (context) => const BudgetScreen(),
+        '/settings': (context) => const SettingsScreen(),
       },
     );
   }

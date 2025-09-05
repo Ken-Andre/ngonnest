@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import '../models/objet.dart';
+import '../repository/inventory_repository.dart';
+import '../repository/foyer_repository.dart';
 import '../services/database_service.dart';
 import '../services/household_service.dart';
 import '../theme/app_theme.dart';
@@ -16,6 +18,8 @@ class AddProductScreen extends StatefulWidget {
 class _AddProductScreenState extends State<AddProductScreen> {
   final _formKey = GlobalKey<FormState>();
   late DatabaseService _databaseService;
+  late InventoryRepository _inventoryRepository;
+  late FoyerRepository _foyerRepository;
   
   bool _isConsumable = true;
   int? _foyerId;
@@ -42,6 +46,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _databaseService = context.read<DatabaseService>();
+      _inventoryRepository = InventoryRepository(_databaseService);
+      _foyerRepository = FoyerRepository(_databaseService);
       _loadFoyerId();
     });
   }
@@ -116,7 +122,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
         seuilAlerteQuantite: 1.0,
       );
 
-      await _databaseService.insertObjetWithAlerts(objet, _foyerId!);
+      // Use the repository pattern to create the product
+      final productId = await _inventoryRepository.create(objet);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

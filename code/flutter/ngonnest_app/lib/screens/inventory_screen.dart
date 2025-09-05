@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/objet.dart';
 import '../models/foyer.dart';
+import '../repository/inventory_repository.dart';
 import '../services/database_service.dart';
 
 class InventoryScreen extends StatefulWidget {
@@ -13,6 +14,7 @@ class InventoryScreen extends StatefulWidget {
 
 class _InventoryScreenState extends State<InventoryScreen> {
   late DatabaseService _databaseService;
+  late InventoryRepository _inventoryRepository;
   List<Objet> _consommables = [];
   List<Objet> _durables = [];
   bool _isLoading = true;
@@ -22,6 +24,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _databaseService = context.read<DatabaseService>();
+      _inventoryRepository = InventoryRepository(_databaseService);
       _loadInventory();
     });
   }
@@ -29,21 +32,25 @@ class _InventoryScreenState extends State<InventoryScreen> {
   Future<void> _loadInventory() async {
     try {
       final foyer = await _databaseService.getFoyer();
-      if (foyer != null) {
-        final consommables = await _databaseService.getObjets(
-          idFoyer: foyer.id,
-          type: TypeObjet.consommable,
-        );
-        final durables = await _databaseService.getObjets(
-          idFoyer: foyer.id,
-          type: TypeObjet.durable,
-        );
-        
+      if (foyer != null && foyer.id != null) {
+        final consommables = await _inventoryRepository.getConsommables(foyer.id!);
+        final durables = await _inventoryRepository.getDurables(foyer.id!);
+
         setState(() {
           _consommables = consommables;
           _durables = durables;
           _isLoading = false;
         });
+      } else {
+        setState(() => _isLoading = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Erreur: Aucun foyer configuré'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     } catch (e) {
       setState(() {
@@ -278,7 +285,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
               subtitle: const Text('Nourriture, produits d\'hygiène, etc.'),
               onTap: () {
                 Navigator.pop(context);
-                Navigator.pushNamed(context, '/add-consumable');
+                Navigator.pushNamed(context, '/add-product');
               },
             ),
             ListTile(
@@ -287,7 +294,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
               subtitle: const Text('Électroménager, meubles, etc.'),
               onTap: () {
                 Navigator.pop(context);
-                Navigator.pushNamed(context, '/add-durable');
+                Navigator.pushNamed(context, '/add-product');
               },
             ),
           ],
@@ -373,7 +380,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
   Future<void> _deleteObjet(Objet objet) async {
     try {
-      await _databaseService.deleteObjet(objet.id!);
+      await _inventoryRepository.delete(objet.id!);
       _loadInventory();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

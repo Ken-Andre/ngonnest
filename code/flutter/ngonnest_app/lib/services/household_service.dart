@@ -1,72 +1,77 @@
-import 'package:sqflite/sqflite.dart';
-import '../models/household_profile.dart';
-import '../db.dart';
+import '../models/foyer.dart';
+import '../repository/foyer_repository.dart';
+import '../services/database_service.dart';
 
 class HouseholdService {
-  static Database? _database;
+  static FoyerRepository? _foyerRepository;
+  static DatabaseService? _databaseService;
 
-  static Future<Database> get database async {
-    if (_database != null) return _database!;
-    _database = await initDatabase();
-    return _database!;
+  static Future<FoyerRepository> get foyerRepository async {
+    if (_foyerRepository != null) return _foyerRepository!;
+
+    _databaseService ??= DatabaseService();
+    _foyerRepository = FoyerRepository(_databaseService!);
+    return _foyerRepository!;
   }
 
   // Create or update household profile
-  static Future<int> saveHouseholdProfile(HouseholdProfile profile) async {
-    final db = await database;
-    
-    // Check if profile already exists
-    final existing = await getHouseholdProfile();
-    if (existing != null) {
-      // Update existing profile
-      return await db.update(
-        'foyer',
-        profile.toMap(),
-        where: 'id = ?',
-        whereArgs: [existing.id],
-      );
-    } else {
-      // Insert new profile
-      return await db.insert('foyer', profile.toMap());
-    }
+  static Future<int> saveFoyer(Foyer foyer) async {
+    final repo = await foyerRepository;
+    return await repo.save(foyer);
   }
 
-  // Create and save household profile from raw data
-  static Future<int> createAndSaveHouseholdProfile(
+  // Create and save foyer from raw data
+  static Future<int> createAndSaveFoyer(
       int nbPersonnes,
-      int nbPieces,
       String typeLogement,
-      String langue,) async {
-    final profile = HouseholdProfile(
+      String langue,
+      {int? nbPieces}) async {
+    final foyer = Foyer(
       nbPersonnes: nbPersonnes,
-      nbPieces: nbPieces,
+      nbPieces: nbPieces ?? (nbPersonnes <= 2 ? 2 : nbPersonnes <= 4 ? 3 : 4),
       typeLogement: typeLogement,
       langue: langue,
     );
-    return await saveHouseholdProfile(profile);
+    return await saveFoyer(foyer);
   }
 
-  // Get household profile
-  static Future<HouseholdProfile?> getHouseholdProfile() async {
-    final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query('foyer');
-    
-    if (maps.isNotEmpty) {
-      return HouseholdProfile.fromMap(maps.first);
-    }
-    return null;
+  // Get foyer data
+  static Future<Foyer?> getFoyer() async {
+    final repo = await foyerRepository;
+    return await repo.get();
   }
 
-  // Check if household profile exists
+  // Check if foyer data exists
+  static Future<bool> hasFoyer() async {
+    final repo = await foyerRepository;
+    return await repo.exists();
+  }
+
+  // Update foyer data
+  static Future<int> updateFoyer(Foyer foyer) async {
+    final repo = await foyerRepository;
+    return await repo.update(foyer);
+  }
+
+  // Delete foyer data
+  static Future<int> deleteFoyer(int id) async {
+    final repo = await foyerRepository;
+    return await repo.delete(id);
+  }
+
+  // Legacy methods for compatibility (deprecated - use foyer methods instead)
+  @deprecated
+  static Future<int> saveHouseholdProfile(dynamic profile) async {
+    return await saveFoyer(profile);
+  }
+
+  @deprecated
+  static Future<dynamic> getHouseholdProfile() async {
+    return await getFoyer();
+  }
+
+  @deprecated
   static Future<bool> hasHouseholdProfile() async {
-    final profile = await getHouseholdProfile();
-    return profile != null;
-  }
-
-  // Delete household profile
-  static Future<int> deleteHouseholdProfile() async {
-    final db = await database;
-    return await db.delete('foyer');
+    return await hasFoyer();
   }
 }
-

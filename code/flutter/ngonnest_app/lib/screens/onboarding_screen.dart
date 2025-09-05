@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../models/foyer.dart';
 import '../models/household_profile.dart';
 import '../services/household_service.dart';
 import '../theme/app_theme.dart';
@@ -61,12 +62,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       final nbPersonnes = selectedSizeData['personCount'] as int;
       final nbPieces = nbPersonnes <= 2 ? 2 : nbPersonnes <= 4 ? 3 : 4;
 
-      await HouseholdService.createAndSaveHouseholdProfile(
-        nbPersonnes,
-        nbPieces,
-        _selectedHousingType,
-        _selectedLanguage,
+      final foyer = Foyer(
+        nbPersonnes: nbPersonnes,
+        nbPieces: nbPieces,
+        typeLogement: _selectedHousingType,
+        langue: _selectedLanguage,
       );
+
+      await HouseholdService.saveFoyer(foyer);
 
       if (mounted) {
         Navigator.of(context).pushReplacementNamed('/dashboard');

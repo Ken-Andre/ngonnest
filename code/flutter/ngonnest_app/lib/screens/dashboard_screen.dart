@@ -1,10 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/household_profile.dart';
+import '../models/foyer.dart';
 import '../models/alert.dart';
+import '../models/household_profile.dart';
 import '../services/household_service.dart';
-import '../services/database_service.dart'; // Import DatabaseService
+import '../services/database_service.dart';
+import '../repository/inventory_repository.dart';
 import '../theme/app_theme.dart';
 import 'add_product_screen.dart';
 import '../theme/theme_mode_notifier.dart';
@@ -17,11 +19,12 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  HouseholdProfile? _profile;
+  Foyer? _foyerProfile;
   late DatabaseService _databaseService;
+  late InventoryRepository _inventoryRepository;
   bool _isLoading = true;
   bool _offlineMode = false;
-  int _selectedTabIndex = 0;
+
 
   // Real data for demonstration
   int _totalItems = 0;
@@ -37,6 +40,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     // but we need it here, so we'll fetch it in a post-frame callback.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _databaseService = context.read<DatabaseService>();
+      _inventoryRepository = InventoryRepository(_databaseService);
       _loadDashboardData();
     });
   }
@@ -44,14 +48,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> _loadDashboardData() async {
     setState(() => _isLoading = true);
     try {
-      final profile = await HouseholdService.getHouseholdProfile();
-      if (profile != null) {
-        final totalItems = await _databaseService.getTotalObjetCount(profile.id!);
-        final expiringSoon = await _databaseService.getExpiringSoonObjetCount(profile.id!); // This needs to be implemented or adapted
-        final alerts = await _databaseService.getAlerts(idFoyer: profile.id!, unreadOnly: true);
+      final foyer = await HouseholdService.getFoyer();
+      if (foyer != null) {
+        final totalItems = await _inventoryRepository.getTotalCount(foyer.id!);
+        final expiringSoon = await _inventoryRepository.getExpiringSoonCount(foyer.id!);
+        final alerts = await _databaseService.getAlerts(idFoyer: foyer.id!, unreadOnly: true);
 
         setState(() {
-          _profile = profile;
+          _foyerProfile = foyer;
           _totalItems = totalItems;
           _expiringSoon = expiringSoon;
           _urgentAlerts = alerts.length;
@@ -85,9 +89,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
             // Content
             Expanded(
-              child: _selectedTabIndex == 0
-                  ? _buildDashboardContent()
-                  : _buildPlaceholderContent(),
+              child: _buildDashboardContent(),
             ),
 
             // Bottom navigation
@@ -216,7 +218,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             const SizedBox(height: 24),
 
             // Household info
-            if (_profile != null) _buildHouseholdInfoSection(),
+            if (_foyerProfile != null) _buildHouseholdInfoSection(),
             const SizedBox(height: 24),
 
             // Recent items placeholder
@@ -594,13 +596,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          _buildInfoRow('Personnes', '${_profile!.nbPersonnes}'),
-          _buildInfoRow('Pièces', '${_profile!.nbPieces}'),
+          _buildInfoRow('Personnes', '${_foyerProfile!.nbPersonnes}'),
+          _buildInfoRow('Pièces', '${_foyerProfile!.nbPieces}'),
           _buildInfoRow(
             'Type de logement',
-            LogementType.getDisplayName(_profile!.typeLogement),
+            LogementType.getDisplayName(_foyerProfile!.typeLogement),
           ),
-          _buildInfoRow('Langue', Language.getDisplayName(_profile!.langue)),
+          _buildInfoRow('Langue', Language.getDisplayName(_foyerProfile!.langue)),
         ],
       ),
     );
@@ -752,7 +754,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           children: tabs.asMap().entries.map((entry) {
             final index = entry.key;
             final tab = entry.value;
-            final isSelected = _selectedTabIndex == index;
+            final isSelected = false; // Since we're using navigation, no tab is selected
 
             return Expanded(
               child: CupertinoButton(
@@ -830,20 +832,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _navigateToTab(int index) {
-    setState(() {
-      _selectedTabIndex = index;
-    });
-
-    // TODO: Implement actual navigation
-    if (index != 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Navigation vers ${_getTabName(index)} en cours de développement',
-          ),
-          duration: const Duration(seconds: 2),
-        ),
-      );
+    // Navigate to actual screens instead of switching content in same screen
+    switch (index) {
+      case 1: // Inventaire
+        Navigator.pushNamed(context, '/inventory');
+        break;
+      case 2: // Ajouter
+        Navigator.pushNamed(context, '/add-product');
+        break;
+      case 3: // Alertes
+        // For now, show notifications sheet
+        _showNotificationsSheet();
+        break;
+      case 4: // Paramètres
+        Navigator.pushNamed(context, '/settings');
+        break;
+      default:
+        // Stay on dashboard (tab 0)
+        break;
     }
   }
 
@@ -858,20 +864,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  String _getTabName(int index) {
-    switch (index) {
-      case 1:
-        return 'Inventaire';
-      case 2:
-        return 'Ajouter produit';
-      case 3:
-        return 'Alertes';
-      case 4:
-        return 'Paramètres';
-      default:
-        return 'Accueil';
-    }
-  }
+
 
   void _showNotificationsSheet() {
     showCupertinoModalPopup<void>(
