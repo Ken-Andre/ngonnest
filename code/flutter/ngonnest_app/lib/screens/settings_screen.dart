@@ -11,13 +11,31 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  // Local state for settings not managed by Provider
   bool _notificationsEnabled = true;
   bool _localDataOnly = true;
   bool _hasAcceptedCloudSync = false;
   String _selectedLanguage = 'fr';
   String _notificationFrequency = 'quotidienne';
-  String _currentTheme = 'clair';
-  String _currentProfile = 'adulte';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+  }
+
+  // TODO: Implement settings initialization from SharedPreferences
+  // Load all saved settings when screen opens
+  // This includes: language, notifications, cloud sync preferences, etc.
+  Future<void> _loadSettings() async {
+    // Example:
+    // final prefs = await SharedPreferences.getInstance();
+    // setState(() {
+    //   _notificationsEnabled = prefs.getBool('notifications_enabled') ?? true;
+    //   _selectedLanguage = prefs.getString('language') ?? 'fr';
+    //   _localDataOnly = prefs.getBool('local_data_only') ?? true;
+    // });
+  }
 
   final List<Map<String, String>> _languages = [
     {'code': 'fr', 'name': 'Français'},
@@ -32,11 +50,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+    return Consumer<ThemeModeNotifier>(
+      builder: (context, themeModeNotifier, child) {
+        return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
+        shadowColor: Colors.transparent,
         leading: CupertinoButton(
           padding: EdgeInsets.zero,
           onPressed: () => Navigator.of(context).pop(),
@@ -55,337 +76,320 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ),
         centerTitle: true,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3)),
+        ),
       ),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            // Header Section
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Theme.of(context).colorScheme.primary,
-                    Theme.of(context).colorScheme.primary.withOpacity(0.8),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Minimalist Header
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
                 ),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        CupertinoIcons.settings,
+                        size: 20,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                     ),
-                    child: Icon(
-                      CupertinoIcons.gear,
-                      size: 24,
-                      color: Theme.of(context).colorScheme.onPrimary,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
+                    const SizedBox(width: 16),
+                    Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Configuration',
+                          'Préférences',
                           style: TextStyle(
-                            fontSize: 20,
+                            fontSize: 18,
                             fontWeight: FontWeight.w600,
-                            color: Theme.of(context).colorScheme.onPrimary,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
-                        const SizedBox(height: 4),
                         Text(
-                          'Personnalisez votre expérience NgonNest',
+                          'Personnalisez votre expérience',
                           style: TextStyle(
                             fontSize: 14,
-                            color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.9),
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                           ),
                         ),
                       ],
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
+              const SizedBox(height: 32),
 
-            // Language Section
-            _buildSectionTitle('Langue'),
-            _buildSettingCard(
-              title: 'Langue de l\'application',
-              subtitle: 'Choisissez votre langue préférée',
-              child: Row(
-                children: [
-                  SizedBox(
-                    width: 100,
-                    child: DropdownButton<String>(
-                      value: _selectedLanguage,
-                      underline: const SizedBox(),
-                      items: _languages.map((lang) =>
-                        DropdownMenuItem(
-                          value: lang['code'],
-                          child: Text(
-                            lang['name']!,
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.onSurface,
-                              fontSize: 16,
-                            ),
-                          ),
-                        )
-                      ).toList(),
-                      onChanged: (value) => setState(() => _selectedLanguage = value!),
-                      isExpanded: true,
-                      hint: const Text('Langue', style: TextStyle(fontSize: 16)),
+              // Language Section
+              _buildSectionTitle('Langue'),
+              _buildSettingCard(
+                title: 'Langue de l\'application',
+                subtitle: 'Choisissez votre langue préférée',
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 100,
+                      child: DropdownButton<String>(
+                        value: _selectedLanguage,
+                        underline: const SizedBox(),
+                        items: _languages
+                            .map(
+                              (lang) => DropdownMenuItem(
+                                value: lang['code'],
+                                child: Text(
+                                  lang['name']!,
+                                  style: TextStyle(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (value) {
+                          setState(() => _selectedLanguage = value!);
+                          // TODO: Implement language change functionality
+                          // When language is changed, update app locale
+                          // This requires:
+                          // 1. Integration with flutter_localizations
+                          // 2. App-level locale state management
+                          // 3. Dynamic string loading based on selected language
+                          // Example: context.read<LocaleNotifier>().setLocale(Locale(value!));
+                        },
+                        isExpanded: true,
+                        hint: const Text(
+                          'Langue',
+                          style: TextStyle(fontSize: 16),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      onPressed: () {},
+                      icon: Icon(
+                        CupertinoIcons.globe,
+                        color: Theme.of(context).colorScheme.primary,
+                        size: 24,
+                      ),
+                      tooltip: 'Sélectionnez pour changer l\'interface',
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Notifications Section
+              _buildSectionTitle('Notifications'),
+              _buildSettingCard(
+                title: 'Notifications push',
+                subtitle: 'Recevoir des alertes sur l\'app',
+                child: Row(
+                  children: [
+                    CupertinoSwitch(
+                      value: _notificationsEnabled,
+                      onChanged: (value) {
+                        setState(() => _notificationsEnabled = value);
+                        // TODO: Implement notification settings
+                        // When notifications are enabled/disabled:
+                        // 1. Update system notification permissions
+                        // 2. Register/unregister for push notifications
+                        // 3. Update background task scheduling
+                        // 4. Save preference to SharedPreferences
+                        // Example: await NotificationService.setNotificationsEnabled(value);
+                      },
+                      activeColor: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      onPressed: () {},
+                      icon: Icon(
+                        CupertinoIcons.bell,
+                        color: Theme.of(context).colorScheme.primary,
+                        size: 24,
+                      ),
+                      tooltip: 'Activer rappels pour stocks bas',
+                    ),
+                  ],
+                ),
+              ),
+
+              if (_notificationsEnabled) ...[
+                const SizedBox(height: 8),
+                Container(
+                  margin: const EdgeInsets.only(left: 16),
+                  child: _buildSettingCard(
+                    title: 'Fréquence des notifications',
+                    subtitle: 'Choisissez la fréquence des rappels',
+                    child: SizedBox(
+                      width: 120,
+                      child: DropdownButton<String>(
+                        value: _notificationFrequency,
+                        underline: const SizedBox(),
+                        items: _notificationFrequencies
+                            .map(
+                              (freq) => DropdownMenuItem(
+                                value: freq['code'],
+                                child: Text(
+                                  freq['name']!,
+                                  style: TextStyle(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (value) =>
+                            setState(() => _notificationFrequency = value!),
+                        isExpanded: true,
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    onPressed: () {},
-                    icon: Icon(
-                      CupertinoIcons.globe,
-                      color: Theme.of(context).colorScheme.primary,
-                      size: 24,
-                    ),
-                    tooltip: 'Sélectionnez pour changer l\'interface',
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
+                ),
+              ],
+              const SizedBox(height: 24),
 
-            // Notifications Section
-            _buildSectionTitle('Notifications'),
-            _buildSettingCard(
-              title: 'Notifications push',
-              subtitle: 'Recevoir des alertes sur l\'app',
-              child: Row(
-                children: [
-                  CupertinoSwitch(
-                    value: _notificationsEnabled,
-                    onChanged: (value) => setState(() => _notificationsEnabled = value),
-                    activeColor: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    onPressed: () {},
-                    icon: Icon(
-                      CupertinoIcons.bell,
-                      color: Theme.of(context).colorScheme.primary,
-                      size: 24,
+              // Privacy Section
+              _buildSectionTitle('Confidentialité'),
+              _buildSettingCard(
+                title: 'Données locales uniquement',
+                subtitle: 'Pas de sync sans accord explicite',
+                child: Row(
+                  children: [
+                    CupertinoSwitch(
+                      value: _localDataOnly,
+                      onChanged: (value) {
+                        if (!value) {
+                          _showCloudSyncConsent();
+                        } else {
+                          setState(() => _localDataOnly = value);
+                        }
+                      },
+                      activeColor: Theme.of(context).colorScheme.primary,
                     ),
-                    tooltip: 'Activer rappels pour stocks bas',
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                  ],
+                ),
               ),
-            ),
+              const SizedBox(height: 24),
 
-            if (_notificationsEnabled) ...[
-              const SizedBox(height: 8),
-              Container(
-                margin: const EdgeInsets.only(left: 16),
-                child: _buildSettingCard(
-                  title: 'Fréquence des notifications',
-                  subtitle: 'Choisissez la fréquence des rappels',
-                  child: SizedBox(
-                    width: 120,
-                    child: DropdownButton<String>(
-                      value: _notificationFrequency,
-                      underline: const SizedBox(),
-                      items: _notificationFrequencies.map((freq) =>
-                        DropdownMenuItem(
-                          value: freq['code'],
-                          child: Text(
-                            freq['name']!,
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.onSurface,
-                              fontSize: 16,
-                            ),
-                          ),
-                        )
-                      ).toList(),
-                      onChanged: (value) => setState(() => _notificationFrequency = value!),
-                      isExpanded: true,
+              // Theme Section
+              _buildSectionTitle('Thème'),
+              _buildSettingCard(
+                title: 'Mode ${themeModeNotifier.themeMode == ThemeMode.light ? 'clair' : themeModeNotifier.themeMode == ThemeMode.dark ? 'sombre' : 'système'}',
+                subtitle: 'Changer l\'apparence de l\'application',
+                child: CupertinoSwitch(
+                  value: themeModeNotifier.themeMode == ThemeMode.dark,
+                  onChanged: (value) {
+                    themeModeNotifier.toggleTheme();
+                  },
+                  activeColor: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+
+              const SizedBox(height: 32),
+
+              // Support Section
+              _buildSectionTitle('Support'),
+              _buildSettingCard(
+                title: 'Envoyer un feedback',
+                subtitle: 'Partagez vos suggestions',
+                child: ElevatedButton.icon(
+                  onPressed: _showFeedbackDialog,
+                  icon: const Icon(CupertinoIcons.mail, size: 18),
+                  label: const Text('Envoyer'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
                   ),
                 ),
               ),
+              const SizedBox(height: 16),
+
+              _buildSettingCard(
+                title: 'Signaler un bug',
+                subtitle: 'Décrivez le problème',
+                child: ElevatedButton.icon(
+                  onPressed: _showBugReportDialog,
+                  icon: const Icon(Icons.bug_report, size: 18),
+                  label: const Text('Signaler'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 48),
             ],
-            const SizedBox(height: 24),
-
-            // Privacy Section
-            _buildSectionTitle('Confidentialité'),
-            _buildSettingCard(
-              title: 'Données locales uniquement',
-              subtitle: 'Pas de sync sans accord explicite',
-              child: Row(
-                children: [
-                  CupertinoSwitch(
-                    value: _localDataOnly,
-                    onChanged: (value) {
-                      if (!value) {
-                        _showCloudSyncConsent();
-                      } else {
-                        setState(() => _localDataOnly = value);
-                      }
-                    },
-                    activeColor: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(width: 8),
-                  // Text(
-                  //   'Données locales uniquement',
-                  //   style: TextStyle(
-                  //     fontSize: 16,
-                  //     color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                  //   ),
-                  // ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Theme Section
-            _buildSectionTitle('Thème'),
-            _buildSettingCard(
-              title: 'Apparence de l\'application',
-              subtitle: 'Choisissez votre thème préféré',
-              child: Row(
-                children: [
-                  ElevatedButton(
-                    onPressed: () => setState(() => _currentTheme = 'clair'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _currentTheme == 'clair'
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.surface,
-                      foregroundColor: _currentTheme == 'clair'
-                          ? Theme.of(context).colorScheme.onPrimary
-                          : Theme.of(context).colorScheme.onSurface,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text('Clair', style: TextStyle(fontSize: 16)),
-                  ),
-                  const SizedBox(width: 8),
-                  ElevatedButton(
-                    onPressed: () => setState(() => _currentTheme = 'sombre'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _currentTheme == 'sombre'
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.surface,
-                      foregroundColor: _currentTheme == 'sombre'
-                          ? Theme.of(context).colorScheme.onPrimary
-                          : Theme.of(context).colorScheme.onSurface,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text('Sombre', style: TextStyle(fontSize: 16)),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    onPressed: () {},
-                    icon: Icon(
-                      CupertinoIcons.paintbrush,
-                      color: Theme.of(context).colorScheme.primary,
-                      size: 24,
-                    ),
-                    tooltip: 'Choisissez votre thème préféré',
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Profiles Section
-            _buildSectionTitle('Profils'),
-            _buildSettingCard(
-              title: 'Type de profil',
-              subtitle: 'Adaptation selon l\'utilisateur',
-              child: Row(
-                children: [
-                  ElevatedButton(
-                    onPressed: () => setState(() => _currentProfile = 'adulte'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _currentProfile == 'adulte'
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.surface,
-                      foregroundColor: _currentProfile == 'adulte'
-                          ? Theme.of(context).colorScheme.onPrimary
-                          : Theme.of(context).colorScheme.onSurface,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text('Adulte', style: TextStyle(fontSize: 16)),
-                  ),
-                  const SizedBox(width: 8),
-                  ElevatedButton(
-                    onPressed: () => setState(() => _currentProfile = 'enfant'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _currentProfile == 'enfant'
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.surface,
-                      foregroundColor: _currentProfile == 'enfant'
-                          ? Theme.of(context).colorScheme.onPrimary
-                          : Theme.of(context).colorScheme.onSurface,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text('Enfant', style: TextStyle(fontSize: 16)),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    onPressed: () {},
-                    icon: Icon(
-                      CupertinoIcons.person,
-                      color: Theme.of(context).colorScheme.primary,
-                      size: 24,
-                    ),
-                    tooltip: 'Sélectionnez profil pour accès adapté',
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 40),
-
-            // Save Button
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: ElevatedButton(
-                onPressed: _saveSettings,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  'Sauvegarder',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
-              ),
-            ),
-            const SizedBox(height: 40),
-          ],
+          ),
         ),
       ),
+
+      // Fixed Bottom Save Button
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          border: Border(
+            top: BorderSide(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1), width: 1),
+          ),
+        ),
+        child: ElevatedButton(
+          onPressed: _saveSettings,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            foregroundColor: Theme.of(context).colorScheme.onPrimary,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            minimumSize: const Size(double.infinity, 50),
+          ),
+          child: const Text(
+            'Sauvegarder',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+        ),
+      ),
+        );
+      }
     );
   }
 
@@ -440,7 +444,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   subtitle,
                   style: TextStyle(
                     fontSize: 14,
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.7),
                   ),
                 ),
               ],
@@ -448,168 +454,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(width: 16),
           child,
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionButton({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required VoidCallback onPressed,
-    Color? color,
-  }) {
-    return CupertinoButton(
-      padding: EdgeInsets.zero,
-      onPressed: onPressed,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: (color ?? Theme.of(context).colorScheme.primary).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                icon,
-                size: 20,
-                color: color ?? Theme.of(context).colorScheme.primary,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              CupertinoIcons.chevron_right,
-              size: 16,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNotificationItem({
-    required String title,
-    required String subtitle,
-    required bool enabled,
-    required Function(bool) onChanged,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.background,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-                if (subtitle.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          CupertinoSwitch(
-            value: enabled,
-            onChanged: onChanged,
-            activeColor: Theme.of(context).colorScheme.primary,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoItem(String label, String value) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-            ),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
         ],
       ),
     );
@@ -627,11 +471,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
               'Acceptez-vous cette fonctionnalité ?',
             ),
             const SizedBox(height: 16),
-            CheckboxListTile(
-              title: const Text('J\'accepte la synchronisation cloud'),
-              value: _hasAcceptedCloudSync,
-              onChanged: (value) => setState(() => _hasAcceptedCloudSync = value ?? false),
-              controlAffinity: ListTileControlAffinity.leading,
+            Material(
+              color: Colors.transparent,
+              child: CheckboxListTile(
+                title: const Text('J\'accepte la synchronisation cloud'),
+                value: _hasAcceptedCloudSync,
+                onChanged: (value) =>
+                    setState(() => _hasAcceptedCloudSync = value ?? false),
+                controlAffinity: ListTileControlAffinity.leading,
+              ),
             ),
           ],
         ),
@@ -644,6 +492,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: const Text('Accepter'),
             onPressed: () {
               if (_hasAcceptedCloudSync) {
+                // TODO: Implement cloud synchronization
+                // When user accepts cloud sync:
+                // 1. Authenticate with cloud service (Google Drive, iCloud, etc.)
+                // 2. Set up data synchronization
+                // 3. Schedule regular backups
+                // 4. Handle conflicts and merge strategies
+                // 5. Update local storage preferences
+                // Example: await CloudService.initializeSync();
+
                 setState(() => _localDataOnly = false);
                 Navigator.of(context).pop();
                 _showSyncEnabledMessage();
@@ -674,7 +531,202 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  void _showFeedbackDialog() {
+    String feedbackMessage = '';
+    showCupertinoModalPopup<void>(
+      context: context,
+      builder: (BuildContext context) => CupertinoAlertDialog(
+        title: const Text('Envoyer un feedback'),
+        content: Column(
+          children: [
+            const Text(
+              'Nous aimerions connaître votre avis sur l\'application.',
+            ),
+            const SizedBox(height: 12),
+            Material(
+              child: Container(
+                height: 100,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
+                child: TextField(
+                  maxLines: 4,
+                  onChanged: (value) => feedbackMessage = value,
+                  decoration: const InputDecoration(
+                    hintText: 'Tapez votre message ici...',
+                    border: InputBorder.none,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          CupertinoDialogAction(
+            child: const Text('Annuler'),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          CupertinoDialogAction(
+            child: const Text('Envoyer'),
+            onPressed: () {
+              if (feedbackMessage.trim().isNotEmpty) {
+                // TODO: Implement server-side feedback submission
+                // Current behavior: Just show confirmation dialog
+                // Future: Send feedback to NgonNest servers via API
+                // Example: await FeedbackService.submitFeedback(feedbackMessage);
+
+                Navigator.of(context).pop();
+                _showFeedbackSentMessage();
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showBugReportDialog() {
+    String bugDescription = '';
+    showCupertinoModalPopup<void>(
+      context: context,
+      builder: (BuildContext context) => CupertinoAlertDialog(
+        title: const Text('Signaler un bug'),
+        content: Column(
+          children: [
+            const Text(
+              'Votre signalement sera envoyé à notre équipe de développement.',
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Pour continuer à nous contacter, rejoignez notre bot Telegram :',
+              style: TextStyle(fontSize: 12),
+            ),
+            const SizedBox(height: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: const Text(
+                't.me/NgonNestBot',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  fontFamily: 'monospace',
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Material(
+              child: Container(
+                height: 100,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
+                child: TextField(
+                  maxLines: 4,
+                  onChanged: (value) => bugDescription = value,
+                  decoration: const InputDecoration(
+                    hintText: 'Décrivez le bug en détail...',
+                    border: InputBorder.none,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          CupertinoDialogAction(
+            child: const Text('Annuler'),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          CupertinoDialogAction(
+            child: const Text('Signaler'),
+            onPressed: () {
+              if (bugDescription.trim().isNotEmpty) {
+                // TODO: Implement bug report handling with Telegram integration
+                // When user reports a bug, automatically redirect to Telegram bot
+                // Pre-load the bug report message for user to send
+                // Example: _redirectToTelegramBotWithBugReport(bugDescription);
+                //
+                // This involves:
+                // 1. Preparing bug report data (description, device info, app version, etc.)
+                // 2. Creating Telegram deep link with pre-filled message
+                // 3. Opening Telegram app/bot with message ready to send
+                // 4. Optionally store bug report locally for backup
+
+                Navigator.of(context).pop();
+                _showBugReportedMessage();
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showFeedbackSentMessage() {
+    showCupertinoModalPopup<void>(
+      context: context,
+      builder: (BuildContext context) => CupertinoAlertDialog(
+        title: const Text('Feedback envoyé'),
+        content: const Text(
+          'Merci pour votre retour ! Nous l\'utiliserons pour améliorer l\'application.',
+        ),
+        actions: [
+          CupertinoDialogAction(
+            child: const Text('OK'),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showBugReportedMessage() {
+    showCupertinoModalPopup<void>(
+      context: context,
+      builder: (BuildContext context) => CupertinoAlertDialog(
+        title: const Text('Bug signalé'),
+        content: const Text(
+          'Merci d\'avoir signalé ce problème. Nous allons l\'examiner rapidement.',
+        ),
+        actions: [
+          CupertinoDialogAction(
+            child: const Text('OK'),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _saveSettings() {
+    // TODO: Implement comprehensive settings persistence
+    // When user saves settings, store all preferences persistently:
+    // 1. Save to SharedPreferences: language, notifications, cloud sync, etc.
+    // 2. Validate settings before saving (e.g., cloud sync authentication)
+    // 3. Handle save errors and provide user feedback
+    // 4. Update any running services (notifications, background tasks)
+    // 5. Ensure settings are loaded on next app start
+    //
+    // Example implementation:
+    // final prefs = await SharedPreferences.getInstance();
+    // await prefs.setString('language', _selectedLanguage);
+    // await prefs.setBool('notifications_enabled', _notificationsEnabled);
+    // await prefs.setBool('local_data_only', _localDataOnly);
+    // await prefs.setString('notification_frequency', _notificationFrequency);
+    //
+    // Then show success confirmation
+
     // Here we would save to database/local storage
     // For now, just show a confirmation
     showCupertinoModalPopup<void>(
