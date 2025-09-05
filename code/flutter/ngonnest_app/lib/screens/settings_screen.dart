@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../theme/theme_mode_notifier.dart';
 
@@ -548,9 +549,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 height: 100,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey.shade300),
+                  border: Border.all(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3)),
                 ),
                 child: TextField(
                   maxLines: 4,
@@ -605,20 +606,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
               style: TextStyle(fontSize: 12),
             ),
             const SizedBox(height: 4),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: const Text(
-                't.me/NgonNestBot',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  fontFamily: 'monospace',
+            GestureDetector(
+              onTap: () async {
+                const url = 'https://t.me/NgonNestBot';
+                await Clipboard.setData(const ClipboardData(text: url));
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Lien Telegram copié !'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface.withOpacity(0.8),
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2)),
                 ),
-                textAlign: TextAlign.center,
+                child: Text(
+                  't.me/NgonNestBot',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    fontFamily: 'monospace',
+                    color: Theme.of(context).colorScheme.primary,
+                    decoration: TextDecoration.underline,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
               ),
             ),
             const SizedBox(height: 12),
@@ -627,9 +645,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 height: 100,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey.shade300),
+                  border: Border.all(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3)),
                 ),
                 child: TextField(
                   maxLines: 4,
