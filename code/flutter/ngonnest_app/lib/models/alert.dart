@@ -40,10 +40,10 @@ class Alert {
     return {
       'id': id,
       'id_objet': idObjet,
-      'type_alerte': typeAlerte.name,
+      'type_alerte': typeAlerte.toString().split('.').last,
       'titre': titre,
       'message': message,
-      'urgences': urgences.name,
+      'urgences': urgences.toString().split('.').last,
       'date_creation': dateCreation.toIso8601String(),
       'date_lecture': dateLecture?.toIso8601String(),
       'lu': lu ? 1 : 0,
@@ -56,13 +56,13 @@ class Alert {
       id: map['id'],
       idObjet: map['id_objet'],
       typeAlerte: AlertType.values.firstWhere(
-        (e) => e.name == map['type_alerte'],
+        (e) => e.toString().split('.').last == map['type_alerte'],
         orElse: () => AlertType.system,
       ),
       titre: map['titre'] ?? '',
       message: map['message'] ?? '',
       urgences: AlertUrgency.values.firstWhere(
-        (e) => e.name == map['urgences'],
+        (e) => e.toString().split('.').last == map['urgences'],
         orElse: () => AlertUrgency.medium,
       ),
       dateCreation: map['date_creation'] != null

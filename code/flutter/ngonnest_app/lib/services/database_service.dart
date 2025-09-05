@@ -59,7 +59,7 @@ class DatabaseService {
     if (type != null) {
       if (whereClause.isNotEmpty) whereClause += ' AND ';
       whereClause += 'type = ?';
-      whereArgs.add(type.name);
+      whereArgs.add(type.toString().split('.').last);
     }
 
     final List<Map<String, dynamic>> maps = await db.query(

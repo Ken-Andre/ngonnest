@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import 'package:workmanager/workmanager.dart';
+
 import 'screens/onboarding_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/add_product_screen.dart';
@@ -20,11 +21,12 @@ import 'screens/preferences_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Workmanager
-  Workmanager().initialize(
-    callbackDispatcher, // The top-level function specified in background_task_service.dart
-    isInDebugMode: true, // Set to false in production
-  );
+  // Initialize Workmanager - désactivé en debug pour éviter la surveillance réseau continue
+  // qui viole la politique de confidentialité et consomme inutilement la batterie
+    Workmanager().initialize(
+      callbackDispatcher,
+      isInDebugMode: false, // Désactivé pour respecter la confidentialité
+    );
 
   final constraints = Constraints(
     networkType: NetworkType.connected, // A hint that the task is important

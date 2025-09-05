@@ -6,6 +6,9 @@ import '../repository/inventory_repository.dart';
 import '../repository/foyer_repository.dart';
 import '../services/database_service.dart';
 import '../services/household_service.dart';
+import '../services/smart_validator.dart';
+import '../services/error_logger_service.dart';
+import '../widgets/error_feedback_widget.dart';
 import '../theme/app_theme.dart';
 
 class AddProductScreen extends StatefulWidget {
@@ -31,8 +34,15 @@ class _AddProductScreenState extends State<AddProductScreen> {
   final _initialQuantityController = TextEditingController(text: '1');
   final _frequencyController = TextEditingController(text: '30');
   String _selectedCategory = 'hygiène';
+  String _selectedUnit = 'pièces'; // Unité sélectionnée
   DateTime? _expiryDate;
   DateTime? _purchaseDate;
+
+  // Validation intelligente
+  ValidationResult? _productNameValidation;
+  ValidationResult? _quantityValidation;
+  ValidationResult? _frequencyValidation;
+  bool _enableDebugMode = true; // Active les portes de debuggage en développement
 
   final List<Map<String, String>> _categories = [
     {'id': 'hygiène', 'name': 'Hygiène', 'icon': '🧴', 'color': '#22C55E'},
@@ -44,12 +54,24 @@ class _AddProductScreenState extends State<AddProductScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // Éliminer la latence : Initialisation synchrone
+    _initializeServices();
+  }
+
+  void _initializeServices() {
+    try {
       _databaseService = context.read<DatabaseService>();
       _inventoryRepository = InventoryRepository(_databaseService);
       _foyerRepository = FoyerRepository(_databaseService);
-      _loadFoyerId();
-    });
+      _loadFoyerId(); // Chargement asynchrone mais sans blocage UI
+    } catch (e) {
+      // Gestion d'erreur pour éviter les crashes
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur d\'initialisation: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
   Future<void> _loadFoyerId() async {
@@ -96,6 +118,31 @@ class _AddProductScreenState extends State<AddProductScreen> {
     super.dispose();
   }
 
+  /// Validation intelligente du nom du produit avec feedback temps réel
+  void _validateProductName(String value) {
+    final result = SmartValidator.validateProductName(value, context: 'add_product_screen');
+    setState(() {
+      _productNameValidation = result;
+    });
+  }
+
+  /// Validation intelligente de la quantité
+  void _validateQuantity(String value) {
+    final context = _isConsumable ? 'consommable' : 'durable';
+    final result = SmartValidator.validateProductQuantity(value, context: context);
+    setState(() {
+      _quantityValidation = result;
+    });
+  }
+
+  /// Validation intelligente de la fréquence
+  void _validateFrequency(String value) {
+    final result = SmartValidator.validateFrequency(value, context: 'consommable');
+    setState(() {
+      _frequencyValidation = result;
+    });
+  }
+
   Future<void> _saveProduct() async {
     if (!_formKey.currentState!.validate()) return;
     if (_foyerId == null) return;
@@ -112,7 +159,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
         dateRupturePrev: _isConsumable ? _expiryDate : null,
         quantiteInitiale: double.tryParse(_initialQuantityController.text) ?? 1.0,
         quantiteRestante: double.tryParse(_initialQuantityController.text) ?? 1.0,
-        unite: _isConsumable ? 'pièces' : 'unités',
+        unite: _selectedUnit,
         tailleConditionnement: _isConsumable ? 1.0 : null,
         prixUnitaire: _isConsumable ? 5.0 : null, // Default price
         methodePrevision: _isConsumable ? MethodePrevision.frequence : null,
@@ -221,34 +268,46 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 ),
               ),
 
-              // Product name
+              // Product name with smart validation
               _buildSectionTitle('Nom du produit'),
               Container(
                 margin: const EdgeInsets.only(bottom: 24),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface, // Use theme color
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.5)), // Use theme color
-                ),
-                child: TextFormField(
-                  controller: _productNameController,
-                  decoration: InputDecoration(
-                    hintText: 'Ex: Savon artisanal, Aspirateur...',
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.zero,
-                    hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
+                  border: Border.all(
+                    color: _productNameValidation?.isValid == false
+                        ? Theme.of(context).colorScheme.error
+                        : Theme.of(context).colorScheme.outline.withOpacity(0.5),
+                    width: _productNameValidation?.isValid == false ? 2 : 1,
                   ),
-                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Le nom du produit est obligatoire';
-                    }
-                    if (value.trim().length < 2) {
-                      return 'Le nom doit contenir au moins 2 caractères';
-                    }
-                    return null;
-                  },
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextFormField(
+                      controller: _productNameController,
+                      onChanged: _validateProductName,
+                      decoration: InputDecoration(
+                        hintText: 'Ex: Savon artisanal, Aspirateur...',
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.zero,
+                        hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
+                      ),
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                      validator: (value) {
+                        final result = SmartValidator.validateProductName(value ?? '', context: 'add_product_screen');
+                        return result.isValid ? null : result.userMessage;
+                      },
+                    ),
+                    // Portes de debuggage intelligentes
+                    ErrorFeedbackWidget(
+                      validationResult: _productNameValidation,
+                      showDebugInfo: _enableDebugMode,
+                      padding: const EdgeInsets.only(top: 8),
+                    ),
+                  ],
                 ),
               ),
 
@@ -277,103 +336,156 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 const SizedBox(height: 24),
               ],
 
-              // Quantity
+              // Quantity with smart validation
               _buildSectionTitle('Quantité ${_isConsumable ? "actuelle" : "durable"}'),
               Container(
                 margin: const EdgeInsets.only(bottom: 24),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface, // Use theme color
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.5)), // Use theme color
+                  border: Border.all(
+                    color: _quantityValidation?.isValid == false
+                        ? Theme.of(context).colorScheme.error
+                        : Theme.of(context).colorScheme.outline.withOpacity(0.5),
+                    width: _quantityValidation?.isValid == false ? 2 : 1,
+                  ),
                 ),
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      _isConsumable ? CupertinoIcons.cube_box : CupertinoIcons.tv,
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7), // Use theme color
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _initialQuantityController,
-                        keyboardType: TextInputType.number,
-                        decoration: InputDecoration(
-                          hintText: _isConsumable ? 'Ex: 5' : 'Ex: 1',
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.zero,
-                          hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
+                    Row(
+                      children: [
+                        Icon(
+                          _isConsumable ? CupertinoIcons.cube_box : CupertinoIcons.tv,
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                         ),
-                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'La quantité est obligatoire';
-                          }
-                          final quantity = double.tryParse(value);
-                          if (quantity == null || quantity <= 0) {
-                            return 'Entrez une quantité valide';
-                          }
-                          return null;
-                        },
-                      ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _initialQuantityController,
+                            keyboardType: TextInputType.number,
+                            onChanged: _validateQuantity,
+                            decoration: InputDecoration(
+                              hintText: _isConsumable ? 'Ex: 5' : 'Ex: 1',
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.zero,
+                              hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
+                            ),
+                            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                            validator: (value) {
+                              final contextType = _isConsumable ? 'consommable' : 'durable';
+                              final result = SmartValidator.validateProductQuantity(value ?? '', context: contextType);
+                              return result.isValid ? null : result.userMessage;
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        // Sélecteur d'unités amélioré
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.surface.withOpacity(0.5),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+                              width: 1,
+                            ),
+                          ),
+                          child: DropdownButton<String>(
+                            value: _selectedUnit,
+                            items: _isConsumable
+                                ? ['pièces', 'kg', 'L', 'mL', 'g', 'unités'].map((unit) =>
+                                    DropdownMenuItem(value: unit, child: Text(unit, style: TextStyle(fontSize: 12))))
+                                  .toList()
+                                : ['unités'].map((unit) =>
+                                    DropdownMenuItem(value: unit, child: Text(unit, style: TextStyle(fontSize: 12))))
+                                  .toList(),
+                            onChanged: (value) {
+                              if (value != null) {
+                                setState(() => _selectedUnit = value);
+                              }
+                            },
+                            underline: const SizedBox.shrink(),
+                            icon: Icon(CupertinoIcons.chevron_down, size: 14, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.9),
+                              fontWeight: FontWeight.w500,
+                            ),
+                            dropdownColor: Theme.of(context).colorScheme.surface,
+                            borderRadius: BorderRadius.circular(8),
+                            isDense: true,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      _isConsumable ? 'pièces' : 'unités',
-                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)), // Use theme color
+                    // Portes de debuggage intelligentes
+                    ErrorFeedbackWidget(
+                      validationResult: _quantityValidation,
+                      showDebugInfo: _enableDebugMode,
+                      padding: const EdgeInsets.only(top: 8),
                     ),
                   ],
                 ),
               ),
 
-              // Frequency for consumables
+              // Frequency for consumables with smart validation
               if (_isConsumable) ...[
                 _buildSectionTitle('Fréquence d\'achat (jours)'),
                 Container(
                   margin: const EdgeInsets.only(bottom: 24),
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface, // Use theme color
+                    color: Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.5)), // Use theme color
+                    border: Border.all(
+                      color: _frequencyValidation?.isValid == false
+                          ? Theme.of(context).colorScheme.error
+                          : Theme.of(context).colorScheme.outline.withOpacity(0.5),
+                      width: _frequencyValidation?.isValid == false ? 2 : 1,
+                    ),
                   ),
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(
-                        CupertinoIcons.time,
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7), // Use theme color
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: TextFormField(
-                          controller: _frequencyController,
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            hintText: 'Ex: 30 jours pour du savon',
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.zero,
-                            hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
+                      Row(
+                        children: [
+                          Icon(
+                            CupertinoIcons.time,
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                           ),
-                          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'La fréquence est obligatoire';
-                            }
-                            final frequency = int.tryParse(value);
-                            if (frequency == null || frequency <= 0) {
-                              return 'Entrez une fréquence valide';
-                            }
-                            if (frequency > 365) {
-                              return 'La fréquence ne peut pas dépasser 365 jours';
-                            }
-                            return null;
-                          },
-                        ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: TextFormField(
+                              controller: _frequencyController,
+                              keyboardType: TextInputType.number,
+                              onChanged: _validateFrequency,
+                              decoration: InputDecoration(
+                                hintText: 'Ex: 30 jours pour du savon',
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.zero,
+                                hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
+                              ),
+                              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                              validator: (value) {
+                                final result = SmartValidator.validateFrequency(value ?? '', context: 'consommable');
+                                return result.isValid ? null : result.userMessage;
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'jours',
+                            style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'jours',
-                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)), // Use theme color
+                      // Portes de debuggage intelligentes
+                      ErrorFeedbackWidget(
+                        validationResult: _frequencyValidation,
+                        showDebugInfo: _enableDebugMode,
+                        padding: const EdgeInsets.only(top: 8),
                       ),
                     ],
                   ),
@@ -579,38 +691,36 @@ class _AddProductScreenState extends State<AddProductScreen> {
   }
 
   Widget _buildCategoryCard(Map<String, String> category, bool isSelected) {
-    return Expanded(
-      child: CupertinoButton(
-        padding: EdgeInsets.zero,
-        onPressed: () => setState(() => _selectedCategory = category['id']!),
-        child: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.surface, // Use theme color
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outline.withOpacity(0.5), // Use theme color
-              width: isSelected ? 2 : 1,
+    return CupertinoButton(
+      padding: EdgeInsets.zero,
+      onPressed: () => setState(() => _selectedCategory = category['id']!),
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.surface, // Use theme color
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outline.withOpacity(0.5), // Use theme color
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              category['icon']!,
+              style: const TextStyle(fontSize: 20),
             ),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                category['icon']!,
-                style: const TextStyle(fontSize: 20),
+            const SizedBox(height: 8),
+            Text(
+              category['name']!,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: isSelected ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.onSurface, // Use theme color
               ),
-              const SizedBox(height: 8),
-              Text(
-                category['name']!,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: isSelected ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.onSurface, // Use theme color
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -620,8 +730,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
+      firstDate: DateTime(2000), // Étendu pour produits anciens
+      lastDate: DateTime(2050),  // Étendu pour planifications futures
       builder: (context, child) {
         return Theme(
           data: ThemeData.light().copyWith(

@@ -7,7 +7,7 @@ Future<Database> initDatabase() async {
 
   return openDatabase(
     path,
-    version: 2, // Increment version to trigger migration
+    version: 3, // Migration pour ajouter les colonnes manquantes
     onCreate: (db, version) async {
       // Table foyer
       await db.execute('''
@@ -110,6 +110,24 @@ Future<Database> initDatabase() async {
               FOREIGN KEY (id_objet) REFERENCES objet (id) ON DELETE CASCADE
             )
           ''');
+        }
+      }
+
+      // Migration to version 3: Add missing columns to objet table
+      if (oldVersion < 3) {
+        // Vérifier et ajouter colonne seuil_alerte_jours
+        final seuilAlerteJoursColumns = await db.rawQuery("PRAGMA table_info(objet)");
+        final hasSeuilAlerteJours = seuilAlerteJoursColumns.any((col) => col['name'] == 'seuil_alerte_jours');
+
+        if (!hasSeuilAlerteJours) {
+          await db.execute('ALTER TABLE objet ADD COLUMN seuil_alerte_jours INTEGER NOT NULL DEFAULT 3');
+        }
+
+        // Vérifier et ajouter colonne seuil_alerte_quantite
+        final hasSeuilAlerteQuantite = seuilAlerteJoursColumns.any((col) => col['name'] == 'seuil_alerte_quantite');
+
+        if (!hasSeuilAlerteQuantite) {
+          await db.execute('ALTER TABLE objet ADD COLUMN seuil_alerte_quantite REAL NOT NULL DEFAULT 1');
         }
       }
     },

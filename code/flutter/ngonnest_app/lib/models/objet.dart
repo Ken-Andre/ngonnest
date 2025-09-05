@@ -48,7 +48,7 @@ class Objet {
       'id_foyer': idFoyer,
       'nom': nom,
       'categorie': categorie,
-      'type': type.name,
+      'type': type.toString().split('.').last,
       'date_achat': dateAchat?.toIso8601String(),
       'duree_vie_prev_jours': dureeViePrevJours,
       'date_rupture_prev': dateRupturePrev?.toIso8601String(),
@@ -57,7 +57,7 @@ class Objet {
       'unite': unite,
       'taille_conditionnement': tailleConditionnement,
       'prix_unitaire': prixUnitaire,
-      'methode_prevision': methodePrevision?.name,
+      'methode_prevision': methodePrevision?.toString().split('.').last,
       'frequence_achat_jours': frequenceAchatJours,
       'consommation_jour': consommationJour,
       'seuil_alerte_jours': seuilAlerteJours,
@@ -71,7 +71,7 @@ class Objet {
       idFoyer: map['id_foyer'],
       nom: map['nom'],
       categorie: map['categorie'],
-      type: TypeObjet.values.firstWhere((e) => e.name == map['type']),
+      type: TypeObjet.values.firstWhere((e) => e.toString().split('.').last == map['type']),
       dateAchat: map['date_achat'] != null ? DateTime.parse(map['date_achat']) : null,
       dureeViePrevJours: map['duree_vie_prev_jours'],
       dateRupturePrev: map['date_rupture_prev'] != null ? DateTime.parse(map['date_rupture_prev']) : null,
@@ -81,7 +81,7 @@ class Objet {
       tailleConditionnement: map['taille_conditionnement'],
       prixUnitaire: map['prix_unitaire'],
       methodePrevision: map['methode_prevision'] != null 
-          ? MethodePrevision.values.firstWhere((e) => e.name == map['methode_prevision'])
+          ? MethodePrevision.values.firstWhere((e) => e.toString().split('.').last == map['methode_prevision'])
           : null,
       frequenceAchatJours: map['frequence_achat_jours'],
       consommationJour: map['consommation_jour'],
@@ -132,4 +132,3 @@ class Objet {
     );
   }
 }
-
