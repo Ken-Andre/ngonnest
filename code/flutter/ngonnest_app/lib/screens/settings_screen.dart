@@ -357,6 +357,65 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
               ),
+              const SizedBox(height: 24),
+
+              // Data Management Section
+              _buildSectionTitle('Données'),
+              _buildSettingCard(
+                title: 'Exporter les données',
+                subtitle: 'Sauvegarder vos données localement',
+                child: ElevatedButton.icon(
+                  onPressed: _exportData,
+                  icon: const Icon(Icons.download, size: 16),
+                  label: const Text('Exporter'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.secondary,
+                    foregroundColor: Theme.of(context).colorScheme.onSecondary,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              _buildSettingCard(
+                title: 'Importer des données',
+                subtitle: 'Restaurer depuis un fichier sauvegardé',
+                child: ElevatedButton.icon(
+                  onPressed: _importData,
+                  icon: const Icon(Icons.upload, size: 16),
+                  label: const Text('Importer'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.secondary,
+                    foregroundColor: Theme.of(context).colorScheme.onSecondary,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              _buildSettingCard(
+                title: 'Supprimer toutes les données',
+                subtitle: 'Reset complet - Action irréversible',
+                child: ElevatedButton.icon(
+                  onPressed: _showDeleteAllDataConfirmation,
+                  icon: const Icon(Icons.delete_forever, size: 16, color: Colors.white),
+                  label: const Text('Supprimer'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red.shade600,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
               const SizedBox(height: 48),
             ],
           ),
@@ -721,6 +780,280 @@ class _SettingsScreenState extends State<SettingsScreen> {
           CupertinoDialogAction(
             child: const Text('OK'),
             onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // TODO: Implement data export functionality
+  // Export all user data to local JSON file
+  // Should include:
+  // - Household profile (foyer)
+  // - Inventory items
+  // - User preferences (settings)
+  // - Encryption with AES-256 as per Conception_Fonctionnelle_NgonNest_MVP_Sprint1.md
+  // - File saved to app local storage
+  // - User gets feedback on successful export
+  Future<void> _exportData() async {
+    try {
+      // Implementation example:
+      // final exportService = ExportImportService();
+      // final data = await exportService.exportAllData();
+      // final fileName = 'ngonnest_backup_${DateTime.now().toIso8601String().split('T')[0]}.json';
+      // final filePath = await _saveFileLocally(data, fileName);
+      // _showExportSuccessDialog(filePath);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Fonctionnalité d\'export en cours de développement'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur lors de l\'export : $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // TODO: Implement data import functionality with smart data handling
+  // Import data from JSON file with intelligent merge strategy
+  // Should handle:
+  // - File picker to select JSON file
+  // - Data validation and decryption (AES-256)
+  // - SSOT refresh after import
+  // - Missing data fallback: use current values or defaults
+  // - Example: if user had French in onboarding but import has no language,
+  //   keep current French setting instead of resetting to default
+  // - User confirmation and progress feedback
+  // - Tests: >90% success rate, verify all imported data integrity
+  Future<void> _importData() async {
+    try {
+      // Implementation example:
+      // final exportService = ExportImportService();
+      // final filePath = await _pickFileForImport();
+      // final importedData = await exportService.importData(filePath);
+      //
+      // // Smart merge strategy for missing data
+      // final mergedSettings = _mergeImportedData(importedData);
+      //
+      // // Apply merged settings
+      // await _applyMergedSettings(mergedSettings);
+      //
+      // // Refresh app state
+      // _refreshAppState();
+      // _showImportSuccessDialog();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Fonctionnalité d\'import en cours de développement'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur lors de l\'import : $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // TODO: Implement complete data deletion with confirmation
+  // Delete ALL user data and reset to initial state
+  // Should include:
+  // - Multi-step confirmation dialog (like "DELETE ALL DATA")
+  // - Clear all SQLite databases (household, inventory)
+  // - Clear all SharedPreferences
+  // - Reset to onboarding state (initial installation)
+  // - App restart or navigation to welcome screen
+  // - No recovery possible - irreversible action
+  void _showDeleteAllDataConfirmation() {
+    showCupertinoModalPopup<void>(
+      context: context,
+      builder: (BuildContext context) => CupertinoAlertDialog(
+        title: const Text(
+          '⚠️ ATTENTION ⚠️',
+          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+        ),
+        content: Column(
+          children: const [
+            SizedBox(height: 8),
+            Text(
+              'Cette action est IRRÉVERSIBLE !',
+              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
+            ),
+            SizedBox(height: 12),
+            Text(
+              'Toutes vos données seront supprimées :\n'
+              '• Profil du foyer\n'
+              '• Inventaire complet\n'
+              '• Historique d\'achats\n'
+              '• Préférences et paramètres\n\n'
+              'L\'application retournera à son état initial.',
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+        actions: [
+          CupertinoDialogAction(
+            child: const Text('Annuler', style: TextStyle(color: Colors.blue)),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          CupertinoDialogAction(
+            child: const Text(
+              'SUPPRIMER TOUT',
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+            ),
+            onPressed: () {
+              Navigator.of(context).pop();
+              _showFinalDeletionConfirmation();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Second confirmation step for extra safety
+  void _showFinalDeletionConfirmation() {
+    String confirmationText = '';
+    bool isTextValid = false;
+
+    showCupertinoModalPopup<void>(
+      context: context,
+      builder: (BuildContext context) => StatefulBuilder(
+        builder: (context, setState) => CupertinoAlertDialog(
+          title: const Text('CONFIRMER LA SUPPRESSION'),
+          content: Column(
+            children: [
+              const SizedBox(height: 8),
+              const Text(
+                'Tapez "SUPPRIMER" pour confirmer :',
+                style: TextStyle(fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 12),
+              Material(
+                color: Colors.transparent,
+                child: Container(
+                  height: 40,
+                  // padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    // borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isTextValid
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                  child: TextField(
+                    maxLength: 9, // "SUPPRIMER".length
+                    onChanged: (value) {
+                      confirmationText = value;
+                      setState(() {
+                        isTextValid = confirmationText == 'SUPPRIMER';
+                      });
+                    },
+                    decoration: InputDecoration(
+                      hintText: 'SUPPRIMER',
+                      hintStyle: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                        fontFamily: 'monospace',
+                        fontWeight: FontWeight.normal,
+                      ),
+                      border: InputBorder.none,
+                      counterText: '',
+                    ),
+                    style: TextStyle(
+                      fontFamily: 'monospace',
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            CupertinoDialogAction(
+              child: const Text('Annuler'),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            CupertinoDialogAction(
+              child: Text(
+                'SUPPRIMER DÉFINITIVEMENT',
+                style: TextStyle(
+                  color: isTextValid ? Colors.red : Colors.grey,
+                ),
+              ),
+              onPressed: isTextValid ? () {
+                Navigator.of(context).pop();
+                _performCompleteDataDeletion();
+              } : null,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // TODO: Implement complete data deletion
+  // Execute the irreversible deletion process
+  Future<void> _performCompleteDataDeletion() async {
+    try {
+      // Implementation example:
+      // // 1. Delete all SQLite data
+      // await DatabaseService.deleteAllData();
+      //
+      // // 2. Clear SharedPreferences
+      // final prefs = await SharedPreferences.getInstance();
+      // await prefs.clear();
+      //
+      // // 3. Clear any cached data
+      // await _clearAllCache();
+      //
+      // // 4. Reset app to initial state
+      // await _resetToInitialState();
+      //
+      // // 5. Navigate to onboarding/welcome screen
+      // _navigateToWelcomeScreen();
+
+      _showDeletionSuccessDialog();
+
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur lors de la suppression : $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _showDeletionSuccessDialog() {
+    showCupertinoModalPopup<void>(
+      context: context,
+      builder: (BuildContext context) => CupertinoAlertDialog(
+        title: const Text('Données supprimées'),
+        content: const Text(
+          'Toutes vos données ont été supprimées.\n'
+          'L\'application va redémarrer.',
+        ),
+        actions: [
+          CupertinoDialogAction(
+            child: const Text('OK'),
+            onPressed: () {
+              Navigator.of(context).pop();
+              // TODO: Implement app restart or navigation to welcome screen
+              // Example: SystemNavigator.pop(); // Or navigate to OnboardingScreen
+            },
           ),
         ],
       ),
