@@ -6,6 +6,7 @@ import '../models/alert.dart';
 import '../models/household_profile.dart';
 import '../services/household_service.dart';
 import '../services/database_service.dart';
+import '../services/error_logger_service.dart';
 import '../repository/inventory_repository.dart';
 import '../theme/app_theme.dart';
 import 'add_product_screen.dart';
@@ -61,13 +62,70 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _urgentAlerts = alerts.length;
           _notifications = alerts;
         });
+
+        // Log succès du chargement du dashboard
+        await ErrorLoggerService.logError(
+          component: 'DashboardScreen',
+          operation: 'loadDashboardData',
+          error: 'SUCCESS: Dashboard loaded successfully',
+          stackTrace: StackTrace.current,
+          severity: ErrorSeverity.low,
+          metadata: {
+            'foyerId': foyer.id,
+            'totalItems': totalItems,
+            'expiringSoon': expiringSoon,
+            'urgentAlerts': alerts.length,
+          },
+        );
       }
-    } catch (e) {
-      // Handle error, e.g., show a snackbar
-      print('Error loading dashboard data: $e');
+    } catch (e, stackTrace) {
+      // Log détaillé pour debugging
+      await ErrorLoggerService.logError(
+        component: 'DashboardScreen',
+        operation: 'loadDashboardData',
+        error: e,
+        stackTrace: stackTrace,
+        severity: ErrorSeverity.medium,
+        metadata: {
+          'foyerExists': _foyerProfile != null,
+          'previousTotalItems': _totalItems,
+        },
+      );
+
+      // Affichage convivial pour l'utilisateur
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              _getUserFriendlyErrorMessage(e),
+            ),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
+  }
+
+  // Messages d'erreur conviviaux pour l'utilisateur
+  String _getUserFriendlyErrorMessage(dynamic error) {
+    final errorStr = error.toString().toLowerCase();
+
+    if (errorStr.contains('network') || errorStr.contains('connection')) {
+      return 'Problème de connexion. Vérifiez votre réseau.';
+    }
+    if (errorStr.contains('database') || errorStr.contains('sqflite')) {
+      return 'Erreur de base de données. Redémarrage de l\'application recommandé.';
+    }
+    if (errorStr.contains('null') || errorStr.contains('id is null')) {
+      return 'Erreur de configuration. Essayez de redémarrer l\'application.';
+    }
+
+    return 'Erreur lors du chargement des données. Réessayez plus tard.';
   }
 
   @override

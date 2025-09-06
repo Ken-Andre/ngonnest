@@ -181,99 +181,108 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Widget _buildLanguageStep() {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 40),
-          
-          // Welcome section
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(32),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 20),
+
+              // Welcome section - Reduced padding
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(24), // Reduced from 32
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: Column(
-              children: [
-                Text(
-                  '🏠',
-                  style: TextStyle(fontSize: 64),
+                child: Column(
+                  children: [
+                    Text(
+                      '🏠',
+                      style: Theme.of(context).textTheme.headlineLarge, // Reduced font size using theme
+                    ),
+                    const SizedBox(height: 16), // Reduced from 24
+                    Text(
+                      'Bienvenue !',
+                      style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.neutralBlack,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 12), // Reduced from 16
+                    Text(
+                      'NgonNest vous aide à gérer vos produits ménagers facilement',
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: AppTheme.neutralGrey,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 24),
-                Text(
-                  'Bienvenue !',
-                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.neutralBlack,
-                  ),
-                  textAlign: TextAlign.center,
+              ),
+
+              const SizedBox(height: 24), // Reduced from 40
+
+              Text(
+                'Sélectionnez votre langue',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.neutralBlack,
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  'NgonNest vous aide à gérer vos produits ménagers facilement',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: AppTheme.neutralGrey,
-                  ),
-                  textAlign: TextAlign.center,
+              ),
+
+              const SizedBox(height: 16), // Reduced from 24
+
+              // Language options
+              ...Language.values.map((lang) => _buildLanguageOption(lang)),
+
+              const SizedBox(height: 24),
+
+              // Time estimate - Moved above spacer, wrapped in container
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryGreen.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              ],
-            ),
+                child: Row(
+                  children: [
+                    Icon(
+                      CupertinoIcons.clock,
+                      color: AppTheme.primaryGreen,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded( // Added Expanded to prevent overflow
+                      child: Text(
+                        'Temps estimé: < 2 minutes',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: AppTheme.primaryGreen,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Minimum spacing at bottom for navigation
+              const SizedBox(height: 80),
+            ],
           ),
-          
-          const SizedBox(height: 40),
-          
-          Text(
-            'Sélectionnez votre langue',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: AppTheme.neutralBlack,
-            ),
-          ),
-          
-          const SizedBox(height: 24),
-          
-          // Language options
-          ...Language.values.map((lang) => _buildLanguageOption(lang)),
-          
-          const Spacer(),
-          
-          // Time estimate
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppTheme.primaryGreen.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  CupertinoIcons.clock,
-                  color: AppTheme.primaryGreen,
-                  size: 20,
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  'Temps estimé: < 2 minutes',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: AppTheme.primaryGreen,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -326,13 +335,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Widget _buildHouseholdSizeStep() {
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 40),
-          
+          const SizedBox(height: 24),
+
           Text(
             'Votre foyer',
             style: Theme.of(context).textTheme.displaySmall?.copyWith(
@@ -340,22 +349,23 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               color: AppTheme.neutralBlack,
             ),
           ),
-          
-          const SizedBox(height: 16),
-          
+
+          const SizedBox(height: 12),
+
           Text(
             'Sélectionnez la taille de votre foyer',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
               color: AppTheme.neutralGrey,
             ),
           ),
-          
-          const SizedBox(height: 40),
-          
+
+          const SizedBox(height: 24),
+
           // Household size options
           ..._householdSizes.map((size) => _buildHouseholdSizeOption(size)),
-          
-          const Spacer(),
+
+          // Minimum spacing at bottom for navigation
+          const SizedBox(height: 80),
         ],
       ),
     );
@@ -443,13 +453,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Widget _buildHousingTypeStep() {
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 40),
-          
+          const SizedBox(height: 24),
+
           Text(
             'Type de logement',
             style: Theme.of(context).textTheme.displaySmall?.copyWith(
@@ -457,22 +467,23 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               color: AppTheme.neutralBlack,
             ),
           ),
-          
-          const SizedBox(height: 16),
-          
+
+          const SizedBox(height: 12),
+
           Text(
             'Pour des recommandations personnalisées',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
               color: AppTheme.neutralGrey,
             ),
           ),
-          
-          const SizedBox(height: 40),
-          
+
+          const SizedBox(height: 24),
+
           // Housing type options
           ...LogementType.values.map((type) => _buildHousingTypeOption(type)),
-          
-          const Spacer(),
+
+          // Minimum spacing at bottom for navigation
+          const SizedBox(height: 80),
         ],
       ),
     );

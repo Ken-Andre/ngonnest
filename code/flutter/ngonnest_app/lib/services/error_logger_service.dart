@@ -237,8 +237,14 @@ class ErrorLoggerService {
       if (await logFile.exists()) {
         final content = await logFile.readAsString();
         if (content.isNotEmpty) {
-          final jsonList = jsonDecode(content) as List<dynamic>;
-          existingLogs = jsonList.map((e) => ErrorLogEntry.fromJson(e)).toList();
+          try {
+            final jsonList = jsonDecode(content) as List<dynamic>;
+            existingLogs = jsonList.map((e) => ErrorLogEntry.fromJson(e)).toList();
+          } catch (parseError) {
+            // Si le fichier est corrompu, on le vide proprement
+            debugPrint('⚠️ Error log file corrupted, starting fresh');
+            existingLogs = [];
+          }
         }
       }
 
@@ -254,6 +260,16 @@ class ErrorLoggerService {
 
     } catch (e) {
       debugPrint('❌ Failed to save error log: $e');
+      // Essai de fallback : écrire un log basique
+      try {
+        final directory = await getApplicationDocumentsDirectory();
+        final fallbackFile = File('${directory.path}/error_log_fallback.txt');
+        final basicLog = '${entry.timestamp}: ${entry.component}.${entry.operation} - ${entry.errorCode}\n';
+        await fallbackFile.writeAsString(basicLog, mode: FileMode.append);
+      } catch (fallbackError) {
+        // Dernier fallback : seulement console
+        debugPrint('❌ Even fallback failed: $fallbackError');
+      }
     }
   }
 

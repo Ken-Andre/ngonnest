@@ -1,5 +1,9 @@
+import 'dart:isolate';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:ngonnest_app/services/console_logger.dart';
+import 'package:ngonnest_app/services/error_logger_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import 'package:workmanager/workmanager.dart';
@@ -10,6 +14,7 @@ import 'screens/add_product_screen.dart';
 import 'screens/inventory_screen.dart';
 import 'screens/budget_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/developer_console_screen.dart';
 import 'services/household_service.dart';
 import 'services/notification_service.dart';
 import 'services/database_service.dart'; // Import DatabaseService
@@ -21,12 +26,49 @@ import 'screens/preferences_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Initialisation du logger simple
+  ConsoleLogger.init(LogMode.debug);
+
+  // 🚀 HOOK GLOBAL ERREURS FLUTTER - Capture 100% des erreurs non gérées
+  FlutterError.onError = (FlutterErrorDetails details) async {
+    await ErrorLoggerService.logError(
+      component: 'FlutterFramework',
+      operation: 'renderError',
+      error: details.exception,
+      stackTrace: details.stack ?? StackTrace.current,
+      severity: ErrorSeverity.high,
+      metadata: {
+        'library': details.library,
+        'context': details.context?.toString(),
+        'summary': details.summary?.toString(),
+        'silentCrash': true,
+      },
+    );
+    // Log console également
+    debugPrint('🔴 [FLUTTER ERROR] ${details.exception.toString()}');
+  };
+
+  // Capture erreurs Isolates non gérées
+  Isolate.current.addErrorListener(
+    RawReceivePort((dynamic pair) async {
+      final errorAndStacktrace = pair as List<dynamic>;
+      await ErrorLoggerService.logError(
+        component: 'Isolate',
+        operation: 'backgroundError',
+        error: errorAndStacktrace.first,
+        stackTrace: errorAndStacktrace.last ?? StackTrace.current,
+        severity: ErrorSeverity.critical,
+        metadata: {'isolate': 'background'},
+      );
+    }).sendPort,
+  );
+
   // Initialize Workmanager - désactivé en debug pour éviter la surveillance réseau continue
   // qui viole la politique de confidentialité et consomme inutilement la batterie
-    Workmanager().initialize(
-      callbackDispatcher,
-      isInDebugMode: false, // Désactivé pour respecter la confidentialité
-    );
+  Workmanager().initialize(
+    callbackDispatcher,
+    isInDebugMode: false, // Désactivé pour respecter la confidentialité
+  );
 
   final constraints = Constraints(
     networkType: NetworkType.connected, // A hint that the task is important
@@ -82,6 +124,7 @@ class MyApp extends StatelessWidget {
         '/inventory': (context) => const InventoryScreen(),
         '/budget': (context) => const BudgetScreen(),
         '/settings': (context) => const SettingsScreen(),
+        '/developer-console': (context) => const DeveloperConsoleScreen(),
       },
     );
   }

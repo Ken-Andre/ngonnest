@@ -1,6 +1,8 @@
 import '../models/foyer.dart';
 import '../repository/foyer_repository.dart';
 import '../services/database_service.dart';
+import '../services/error_logger_service.dart';
+import '../services/console_logger.dart';
 
 class HouseholdService {
   static FoyerRepository? _foyerRepository;
@@ -16,8 +18,47 @@ class HouseholdService {
 
   // Create or update household profile
   static Future<int> saveFoyer(Foyer foyer) async {
-    final repo = await foyerRepository;
-    return await repo.save(foyer);
+    try {
+      ConsoleLogger.info("Saving foyer with ${foyer.nbPersonnes} personnes");
+
+      final repo = await foyerRepository;
+      final result = await repo.save(foyer);
+
+      ConsoleLogger.success("Foyer saved successfully with ID: $result");
+
+      // Log succès détaillé
+      await ErrorLoggerService.logError(
+        component: 'HouseholdService',
+        operation: 'saveFoyer',
+        error: 'SUCCESS: Foyer saved successfully',
+        stackTrace: StackTrace.current,
+        severity: ErrorSeverity.low,
+        metadata: {
+          'foyerId': result,
+          'nbPersonnes': foyer.nbPersonnes,
+          'typeLogement': foyer.typeLogement,
+        },
+      );
+
+      return result;
+    } catch (e, stackTrace) {
+      // Log simple dans la console - comme en Python/Java
+      ConsoleLogger.error('HouseholdService', 'saveFoyer', e, stackTrace: stackTrace);
+
+      // Log détaillé pour le système de debugging existant
+      await ErrorLoggerService.logError(
+        component: 'HouseholdService',
+        operation: 'saveFoyer',
+        error: e,
+        stackTrace: stackTrace,
+        severity: ErrorSeverity.medium,
+        metadata: {
+          'nbPersonnes': foyer.nbPersonnes,
+          'typeLogement': foyer.typeLogement,
+        },
+      );
+      rethrow;
+    }
   }
 
   // Create and save foyer from raw data
