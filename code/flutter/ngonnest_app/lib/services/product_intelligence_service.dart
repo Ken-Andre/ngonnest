@@ -1,0 +1,179 @@
+import 'dart:convert';
+import '../models/product_template.dart';
+
+/// Service centralisé pour le renseignement intelligent des produits
+/// Gère recherche, suggestions et apprentissage des préférences utilisateur
+class ProductIntelligenceService {
+  static final ProductIntelligenceService _instance = ProductIntelligenceService._internal();
+  factory ProductIntelligenceService() => _instance;
+
+  ProductIntelligenceService._internal();
+
+  // Cache des suggestions populaires
+  final Map<String, List<ProductTemplate>> _suggestionsCache = {};
+
+  /// Recherche intelligente de produits avec auto-suggestions
+  Future<List<ProductTemplate>> searchProducts(String query, String category) async {
+    if (query.isEmpty) return [];
+
+    try {
+      final products = await _getProductsByCategory(category);
+      final filtered = products.where((product) =>
+        product.name.toLowerCase().contains(query.toLowerCase()) ||
+        product.category.toLowerCase().contains(query.toLowerCase()) ||
+        (product.subcategory?.toLowerCase().contains(query.toLowerCase()) ?? false)
+      ).toList();
+
+      // Tri par popularité et pertinence
+      filtered.sort((a, b) {
+        final aScore = _calculateRelevanceScore(a, query, category);
+        final bScore = _calculateRelevanceScore(b, query, category);
+        return bScore.compareTo(aScore);
+      });
+
+      return filtered.take(10).toList(); // Limite à 10 résultats pour performance
+    } catch (e) {
+      print('Erreur lors de la recherche de produits: $e');
+      return [];
+    }
+  }
+
+  /// Calcule le score de pertinence pour le tri des suggestions
+  double _calculateRelevanceScore(ProductTemplate product, String query, String category) {
+    double score = 0.0;
+
+    // Boost pour les correspondances exactes
+    if (product.name.toLowerCase() == query.toLowerCase()) score += 50;
+    if (product.category.toLowerCase() == category.toLowerCase()) score += 30;
+
+    // Boost pour popularité
+    score += product.popularity * 0.1;
+
+    // Boost pour correspondance partielle
+    if (product.name.toLowerCase().startsWith(query.toLowerCase())) score += 20;
+    if (product.name.toLowerCase().contains(query.toLowerCase())) score += 10;
+
+    return score;
+  }
+
+  /// Récupère la hiérarchie des catégories
+  Future<List<Map<String, dynamic>>> getCategoryHierarchy(String parentId) async {
+    final categories = ProductPresets.categories;
+    try {
+      final parent = categories.firstWhere(
+        (cat) => cat['id'] == parentId,
+      );
+
+      return List<Map<String, dynamic>>.from(parent['subcategories'] ?? []);
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /// Calcule la quantité optimale basée sur la taille familiale
+  Future<double> calculateOptimalQuantity(ProductTemplate product, int familySize) async {
+    final guidelines = product.quantityGuidelines;
+
+    if (guidelines == null) return product.defaultQuantity ?? 1.0;
+
+    // Calcul basé sur les guidelines existants
+    final baseQuantity = guidelines['family_4'] ?? product.defaultQuantity ?? 1.0;
+    final period = guidelines['period'] ?? 30;
+
+    // Ajustement linéaire par taille familiale
+    final adjustedQuantity = (familySize / 4.0) * baseQuantity;
+
+    // Quantités communes prédéfinies
+    final commonQuantities = product.commonQuantities ?? {};
+    final familyKey = '${familySize}_persons';
+    if (commonQuantities.containsKey(familyKey)) {
+      return commonQuantities[familyKey]!.toDouble();
+    }
+
+    return adjustedQuantity.roundToDouble();
+  }
+
+  /// Fréquence d'achat recommandée
+  Future<int> calculateOptimalFrequency(ProductTemplate product, int familySize) async {
+    // Base sur les patterns d'usage courants
+    final defaultFrequency = product.defaultFrequency ?? 30;
+
+    // Ajustement selon taille familiale (consommation plus rapide = fréquence plus élevée)
+    if (familySize <= 2) return (defaultFrequency * 0.8).round(); // Moins fréquent
+    if (familySize >= 6) return (defaultFrequency * 1.2).round(); // Plus fréquent
+
+    return defaultFrequency;
+  }
+
+  /// Apprend des préférences utilisateur
+  Future<void> learnFromUserChoice(String productId, String category, int familySize) async {
+    // TODO: Implémenter tracking des préférences utilisateur
+    // Sauvegarde dans la base de données pour apprentissage futur
+    print('Learning from user choice: $productId in $category for family size $familySize');
+  }
+
+  /// Produits populaires par catégorie
+  Future<List<ProductTemplate>> getPopularProductsByCategory(String category) async {
+    if (_suggestionsCache.containsKey(category)) {
+      return _suggestionsCache[category]!;
+    }
+
+    try {
+      final products = await _getProductsByCategory(category);
+      final sorted = products.where((p) => p.popularity > 10)
+                            .toList()
+                          ..sort((a, b) => b.popularity.compareTo(a.popularity));
+
+      _suggestionsCache[category] = sorted.take(5).toList();
+      return _suggestionsCache[category]!;
+    } catch (e) {
+      print('Erreur récupération produits populaires: $e');
+      return [];
+    }
+  }
+
+  /// Récupère tous les produits d'une catégorie
+  Future<List<ProductTemplate>> _getProductsByCategory(String category) async {
+    try {
+      final categoryData = ProductPresets.categories.firstWhere(
+        (cat) => cat['id'] == category,
+      );
+
+    final products = <ProductTemplate>[];
+
+    // Produits de la catégorie principale
+    final categoryProducts = categoryData['products'] as List<dynamic>? ?? [];
+    products.addAll(
+      categoryProducts.map((p) => ProductTemplate.fromMap({...p, 'category': category}))
+    );
+
+    // Produits des sous-catégories
+    final subcategories = categoryData['subcategories'] as List<dynamic>? ?? [];
+    for (final subcategory in subcategories) {
+      final subcategoryProducts = subcategory['products'] as List<dynamic>? ?? [];
+      products.addAll(
+        subcategoryProducts.map((p) => ProductTemplate.fromMap({
+          ...p,
+          'category': category,
+          'subcategory': subcategory['name']
+        }))
+      );
+    }
+
+    return products;
+    } catch (e) {
+      print('Erreur récupération catégorie $category: $e');
+      return [];
+    }
+  }
+
+  /// Évalue si un produit correspond aux besoins familiaux
+  Future<bool> isProductSuitableForFamily(ProductTemplate product, int familySize) async {
+    // Logique basée sur les guidelines de quantité
+    final guidelines = product.quantityGuidelines;
+    if (guidelines == null) return true; // Si pas de guidelines, considérer comme adapté
+
+    final recommended = await calculateOptimalQuantity(product, familySize);
+    return recommended > 0; // Produit adapté si une quantité peut être calculée
+  }
+}

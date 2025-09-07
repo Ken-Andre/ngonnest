@@ -9,6 +9,11 @@ import '../services/household_service.dart';
 import '../services/smart_validator.dart';
 import '../services/error_logger_service.dart';
 import '../widgets/error_feedback_widget.dart';
+import '../widgets/smart_product_search.dart';
+import '../widgets/hierarchical_category_selector.dart';
+import '../widgets/smart_quantity_selector.dart';
+import '../services/product_intelligence_service.dart';
+import '../models/product_template.dart';
 import '../theme/app_theme.dart';
 
 class AddProductScreen extends StatefulWidget {
@@ -43,6 +48,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
   ValidationResult? _quantityValidation;
   ValidationResult? _frequencyValidation;
   bool _enableDebugMode = true; // Active les portes de debuggage en développement
+
+  // Recherche intelligente de produits
+  ProductTemplate? _selectedProductTemplate;
+  late SmartProductSearch _smartSearch;
 
   final List<Map<String, String>> _categories = [
     {'id': 'hygiène', 'name': 'Hygiène', 'icon': '🧴', 'color': '#22C55E'},
@@ -107,6 +116,34 @@ class _AddProductScreenState extends State<AddProductScreen> {
       if (mounted) {
         setState(() => _isLoading = false);
       }
+    }
+  }
+
+  /// Gestionnaire de sélection de produit depuis les suggestions
+  void _onProductTemplateSelected(ProductTemplate product) {
+    setState(() {
+      _selectedProductTemplate = product;
+      // Pré-remplir automatiquement depuis le template
+      _productNameController.text = product.name;
+      if (product.defaultQuantity != null) {
+        _initialQuantityController.text = product.defaultQuantity.toString();
+      }
+      if (product.defaultFrequency != null && _isConsumable) {
+        _frequencyController.text = product.defaultFrequency.toString();
+      }
+      // Automatiquement ajuster l'unité si spécifiée dans le template
+      if (product.unit.isNotEmpty) {
+        _selectedUnit = product.unit;
+      }
+    });
+
+    // Validation automatique après remplissage
+    _validateProductName(product.name);
+    if (product.defaultQuantity != null) {
+      _validateQuantity(product.defaultQuantity.toString());
+    }
+    if (product.defaultFrequency != null) {
+      _validateFrequency(product.defaultFrequency.toString());
     }
   }
 
@@ -268,167 +305,96 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 ),
               ),
 
-              // Product name with smart validation
+              // Product name with smart suggestions
               _buildSectionTitle('Nom du produit'),
-              Container(
-                margin: const EdgeInsets.only(bottom: 24),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: _productNameValidation?.isValid == false
-                        ? Theme.of(context).colorScheme.error
-                        : Theme.of(context).colorScheme.outline.withOpacity(0.5),
-                    width: _productNameValidation?.isValid == false ? 2 : 1,
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    TextFormField(
-                      controller: _productNameController,
-                      onChanged: _validateProductName,
-                      decoration: InputDecoration(
-                        hintText: 'Ex: Savon artisanal, Aspirateur...',
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.zero,
-                        hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
-                      ),
-                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-                      validator: (value) {
-                        final result = SmartValidator.validateProductName(value ?? '', context: 'add_product_screen');
-                        return result.isValid ? null : result.userMessage;
-                      },
-                    ),
-                    // Portes de debuggage intelligentes
-                    ErrorFeedbackWidget(
-                      validationResult: _productNameValidation,
-                      showDebugInfo: _enableDebugMode,
-                      padding: const EdgeInsets.only(top: 8),
-                    ),
-                  ],
-                ),
+              SmartProductSearch(
+                category: _selectedCategory,
+                onProductSelected: _onProductTemplateSelected,
+                hintText: 'Tapez pour voir les suggestions...',
+                enabled: !_isLoading,
               ),
 
-              // Category selection for consumables
+              // Hierarchical Category Selector for consumables
               if (_isConsumable) ...[
-                _buildSectionTitle('Catégorie'),
-                Container(
-                  constraints: const BoxConstraints(maxHeight: 160),
-                  child: GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 8,
-                      childAspectRatio: 2.2,
-                    ),
-                    itemCount: _categories.length,
-                    itemBuilder: (context, index) {
-                      final category = _categories[index];
-                      final isSelected = _selectedCategory == category['id'];
-                      return _buildCategoryCard(category, isSelected);
-                    },
-                  ),
+                _buildSectionTitle('Navigation par catégories'),
+                HierarchicalCategorySelector(
+                  onCategorySelected: (categoryId) {
+                    setState(() => _selectedCategory = categoryId);
+                  },
+                  onProductSelected: _onProductTemplateSelected,
+                  familySize: _getHouseholdSize(),
+                  enabled: !_isLoading,
                 ),
                 const SizedBox(height: 24),
               ],
 
-              // Quantity with smart validation
-              _buildSectionTitle('Quantité ${_isConsumable ? "actuelle" : "durable"}'),
-              Container(
-                margin: const EdgeInsets.only(bottom: 24),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: _quantityValidation?.isValid == false
-                        ? Theme.of(context).colorScheme.error
-                        : Theme.of(context).colorScheme.outline.withOpacity(0.5),
-                    width: _quantityValidation?.isValid == false ? 2 : 1,
+              // Smart Quantity Selector
+              if (_isConsumable) ...[
+                SmartQuantitySelector(
+                  category: _selectedCategory,
+                  selectedProduct: _selectedProductTemplate,
+                  familySize: _getHouseholdSize(),
+                  onQuantityChanged: (quantity, unit) {
+                    setState(() {
+                      _initialQuantityController.text = quantity.toString();
+                      _selectedUnit = unit;
+                    });
+                  },
+                  initialQuantity: _selectedProductTemplate?.defaultQuantity ?? 1.0,
+                  initialUnit: _selectedProductTemplate?.unit ?? 'pièces',
+                  enabled: !_isLoading,
+                ),
+              ] else ...[
+                // Quantity for durables (simplified)
+                _buildSectionTitle('Quantité durable'),
+                Container(
+                  margin: const EdgeInsets.only(bottom: 24),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        CupertinoIcons.tv,
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _initialQuantityController,
+                          keyboardType: TextInputType.number,
+                          onChanged: _validateQuantity,
+                          decoration: InputDecoration(
+                            hintText: 'Ex: 1',
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.zero,
+                            hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
+                          ),
+                          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                          validator: (value) {
+                            final result = SmartValidator.validateProductQuantity(value ?? '', context: 'durable');
+                            return result.isValid ? null : result.userMessage;
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'unités',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          _isConsumable ? CupertinoIcons.cube_box : CupertinoIcons.tv,
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextFormField(
-                            controller: _initialQuantityController,
-                            keyboardType: TextInputType.number,
-                            onChanged: _validateQuantity,
-                            decoration: InputDecoration(
-                              hintText: _isConsumable ? 'Ex: 5' : 'Ex: 1',
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.zero,
-                              hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
-                            ),
-                            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-                            validator: (value) {
-                              final contextType = _isConsumable ? 'consommable' : 'durable';
-                              final result = SmartValidator.validateProductQuantity(value ?? '', context: contextType);
-                              return result.isValid ? null : result.userMessage;
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        // Sélecteur d'unités amélioré
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.surface.withOpacity(0.5),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
-                              width: 1,
-                            ),
-                          ),
-                          child: DropdownButton<String>(
-                            value: _selectedUnit,
-                            items: _isConsumable
-                                ? ['pièces', 'kg', 'L', 'mL', 'g', 'unités'].map((unit) =>
-                                    DropdownMenuItem(value: unit, child: Text(unit, style: TextStyle(fontSize: 12))))
-                                  .toList()
-                                : ['unités'].map((unit) =>
-                                    DropdownMenuItem(value: unit, child: Text(unit, style: TextStyle(fontSize: 12))))
-                                  .toList(),
-                            onChanged: (value) {
-                              if (value != null) {
-                                setState(() => _selectedUnit = value);
-                              }
-                            },
-                            underline: const SizedBox.shrink(),
-                            icon: Icon(CupertinoIcons.chevron_down, size: 14, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.9),
-                              fontWeight: FontWeight.w500,
-                            ),
-                            dropdownColor: Theme.of(context).colorScheme.surface,
-                            borderRadius: BorderRadius.circular(8),
-                            isDense: true,
-                          ),
-                        ),
-                      ],
-                    ),
-                    // Portes de debuggage intelligentes
-                    ErrorFeedbackWidget(
-                      validationResult: _quantityValidation,
-                      showDebugInfo: _enableDebugMode,
-                      padding: const EdgeInsets.only(top: 8),
-                    ),
-                  ],
-                ),
-              ),
+              ],
 
               // Frequency for consumables with smart validation
               if (_isConsumable) ...[
@@ -735,9 +701,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
       builder: (context, child) {
         return Theme(
           data: ThemeData.light().copyWith(
-            primaryColor: Theme.of(context).colorScheme.primary, // Use theme color
+            primaryColor: Theme.of(context).colorScheme.primary,
             colorScheme: ColorScheme.light(
-              primary: Theme.of(context).colorScheme.primary, // Use theme color
+              primary: Theme.of(context).colorScheme.primary,
             ),
           ),
           child: child!,
@@ -754,5 +720,12 @@ class _AddProductScreenState extends State<AddProductScreen> {
         }
       });
     }
+  }
+
+  /// Obtient la taille du foyer depuis le service Household
+  int _getHouseholdSize() {
+    // TODO: Intégrer ce service correctement quand il sera disponible
+    // Pour l'instant, valeur par défaut
+    return 4;
   }
 }
