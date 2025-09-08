@@ -40,7 +40,7 @@ class _SmartQuantitySelectorState extends State<SmartQuantitySelector> {
   bool _isCalculating = false;
 
   final List<String> _commonUnits = [
-    'unités', 'kg', 'L', 'mL', 'g', 'pièces', 'mètres', 'litres', 'rouleaux'
+    'pièces', 'kg', 'L', 'pack'
   ];
 
   @override

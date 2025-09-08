@@ -17,11 +17,9 @@ class ProductIntelligenceService {
     if (query.isEmpty) return [];
 
     try {
-      final products = await _getProductsByCategory(category);
+      final products = await getProductsByCategory(category);
       final filtered = products.where((product) =>
-        product.name.toLowerCase().contains(query.toLowerCase()) ||
-        product.category.toLowerCase().contains(query.toLowerCase()) ||
-        (product.subcategory?.toLowerCase().contains(query.toLowerCase()) ?? false)
+        product.name.toLowerCase().contains(query.toLowerCase())
       ).toList();
 
       // Tri par popularité et pertinence
@@ -56,18 +54,28 @@ class ProductIntelligenceService {
     return score;
   }
 
-  /// Récupère la hiérarchie des catégories
-  Future<List<Map<String, dynamic>>> getCategoryHierarchy(String parentId) async {
+  /// Récupère les produits d'une catégorie (simplifié pour MVP)
+  Future<List<Map<String, dynamic>>> getCategoryHierarchy(String categoryId) async {
     final categories = ProductPresets.categories;
     try {
-      final parent = categories.firstWhere(
-        (cat) => cat['id'] == parentId,
+      final category = categories.firstWhere(
+        (cat) => cat['id'] == categoryId,
       );
 
-      return List<Map<String, dynamic>>.from(parent['subcategories'] ?? []);
+      return List<Map<String, dynamic>>.from(category['products'] ?? []);
     } catch (e) {
       return [];
     }
+  }
+
+  /// Récupère toutes les catégories disponibles
+  List<Map<String, dynamic>> getAllCategories() {
+    return ProductPresets.categories.map((category) => {
+      'id': category['id'],
+      'name': category['name'],
+      'icon': category['icon'],
+      'popularity': category['popularity'] ?? 0,
+    }).toList();
   }
 
   /// Calcule la quantité optimale basée sur la taille familiale
@@ -119,7 +127,7 @@ class ProductIntelligenceService {
     }
 
     try {
-      final products = await _getProductsByCategory(category);
+      final products = await getProductsByCategory(category);
       final sorted = products.where((p) => p.popularity > 10)
                             .toList()
                           ..sort((a, b) => b.popularity.compareTo(a.popularity));
@@ -132,8 +140,8 @@ class ProductIntelligenceService {
     }
   }
 
-  /// Récupère tous les produits d'une catégorie
-  Future<List<ProductTemplate>> _getProductsByCategory(String category) async {
+  /// Récupère tous les produits d'une catégorie (methode publique)
+  Future<List<ProductTemplate>> getProductsByCategory(String category) async {
     try {
       final categoryData = ProductPresets.categories.firstWhere(
         (cat) => cat['id'] == category,
@@ -146,19 +154,6 @@ class ProductIntelligenceService {
     products.addAll(
       categoryProducts.map((p) => ProductTemplate.fromMap({...p, 'category': category}))
     );
-
-    // Produits des sous-catégories
-    final subcategories = categoryData['subcategories'] as List<dynamic>? ?? [];
-    for (final subcategory in subcategories) {
-      final subcategoryProducts = subcategory['products'] as List<dynamic>? ?? [];
-      products.addAll(
-        subcategoryProducts.map((p) => ProductTemplate.fromMap({
-          ...p,
-          'category': category,
-          'subcategory': subcategory['name']
-        }))
-      );
-    }
 
     return products;
     } catch (e) {

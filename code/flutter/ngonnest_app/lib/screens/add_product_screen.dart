@@ -38,7 +38,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
   final _productNameController = TextEditingController();
   final _initialQuantityController = TextEditingController(text: '1');
   final _frequencyController = TextEditingController(text: '30');
-  String _selectedCategory = 'hygiène';
+  String _selectedCategory = 'hygiene'; // Match database naming (no accents)
   String _selectedUnit = 'pièces'; // Unité sélectionnée
   DateTime? _expiryDate;
   DateTime? _purchaseDate;
@@ -220,12 +220,20 @@ class _AddProductScreenState extends State<AddProductScreen> {
         );
         Navigator.of(context).pop(true); // Return true to indicate success
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      // Log the error for debugging
+      print('Database Error: $e');
+      print('StackTrace: $stackTrace');
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur lors de la sauvegarde: $e'),
+            content: Text(e.toString().contains('DatabaseException')
+              ? 'Erreur base de données: ${e.toString().split(':')[1] ?? 'Database access error'}'
+              : 'Erreur lors de la sauvegarde: $e'
+            ),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
           ),
         );
       }

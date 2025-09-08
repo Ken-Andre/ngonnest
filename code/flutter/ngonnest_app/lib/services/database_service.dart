@@ -349,7 +349,10 @@ class DatabaseService {
 
   // Close database
   Future<void> close() async {
-    final db = await database;
-    await db.close();
+    if (_database != null) {
+      final db = _database!;
+      _database = null; // Reset the static instance
+      await db.close();
+    }
   }
 }

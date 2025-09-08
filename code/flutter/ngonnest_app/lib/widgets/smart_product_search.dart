@@ -43,7 +43,21 @@ class _SmartProductSearchState extends State<SmartProductSearch> {
       return await _intelligenceService.getPopularProductsByCategory(widget.category);
     }
 
-    return await _intelligenceService.searchProducts(query, widget.category);
+    // Recherche dans tous les produits de la catégorie actuelle
+    try {
+      final products = await _intelligenceService.getProductsByCategory(widget.category);
+      final filtered = products.where((product) =>
+        product.name.toLowerCase().contains(query.toLowerCase())
+      ).toList();
+
+      // Tri par popularité et pertinence
+      filtered.sort((a, b) => b.popularity.compareTo(a.popularity));
+
+      return filtered.take(8).toList(); // Limite à 8 résultats
+    } catch (e) {
+      print('Erreur recherche: $e');
+      return [];
+    }
   }
 
   @override

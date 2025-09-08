@@ -144,205 +144,404 @@ class ProductTemplate {
   int get hashCode => id.hashCode;
 }
 
-/// Données prédéfinies des produits organisées par catégorie hiérarchique
+/// Données prédéfinies des produits organisées par catégorie pour gestion maison Camerounaise
 class ProductPresets {
   static const List<Map<String, dynamic>> categories = [
     {
       'id': 'hygiene',
       'name': 'Hygiène',
       'icon': '🧴',
-      'subcategories': [
-        {
-          'id': 'savon',
-          'name': 'Savon',
-          'products': [
-            {
-              'name': 'Savon artisanal',
-              'unit': 'pièces',
-              'defaultFrequency': 30,
-              'popularity': 85,
-              'icon': '🧼',
-              'quantityGuidelines': {
-                'family_4': 2,
-                'period': 30,
-              },
-              'commonQuantities': {
-                '2_persons': 1,
-                '4_persons': 2,
-                '6_persons': 3,
-              },
-            },
-            {
-              'name': 'Savon liquide mains',
-              'unit': 'L',
-              'defaultFrequency': 45,
-              'popularity': 90,
-              'icon': '🧴',
-              'quantityGuidelines': {
-                'family_4': 0.5,
-                'period': 45,
-              },
-              'commonQuantities': {
-                '2_persons': 0.25,
-                '4_persons': 0.5,
-                '6_persons': 1.0,
-              },
-            },
-            {
-              'name': 'Gel douche',
-              'unit': 'L',
-              'defaultFrequency': 30,
-              'popularity': 75,
-              'icon': '🚿',
-              'quantityGuidelines': {
-                'family_4': 0.75,
-                'period': 30,
-              },
-            },
-          ],
-        },
-        {
-          'id': 'dentifrice',
-          'name': 'Dentifrice',
-          'products': [
-            {
-              'name': 'Dentifrice adulte',
-              'unit': 'pièces',
-              'defaultFrequency': 90,
-              'popularity': 80,
-              'icon': '🦷',
-              'quantityGuidelines': {
-                'family_4': 2,
-                'period': 90,
-              },
-              'commonQuantities': {
-                '2_persons': 1,
-                '4_persons': 2,
-                '6_persons': 3,
-              },
-            },
-            {
-              'name': 'Dentifrice enfants',
-              'unit': 'pièces',
-              'defaultFrequency': 60,
-              'popularity': 65,
-              'icon': '👶',
-              'quantityGuidelines': {
-                'family_4': 1,
-                'period': 60,
-              },
-            },
-          ],
-        },
-      ],
+      'popularity': 95,
       'products': [
+        // Hygiène personnelle
         {
-          'name': 'Papier toilette',
-          'unit': 'rouleaux',
-          'defaultFrequency': 14,
+          'name': 'Savon de toilette',
+          'unit': 'pièces',
+          'defaultFrequency': 90,
           'popularity': 95,
-          'icon': '🧻',
-          'quantityGuidelines': {
-            'family_4': 12,
-            'period': 14,
-          },
-          'commonQuantities': {
-            '2_persons': 6,
-            '4_persons': 12,
-            '6_persons': 24,
-          },
+          'icon': '🧼',
+          'quantityGuidelines': {'family_4': 4},
         },
         {
           'name': 'Shampooing',
           'unit': 'L',
-          'defaultFrequency': 45,
-          'popularity': 78,
+          'defaultFrequency': 90,
+          'popularity': 85,
           'icon': '🧴',
-          'quantityGuidelines': {
-            'family_4': 0.75,
-            'period': 45,
-          },
+          'quantityGuidelines': {'family_4': 0.75},
+        },
+        {
+          'name': 'Gel douche',
+          'unit': 'L',
+          'defaultFrequency': 75,
+          'popularity': 80,
+          'icon': '🚿',
+          'quantityGuidelines': {'family_4': 0.5},
+        },
+        {
+          'name': 'Dentifrice adulte',
+          'unit': 'pièces',
+          'defaultFrequency': 90,
+          'popularity': 85,
+          'icon': '🦷',
+          'quantityGuidelines': {'family_4': 2},
+        },
+        {
+          'name': 'Dentifrice enfants',
+          'unit': 'pièces',
+          'defaultFrequency': 75,
+          'popularity': 70,
+          'icon': '👶',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Papier toilette',
+          'unit': 'pack',
+          'defaultFrequency': 14,
+          'popularity': 100,
+          'icon': '🧻',
+          'quantityGuidelines': {'family_4': 12},
+        },
+        {
+          'name': 'Serviettes hygiéniques',
+          'unit': 'pack',
+          'defaultFrequency': 30,
+          'popularity': 75,
+          'icon': '📱',
+          'quantityGuidelines': {'family_4': 4},
+        },
+        {
+          'name': 'Cotons/Compresses',
+          'unit': 'pack',
+          'defaultFrequency': 180,
+          'popularity': 65,
+          'icon': '👂',
+          'quantityGuidelines': {'family_4': 2},
         },
       ],
     },
     {
-      'id': 'nettoyage',
-      'name': 'Nettoyage',
+      'id': 'menage',
+      'name': 'Ménage',
       'icon': '🧹',
+      'popularity': 90,
       'products': [
+        // Ustensiles de cuisine et ménage
         {
-          'name': 'Liquide vaisselle',
-          'unit': 'L',
+          'name': 'Éponge vaisselle',
+          'unit': 'pièces',
           'defaultFrequency': 30,
-          'popularity': 88,
+          'popularity': 90,
+          'icon': '🧽',
+          'quantityGuidelines': {'family_4': 3},
+        },
+        {
+          'name': 'Balai souple',
+          'unit': 'pièces',
+          'defaultFrequency': 365,
+          'popularity': 85,
+          'icon': '🧹',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Pelle à poussière',
+          'unit': 'pièces',
+          'defaultFrequency': 365,
+          'popularity': 80,
+          'icon': '🧹',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Raclette',
+          'unit': 'pièces',
+          'defaultFrequency': 180,
+          'popularity': 75,
+          'icon': '🪒',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Serpillière',
+          'unit': 'pièces',
+          'defaultFrequency': 365,
+          'popularity': 85,
+          'icon': '🧺',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Torchoons cuisine',
+          'unit': 'pièces',
+          'defaultFrequency': 90,
+          'popularity': 80,
+          'icon': '🧺',
+          'quantityGuidelines': {'family_4': 4},
+        },
+        {
+          'name': 'Bouchon cuisine',
+          'unit': 'pack',
+          'defaultFrequency': 365,
+          'popularity': 70,
+          'icon': '🔌',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Alimentum/papieralum',
+          'unit': 'pack',
+          'defaultFrequency': 30,
+          'popularity': 65,
           'icon': '🍽️',
-          'quantityGuidelines': {
-            'family_4': 0.75,
-            'period': 30,
-          },
+          'quantityGuidelines': {'family_4': 2},
+        },
+        // Produits nettoyage
+        {
+          'name': 'Produit vaisselle',
+          'unit': 'L',
+          'defaultFrequency': 45,
+          'popularity': 90,
+          'icon': '🍽️',
+          'quantityGuidelines': {'family_4': 0.75},
         },
         {
           'name': 'Détergent lessive',
           'unit': 'kg',
-          'defaultFrequency': 45,
-          'popularity': 85,
+          'defaultFrequency': 60,
+          'popularity': 95,
           'icon': '👕',
-          'quantityGuidelines': {
-            'family_4': 3,
-            'period': 45,
-          },
-          'commonQuantities': {
-            '2_persons': 1.5,
-            '4_persons': 3,
-            '6_persons': 6,
-          },
+          'quantityGuidelines': {'family_4': 3},
+        },
+        {
+          'name': 'Produit sol/multisurface',
+          'unit': 'L',
+          'defaultFrequency': 45,
+          'popularity': 80,
+          'icon': '🏠',
+          'quantityGuidelines': {'family_4': 0.5},
+        },
+        {
+          'name': 'Produit WC',
+          'unit': 'pack',
+          'defaultFrequency': 90,
+          'popularity': 85,
+          'icon': '🪠',
+          'quantityGuidelines': {'family_4': 2},
+        },
+        {
+          'name': 'Sacs poubelle',
+          'unit': 'pack',
+          'defaultFrequency': 30,
+          'popularity': 85,
+          'icon': '🗑️',
+          'quantityGuidelines': {'family_4': 12},
         },
       ],
     },
     {
-      'id': 'cuisine',
-      'name': 'Cuisine',
+      'id': 'nourriture',
+      'name': 'Nourriture',
       'icon': '🍳',
+      'popularity': 88,
       'products': [
         {
-          'name': 'Huile de cuisson',
+          'name': 'Huile palme',
           'unit': 'L',
-          'defaultFrequency': 60,
-          'popularity': 82,
-          'icon': '🫒',
-          'quantityGuidelines': {
-            'family_4': 1,
-            'period': 60,
-          },
+          'defaultFrequency': 90,
+          'popularity': 85,
+          'icon': '🥥',
+          'quantityGuidelines': {'family_4': 1.5},
         },
         {
-          'name': 'Sel',
+          'name': 'Huile arachide',
+          'unit': 'L',
+          'defaultFrequency': 90,
+          'popularity': 80,
+          'icon': '🥜',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Sucre',
+          'unit': 'kg',
+          'defaultFrequency': 180,
+          'popularity': 90,
+          'icon': '🍯',
+          'quantityGuidelines': {'family_4': 2},
+        },
+        {
+          'name': 'Sel de cuisine',
           'unit': 'kg',
           'defaultFrequency': 365,
-          'popularity': 70,
+          'popularity': 95,
           'icon': '🧂',
-          'quantityGuidelines': {
-            'family_4': 1,
-            'period': 365,
-          },
+          'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Lait concentré',
+          'unit': 'pièces',
+          'defaultFrequency': 60,
+          'popularity': 75,
+          'icon': '🥛',
+          'quantityGuidelines': {'family_4': 6},
+        },
+        {
+          'name': 'Thé/Café',
+          'unit': 'pièces',
+          'defaultFrequency': 90,
+          'popularity': 80,
+          'icon': '☕',
+          'quantityGuidelines': {'family_4': 3},
+        },
+        {
+          'name': 'Riz Bafia',
+          'unit': 'kg',
+          'defaultFrequency': 30,
+          'popularity': 85,
+          'icon': '🍚',
+          'quantityGuidelines': {'family_4': 2},
+        },
+        {
+          'name': 'Haricots rouges',
+          'unit': 'kg',
+          'defaultFrequency': 60,
+          'popularity': 75,
+          'icon': '🫘',
+          'quantityGuidelines': {'family_4': 1.5},
         },
       ],
     },
     {
       'id': 'durables',
       'name': 'Durables',
-      'icon': '📺',
+      'icon': '🏠',
+      'popularity': 85,
       'products': [
+        // Électroménagers et meubles
+        {
+          'name': 'Téléviseur',
+          'unit': 'pièces',
+          'defaultFrequency': 1825, // ~5 ans
+          'popularity': 95,
+          'icon': '📺',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Ventilateur',
+          'unit': 'pièces',
+          'defaultFrequency': 1825, // ~5 ans
+          'popularity': 90,
+          'icon': '💨',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Climatiseur',
+          'unit': 'pièces',
+          'defaultFrequency': 2555, // ~7 ans
+          'popularity': 80,
+          'icon': '❄️',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Réfrigérateur',
+          'unit': 'pièces',
+          'defaultFrequency': 2555, // ~7 ans
+          'popularity': 90,
+          'icon': '🧊',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Plaque cuisson',
+          'unit': 'pièces',
+          'defaultFrequency': 1825, // ~5 ans
+          'popularity': 85,
+          'icon': '🔥',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Machine à laver',
+          'unit': 'pièces',
+          'defaultFrequency': 2555, // ~7 ans
+          'popularity': 85,
+          'icon': '🧺',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Chauffage électrique',
+          'unit': 'pièces',
+          'defaultFrequency': 1825, // ~5 ans
+          'popularity': 70,
+          'icon': '🔥',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        // Meubles
+        {
+          'name': 'Canapé salon',
+          'unit': 'pièces',
+          'defaultFrequency': 2555, // ~7 ans
+          'popularity': 85,
+          'icon': '🛋️',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Meuble TV',
+          'unit': 'pièces',
+          'defaultFrequency': 1825, // ~5 ans
+          'popularity': 80,
+          'icon': '📺',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Table salle à manger',
+          'unit': 'pièces',
+          'defaultFrequency': 2555, // ~7 ans
+          'popularity': 80,
+          'icon': '🍽️',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Chaises',
+          'unit': 'pièces',
+          'defaultFrequency': 1825, // ~5 ans
+          'popularity': 85,
+          'icon': '🪑',
+          'quantityGuidelines': {'family_4': 4},
+        },
+        {
+          'name': 'Lit complet',
+          'unit': 'pièces',
+          'defaultFrequency': 3650, // ~10 ans
+          'popularity': 90,
+          'icon': '🛏️',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Armoire',
+          'unit': 'pièces',
+          'defaultFrequency': 2555, // ~7 ans
+          'popularity': 85,
+          'icon': '🗂️',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Cuisine complète',
+          'unit': 'pièces',
+          'defaultFrequency': 3650, // ~10 ans
+          'popularity': 80,
+          'icon': '🍳',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        // Électronique petite
         {
           'name': 'Ampoules',
-          'unit': 'unités',
-          'defaultFrequency': 730, // 2 ans
-          'popularity': 60,
+          'unit': 'pack',
+          'defaultFrequency': 730, // ~2 ans
+          'popularity': 90,
           'icon': '💡',
-          'quantityGuidelines': {
-            'family_4': 10,
-            'period': 730,
-          },
+          'quantityGuidelines': {'family_4': 2},
+        },
+        {
+          'name': 'Piles/Batteries',
+          'unit': 'pack',
+          'defaultFrequency': 365, // ~1 an
+          'popularity': 80,
+          'icon': '🔋',
+          'quantityGuidelines': {'family_4': 3},
         },
       ],
     },
