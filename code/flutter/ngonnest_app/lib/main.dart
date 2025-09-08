@@ -1,7 +1,7 @@
 import 'dart:isolate';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+// import 'package:flutter/services.dart';
 import 'package:ngonnest_app/services/console_logger.dart';
 import 'package:ngonnest_app/services/error_logger_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -40,7 +40,7 @@ void main() async {
       metadata: {
         'library': details.library,
         'context': details.context?.toString(),
-        'summary': details.summary?.toString(),
+        'summary': details.summary.toString(),
         'silentCrash': true,
       },
     );

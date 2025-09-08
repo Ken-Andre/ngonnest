@@ -1,6 +1,7 @@
 import '../models/objet.dart';
 import '../services/database_service.dart';
 import '../services/prediction_service.dart';
+import '../services/error_logger_service.dart';
 
 /// Repository for Inventory (Objet) data operations
 /// Implements the Repository pattern as a wrapper around DatabaseService
@@ -14,50 +15,95 @@ class InventoryRepository {
   /// Automatically calculates rupture date for consumables using PredictionService
   /// Returns the ID of the newly created item
   Future<int> create(Objet objet) async {
-    // Calculate rupture date for consumables
-    final objetWithRuptureDate = PredictionService.updateRuptureDate(objet);
-    return await _databaseService.insertObjet(objetWithRuptureDate);
+    try {
+      // Calculate rupture date for consumables
+      final objetWithRuptureDate = PredictionService.updateRuptureDate(objet);
+      return await _databaseService.insertObjet(objetWithRuptureDate);
+    } catch (e, stackTrace) {
+      print('Database error in InventoryRepository.create: $e');
+      print('StackTrace: $stackTrace');
+      await ErrorLoggerService.logError(
+        component: 'InventoryRepository',
+        operation: 'create',
+        error: e,
+        stackTrace: stackTrace,
+        severity: ErrorSeverity.high,
+        metadata: {
+          'productName': objet.nom,
+          'productCategory': objet.categorie,
+        },
+      );
+      rethrow;
+    }
   }
 
   /// Read (get) an inventory item by ID
   Future<Objet?> read(int id) async {
-    return await _databaseService.getObjet(id);
+    try {
+      return await _databaseService.getObjet(id);
+    } catch (e, stackTrace) {
+      print('Database error in InventoryRepository.read: $e');
+      print('StackTrace: $stackTrace');
+      await ErrorLoggerService.logError(
+        component: 'InventoryRepository',
+        operation: 'read',
+        error: e,
+        stackTrace: stackTrace,
+        severity: ErrorSeverity.medium,
+        metadata: {'objectId': id},
+      );
+      rethrow;
+    }
   }
 
   /// Update an existing inventory item
   /// Returns the number of affected rows
   Future<int> update(int id, Map<String, dynamic> updates) async {
-    // First get the existing objet
-    final existingObjet = await _databaseService.getObjet(id);
-    if (existingObjet == null) {
-      throw ArgumentError('Objet with id $id not found');
+    try {
+      // First get the existing objet
+      final existingObjet = await _databaseService.getObjet(id);
+      if (existingObjet == null) {
+        throw ArgumentError('Objet with id $id not found');
+      }
+
+      // Create updated objet with the provided updates
+      final updatedObjet = Objet(
+        id: existingObjet.id,
+        idFoyer: existingObjet.idFoyer,
+        nom: updates['nom'] ?? existingObjet.nom,
+        categorie: updates['categorie'] ?? existingObjet.categorie,
+        type: updates['type'] ?? existingObjet.type,
+        dateAchat: updates['dateAchat'] ?? existingObjet.dateAchat,
+        dureeViePrevJours: updates['dureeViePrevJours'] ?? existingObjet.dureeViePrevJours,
+        dateRupturePrev: updates['dateRupturePrev'] ?? existingObjet.dateRupturePrev,
+        quantiteInitiale: updates['quantiteInitiale'] ?? existingObjet.quantiteInitiale,
+        quantiteRestante: updates['quantiteRestante'] ?? existingObjet.quantiteRestante,
+        unite: updates['unite'] ?? existingObjet.unite,
+        tailleConditionnement: updates['tailleConditionnement'] ?? existingObjet.tailleConditionnement,
+        prixUnitaire: updates['prixUnitaire'] ?? existingObjet.prixUnitaire,
+        methodePrevision: updates['methodePrevision'] ?? existingObjet.methodePrevision,
+        frequenceAchatJours: updates['frequenceAchatJours'] ?? existingObjet.frequenceAchatJours,
+        consommationJour: updates['consommationJour'] ?? existingObjet.consommationJour,
+        seuilAlerteJours: updates['seuilAlerteJours'] ?? existingObjet.seuilAlerteJours,
+        seuilAlerteQuantite: updates['seuilAlerteQuantite'] ?? existingObjet.seuilAlerteQuantite,
+      );
+
+      // Recalculate rupture date for consumables when updating
+      final objetWithUpdatedRuptureDate = PredictionService.updateRuptureDate(updatedObjet);
+      return await _databaseService.updateObjet(objetWithUpdatedRuptureDate);
+    } catch (e, stackTrace) {
+      print('Database error in InventoryRepository.update: $e');
+      print('StackTrace: $stackTrace');
+      await ErrorLoggerService.logError(
+        component: 'InventoryRepository',
+        operation: 'update',
+        error: e,
+        stackTrace: stackTrace,
+        severity: ErrorSeverity.high,
+        metadata: {'objectId': id},
+      );
+      rethrow;
     }
-
-    // Create updated objet with the provided updates
-    final updatedObjet = Objet(
-      id: existingObjet.id,
-      idFoyer: existingObjet.idFoyer,
-      nom: updates['nom'] ?? existingObjet.nom,
-      categorie: updates['categorie'] ?? existingObjet.categorie,
-      type: updates['type'] ?? existingObjet.type,
-      dateAchat: updates['dateAchat'] ?? existingObjet.dateAchat,
-      dureeViePrevJours: updates['dureeViePrevJours'] ?? existingObjet.dureeViePrevJours,
-      dateRupturePrev: updates['dateRupturePrev'] ?? existingObjet.dateRupturePrev,
-      quantiteInitiale: updates['quantiteInitiale'] ?? existingObjet.quantiteInitiale,
-      quantiteRestante: updates['quantiteRestante'] ?? existingObjet.quantiteRestante,
-      unite: updates['unite'] ?? existingObjet.unite,
-      tailleConditionnement: updates['tailleConditionnement'] ?? existingObjet.tailleConditionnement,
-      prixUnitaire: updates['prixUnitaire'] ?? existingObjet.prixUnitaire,
-      methodePrevision: updates['methodePrevision'] ?? existingObjet.methodePrevision,
-      frequenceAchatJours: updates['frequenceAchatJours'] ?? existingObjet.frequenceAchatJours,
-      consommationJour: updates['consommationJour'] ?? existingObjet.consommationJour,
-      seuilAlerteJours: updates['seuilAlerteJours'] ?? existingObjet.seuilAlerteJours,
-      seuilAlerteQuantite: updates['seuilAlerteQuantite'] ?? existingObjet.seuilAlerteQuantite,
-    );
-
-    // Recalculate rupture date for consumables when updating
-    final objetWithUpdatedRuptureDate = PredictionService.updateRuptureDate(updatedObjet);
-    return await _databaseService.updateObjet(objetWithUpdatedRuptureDate);
   }
 
   /// Direct update with Objet object (convenience method)
