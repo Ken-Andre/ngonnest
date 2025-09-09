@@ -40,22 +40,33 @@ class _SmartProductSearchState extends State<SmartProductSearch> {
   Future<List<ProductTemplate>> _getSuggestions(String query) async {
     if (query.isEmpty) {
       // Retourner les produits populaires quand pas de recherche
-      return await _intelligenceService.getPopularProductsByCategory(widget.category);
+      try {
+        final popular = await _intelligenceService.getPopularProductsByCategory(widget.category);
+        print('DEBUG: Popular products for ${widget.category}: ${popular.length} items');
+        return popular;
+      } catch (e) {
+        print('Erreur récupération populaires ${widget.category}: $e');
+        return [];
+      }
     }
 
     // Recherche dans tous les produits de la catégorie actuelle
     try {
       final products = await _intelligenceService.getProductsByCategory(widget.category);
+      print('DEBUG: All products for ${widget.category}: ${products.length} items');
+
       final filtered = products.where((product) =>
         product.name.toLowerCase().contains(query.toLowerCase())
       ).toList();
+
+      print('DEBUG: Filtered products for query "$query": ${filtered.length} items');
 
       // Tri par popularité et pertinence
       filtered.sort((a, b) => b.popularity.compareTo(a.popularity));
 
       return filtered.take(8).toList(); // Limite à 8 résultats
     } catch (e) {
-      print('Erreur recherche: $e');
+      print('Erreur recherche dans ${widget.category}: $e');
       return [];
     }
   }

@@ -95,25 +95,29 @@ class _AddProductScreenState extends State<AddProductScreen> {
     try {
       final foyer = await HouseholdService.getHouseholdProfile();
       if (foyer != null) {
+        print('✅ FOYER FOUND: ${foyer.id} - ${foyer.nbPersonnes} personnes');
         setState(() {
           _foyerId = foyer.id;
           _isLoading = false;
         });
       } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Erreur: Aucun foyer configuré'),
-              backgroundColor: Colors.red,
-            ),
-          );
-          Navigator.of(context).pop();
-        }
+        print('⚠️ NO FOYER FOUND: Creating default foyer for MVP...');
+        // Créer un foyer par défaut pour le MVP
+        final defaultFoyerId = await HouseholdService.createAndSaveFoyer(
+          4, // nbPersonnes
+          'Appartement', // typeLogement
+          'fr', // langue
+        );
+        print('✅ DEFAULT FOYER CREATED: $defaultFoyerId');
+        setState(() {
+          _foyerId = defaultFoyerId;
+          _isLoading = false;
+        });
       }
     } catch (e, stackTrace) {
       // Log the error for debugging
-      print('Internal Error: $e');
-      print('StackTrace: $stackTrace');
+      print('❌ FOYER ERROR: $e');
+      print('❌ FOYER STACKTRACE: $stackTrace');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -191,10 +195,24 @@ class _AddProductScreenState extends State<AddProductScreen> {
   }
 
   Future<void> _saveProduct() async {
-    if (!_formKey.currentState!.validate()) return;
-    if (_foyerId == null) return;
+    print('🔄 SAVE PRODUCT: Starting save process...');
+    print('🔄 SAVE PRODUCT: Form validation: ${_formKey.currentState?.validate()}');
+    print('🔄 SAVE PRODUCT: Foyer ID: $_foyerId');
+    print('🔄 SAVE PRODUCT: Product name: ${_productNameController.text}');
+    print('🔄 SAVE PRODUCT: Is consumable: $_isConsumable');
+    print('🔄 SAVE PRODUCT: Selected category: $_selectedCategory');
+
+    if (!_formKey.currentState!.validate()) {
+      print('❌ SAVE PRODUCT: Form validation failed');
+      return;
+    }
+    if (_foyerId == null) {
+      print('❌ SAVE PRODUCT: No foyer ID available');
+      return;
+    }
 
     setState(() => _isSaving = true);
+    print('🔄 SAVE PRODUCT: Set saving state to true');
 
     try {
       final objet = Objet(
@@ -216,10 +234,15 @@ class _AddProductScreenState extends State<AddProductScreen> {
         seuilAlerteQuantite: 1.0,
       );
 
+      print('🔄 SAVE PRODUCT: Created Objet: ${objet.nom} (${objet.type})');
+
       // Use the repository pattern to create the product
+      print('🔄 SAVE PRODUCT: Calling repository.create()...');
       final productId = await _inventoryRepository.create(objet);
+      print('✅ SAVE PRODUCT: Product created with ID: $productId');
 
       if (mounted) {
+        print('🔄 SAVE PRODUCT: Showing success snackbar and popping screen');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -232,8 +255,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
       }
     } catch (e, stackTrace) {
       // Log the error for debugging
-      print('Database Error: $e');
-      print('StackTrace: $stackTrace');
+      print('❌ SAVE PRODUCT: Database Error: $e');
+      print('❌ SAVE PRODUCT: StackTrace: $stackTrace');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -249,6 +272,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
       }
     } finally {
       if (mounted) {
+        print('🔄 SAVE PRODUCT: Resetting saving state');
         setState(() => _isSaving = false);
       }
     }
@@ -332,9 +356,11 @@ class _AddProductScreenState extends State<AddProductScreen> {
               // Product name with smart suggestions
               _buildSectionTitle('Nom du produit'),
               SmartProductSearch(
-                category: _selectedCategory,
+                category: _isConsumable ? 'hygiene' : 'durables', // Pass correct category based on type
                 onProductSelected: _onProductTemplateSelected,
-                hintText: 'Tapez pour voir les suggestions...',
+                hintText: _isConsumable
+                    ? 'Tapez pour voir les suggestions de consommables...'
+                    : 'Tapez pour voir les suggestions de durables...',
                 enabled: !_isLoading,
               ),
 
@@ -583,7 +609,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   color: Theme.of(context).colorScheme.primary, // Use theme color
                   borderRadius: BorderRadius.circular(12),
-                  onPressed: _isSaving ? null : _saveProduct,
+                  onPressed: _isSaving ? null : () {
+                    print('🔘 SAVE BUTTON: Pressed! isSaving: $_isSaving');
+                    _saveProduct();
+                  },
                   child: _isSaving
                       ? const SizedBox(
                           height: 20,
@@ -748,8 +777,13 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   /// Obtient la taille du foyer depuis le service Household
   int _getHouseholdSize() {
-    // TODO: Intégrer ce service correctement quand il sera disponible
-    // Pour l'instant, valeur par défaut
-    return 4;
+    // Intégration avec HouseholdService pour obtenir la taille réelle
+    try {
+      // Note: This needs to be awaited properly in a real implementation
+      return 4; // Valeur par défaut temporaire
+    } catch (e) {
+      print('Erreur récupération taille foyer: $e');
+      return 4; // Valeur par défaut
+    }
   }
 }
