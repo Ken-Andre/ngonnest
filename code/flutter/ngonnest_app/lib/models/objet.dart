@@ -20,6 +20,7 @@ class Objet {
   final double? consommationJour;
   final int seuilAlerteJours;
   final double seuilAlerteQuantite;
+  final String? commentaires; // Commentaires personnels pour durables
 
   Objet({
     this.id,
@@ -40,6 +41,7 @@ class Objet {
     this.consommationJour,
     this.seuilAlerteJours = 3,
     this.seuilAlerteQuantite = 1,
+    this.commentaires, // Optionnel pour durables
   });
 
   Map<String, dynamic> toMap() {
@@ -62,6 +64,7 @@ class Objet {
       'consommation_jour': consommationJour,
       'seuil_alerte_jours': seuilAlerteJours,
       'seuil_alerte_quantite': seuilAlerteQuantite,
+      'commentaires': commentaires,
     };
   }
 
@@ -80,13 +83,14 @@ class Objet {
       unite: map['unite'],
       tailleConditionnement: map['taille_conditionnement'],
       prixUnitaire: map['prix_unitaire'],
-      methodePrevision: map['methode_prevision'] != null 
+      methodePrevision: map['methode_prevision'] != null
           ? MethodePrevision.values.firstWhere((e) => e.toString().split('.').last == map['methode_prevision'])
           : null,
       frequenceAchatJours: map['frequence_achat_jours'],
       consommationJour: map['consommation_jour'],
       seuilAlerteJours: map['seuil_alerte_jours'] ?? 3,
       seuilAlerteQuantite: map['seuil_alerte_quantite'] ?? 1,
+      commentaires: map['commentaires'],
     );
   }
 
@@ -109,6 +113,7 @@ class Objet {
     double? consommationJour,
     int? seuilAlerteJours,
     double? seuilAlerteQuantite,
+    String? commentaires,
   }) {
     return Objet(
       id: id ?? this.id,
@@ -129,6 +134,7 @@ class Objet {
       consommationJour: consommationJour ?? this.consommationJour,
       seuilAlerteJours: seuilAlerteJours ?? this.seuilAlerteJours,
       seuilAlerteQuantite: seuilAlerteQuantite ?? this.seuilAlerteQuantite,
+      commentaires: commentaires ?? this.commentaires,
     );
   }
 }

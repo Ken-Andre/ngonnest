@@ -130,7 +130,37 @@ class DatabaseService {
 
   Future<int> insertObjet(Objet objet) async {
     final db = await database;
-    return await db.insert('objet', objet.toMap());
+    try {
+      return await db.insert('objet', objet.toMap());
+    } catch (e) {
+      // Handle legacy database without commentaires column
+      if (e.toString().contains('no column named commentaires')) {
+        print('[DatabaseService] Legacy database detected, adding commentaires column...');
+        try {
+          await db.execute('ALTER TABLE objet ADD COLUMN commentaires TEXT');
+          print('✅ Auto-migration: Added commentaires column successfully');
+          // Retry the insert after adding the column
+          return await db.insert('objet', objet.toMap());
+        } catch (migrationError) {
+          print('[DatabaseService] Failed to add commentaires column: $migrationError');
+          await _logDatabaseError(
+            'auto_migration_failed',
+            'Failed to auto-add commentaires column to legacy database',
+            error: migrationError,
+            severity: ErrorSeverity.high,
+          );
+          rethrow;
+        }
+      }
+      // Re-throw other errors
+      await _logDatabaseError(
+        'insert_objet_failed',
+        'Failed to insert objet into database',
+        error: e,
+        severity: ErrorSeverity.medium,
+      );
+      rethrow;
+    }
   }
 
   Future<int> updateObjet(Objet objet) async {
@@ -465,6 +495,23 @@ class DatabaseService {
       _lastConnectionCheck = null;
       await db.close();
       print('[DatabaseService] Database closed successfully');
+    }
+  }
+
+  /// Debug method: Check table structure
+  Future<void> debugTableStructure() async {
+    final db = await database;
+    try {
+      final objetColumns = await db.rawQuery("PRAGMA table_info(objet)");
+      print('[DEBUG] Objet table structure:');
+      for (final col in objetColumns) {
+        print('  - ${col['name']}: ${col['type']} ${col['notnull'] == 1 ? 'NOT NULL' : 'NULL'} ${col['dflt_value'] != null ? 'DEFAULT ${col['dflt_value']}' : ''}');
+      }
+
+      final dbVersion = await db.getVersion();
+      print('[DEBUG] Database version: $dbVersion');
+    } catch (e) {
+      print('[DEBUG ERROR] Failed to get table structure: $e');
     }
   }
 }

@@ -5,9 +5,9 @@ Future<Database> initDatabase() async {
   final databasesPath = await getDatabasesPath();
   final path = join(databasesPath, 'ngonnest.db');
 
-  return openDatabase(
+  final database = await openDatabase(
     path,
-    version: 3, // Migration pour ajouter les colonnes manquantes
+    version: 5, // Migration v5: forcer ajout colonne commentaires durables
     onCreate: (db, version) async {
       // Table foyer
       await db.execute('''
@@ -21,7 +21,7 @@ Future<Database> initDatabase() async {
         )
       ''');
 
-      // Table objet (pour consommables et durables)
+      // Table objet (pour consommables et durables) - version avec commentaires
       await db.execute('''
         CREATE TABLE objet (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -42,6 +42,7 @@ Future<Database> initDatabase() async {
           consommation_jour REAL,
           seuil_alerte_jours INTEGER DEFAULT 3,
           seuil_alerte_quantite REAL DEFAULT 1,
+          commentaires TEXT,
           FOREIGN KEY (id_foyer) REFERENCES foyer (id)
         )
       ''');
@@ -130,6 +131,45 @@ Future<Database> initDatabase() async {
           await db.execute('ALTER TABLE objet ADD COLUMN seuil_alerte_quantite REAL NOT NULL DEFAULT 1');
         }
       }
+
+      // Migration to version 4: Add commentaires column for durables
+      if (oldVersion < 4) {
+        // Vérifier et ajouter colonne commentaires
+        final objetColumns = await db.rawQuery("PRAGMA table_info(objet)");
+        final hasCommentaires = objetColumns.any((col) => col['name'] == 'commentaires');
+
+        if (!hasCommentaires) {
+          await db.execute('ALTER TABLE objet ADD COLUMN commentaires TEXT');
+          print('✅ Migration v4: Added commentaires column to objet table');
+        }
+      }
+
+      // Migration to version 4: Force add commentaires column for legacy databases
+      if (oldVersion < 5) {
+        // Toujours vérifier et ajouter colonne commentaires (même si déjà fait en v4)
+        final objetColumns = await db.rawQuery("PRAGMA table_info(objet)");
+        final hasCommentaires = objetColumns.any((col) => col['name'] == 'commentaires');
+
+        if (!hasCommentaires) {
+          await db.execute('ALTER TABLE objet ADD COLUMN commentaires TEXT');
+          print('✅ Migration v5: Force added commentaires column to objet table');
+        } else {
+          print('✅ Migration v5: Commentaires column already exists');
+        }
+      }
     },
   );
+
+  // Debug: Log database structure after initialization
+  try {
+    final objetColumns = await database.rawQuery("PRAGMA table_info(objet)");
+    print('[INIT DEBUG] Objet table structure after migration:');
+    for (final col in objetColumns) {
+      print('  - ${col['name']}: ${col['type']} ${col['notnull'] == 1 ? 'NOT NULL' : 'NULL'}');
+    }
+  } catch (e) {
+    print('[INIT DEBUG ERROR] Failed to check table structure: $e');
+  }
+
+  return database;
 }

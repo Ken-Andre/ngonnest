@@ -12,6 +12,7 @@ import '../widgets/error_feedback_widget.dart';
 import '../widgets/smart_product_search.dart';
 import '../widgets/hierarchical_category_selector.dart';
 import '../widgets/smart_quantity_selector.dart';
+import '../widgets/dropdown_categories_durables.dart';
 import '../services/product_intelligence_service.dart';
 import '../models/product_template.dart';
 import '../theme/app_theme.dart';
@@ -40,7 +41,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
   final _productNameController = TextEditingController();
   final _initialQuantityController = TextEditingController(text: '1');
   final _frequencyController = TextEditingController(text: '30');
+  final _commentairesController = TextEditingController(); // Commentaires pour durables
   String _selectedCategory = 'hygiene'; // Match database naming (no accents)
+  String _selectedDurableCategory = ''; // Catégorie durable sélectionnée
   String _selectedUnit = 'pièces'; // Unité sélectionnée
   DateTime? _expiryDate;
   DateTime? _purchaseDate;
@@ -76,6 +79,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
       _databaseService = context.read<DatabaseService>();
       _inventoryRepository = InventoryRepository(_databaseService);
       _foyerRepository = FoyerRepository(_databaseService);
+
+      // Debug: Check database structure for commentaires column
+      _databaseService.debugTableStructure();
+
       _loadFoyerId(); // Chargement asynchrone mais sans blocage UI
     } catch (e, stackTrace) {
       // Log the error for debugging
@@ -166,6 +173,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
     _productNameController.dispose();
     _initialQuantityController.dispose();
     _frequencyController.dispose();
+    _commentairesController.dispose();
     super.dispose();
   }
 
@@ -218,7 +226,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
       final objet = Objet(
         idFoyer: _foyerId!,
         nom: _productNameController.text.trim(),
-        categorie: _selectedCategory,
+        categorie: _isConsumable ? _selectedCategory : (_selectedDurableCategory.isNotEmpty ? _selectedDurableCategory : 'autre'),
         type: _isConsumable ? TypeObjet.consommable : TypeObjet.durable,
         dateAchat: _isConsumable ? null : _purchaseDate,
         dateRupturePrev: _isConsumable ? _expiryDate : null,
@@ -232,6 +240,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
         consommationJour: _isConsumable ? 1.0 : null,
         seuilAlerteJours: 3,
         seuilAlerteQuantite: 1.0,
+        commentaires: _isConsumable ? null : (_commentairesController.text.trim().isNotEmpty ? _commentairesController.text.trim() : null),
       );
 
       print('🔄 SAVE PRODUCT: Created Objet: ${objet.nom} (${objet.type})');
@@ -363,6 +372,97 @@ class _AddProductScreenState extends State<AddProductScreen> {
                     : 'Tapez pour voir les suggestions de durables...',
                 enabled: !_isLoading,
               ),
+
+              // Dropdown Categories Durables - only for durables
+              if (!_isConsumable) ...[
+                DropdownCategoriesDurables(
+                  selectedCategoryId: _selectedDurableCategory.isNotEmpty ? _selectedDurableCategory : null,
+                  onCategorySelected: (categoryId) {
+                    setState(() => _selectedDurableCategory = categoryId);
+                  },
+                  hintText: 'Choisir une catégorie pour ce bien durable',
+                  enabled: !_isLoading,
+                ),
+              ],
+
+              // Commentaires field - only for durables
+              if (!_isConsumable) ...[
+                _buildSectionTitle('Commentaires / Notes (optionnel)'),
+                Container(
+                  margin: const EdgeInsets.only(bottom: 24),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            CupertinoIcons.text_bubble,
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                            size: 18,
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            'Informations complémentaires',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.9),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _commentairesController,
+                        maxLines: 3,
+                        minLines: 1,
+                        decoration: InputDecoration(
+                          hintText: 'Ex: Code iCloud, numéro de série, date de garantie...',
+                          hintStyle: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                            fontSize: 14,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(
+                              color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(
+                              color: Theme.of(context).colorScheme.primary,
+                              width: 2,
+                            ),
+                          ),
+                          contentPadding: const EdgeInsets.all(12),
+                        ),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Utile pour se souvenir des détails importants de ce bien durable',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
 
               // Hierarchical Category Selector for consumables
               if (_isConsumable) ...[

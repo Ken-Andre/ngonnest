@@ -324,25 +324,103 @@ class _InventoryScreenState extends State<InventoryScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(objet.nom),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+        title: Row(
           children: [
-            Text('Catégorie: ${objet.categorie}'),
-            Text('Type: ${objet.type == TypeObjet.consommable ? "Consommable" : "Durable"}'),
-            if (objet.type == TypeObjet.consommable) ...[
-              Text('Quantité initiale: ${objet.quantiteInitiale} ${objet.unite}'),
-              Text('Quantité restante: ${objet.quantiteRestante} ${objet.unite}'),
-              if (objet.prixUnitaire != null)
-                Text('Prix unitaire: ${objet.prixUnitaire} €'),
-            ] else ...[
-              if (objet.dateAchat != null)
-                Text('Date d\'achat: ${_formatDate(objet.dateAchat)}'),
-              if (objet.dureeViePrevJours != null)
-                Text('Durée de vie prévue: ${objet.dureeViePrevJours} jours'),
-            ],
+            Icon(
+              objet.type == TypeObjet.consommable
+                  ? Icons.shopping_cart
+                  : Icons.inventory,
+              color: objet.type == TypeObjet.consommable ? Colors.green : Colors.blue,
+            ),
+            const SizedBox(width: 8),
+            Expanded(child: Text(objet.nom)),
           ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Informations de base
+              _buildDetailRow('Catégorie', objet.categorie),
+              _buildDetailRow('Type', objet.type == TypeObjet.consommable ? "Consommable" : "Durable"),
+
+              const Divider(height: 24),
+
+              // Informations spécifiques selon le type
+              if (objet.type == TypeObjet.consommable) ...[
+                _buildDetailRow('Quantité initiale', '${objet.quantiteInitiale} ${objet.unite}'),
+                _buildDetailRow('Quantité restante', '${objet.quantiteRestante} ${objet.unite}'),
+                if (objet.prixUnitaire != null)
+                  _buildDetailRow('Prix unitaire', '${objet.prixUnitaire} €'),
+                if (objet.dateRupturePrev != null)
+                  _buildDetailRow('Rupture prévue', _formatDate(objet.dateRupturePrev)),
+              ] else ...[
+                if (objet.dateAchat != null)
+                  _buildDetailRow('Date d\'achat', _formatDate(objet.dateAchat)),
+                if (objet.dureeViePrevJours != null)
+                  _buildDetailRow('Durée de vie prévue', '${objet.dureeViePrevJours} jours'),
+
+                // Affichage des commentaires pour les durables
+                if (objet.commentaires != null && objet.commentaires!.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Commentaires / Notes :',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.blue,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                    ),
+                    child: Text(
+                      objet.commentaires!,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontStyle: FontStyle.italic,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ] else if (objet.type == TypeObjet.durable) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          size: 16,
+                          color: Colors.grey[600],
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Aucun commentaire ajouté',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -419,5 +497,36 @@ class _InventoryScreenState extends State<InventoryScreen> {
   String _formatDate(DateTime? date) {
     if (date == null) return 'N/A';
     return '${date.day}/${date.month}/${date.year}';
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 140,
+            child: Text(
+              '$label :',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 14,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
