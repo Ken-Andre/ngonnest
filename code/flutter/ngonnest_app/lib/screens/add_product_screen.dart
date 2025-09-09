@@ -17,7 +17,9 @@ import '../models/product_template.dart';
 import '../theme/app_theme.dart';
 
 class AddProductScreen extends StatefulWidget {
-  const AddProductScreen({super.key});
+  final bool isConsumable;
+  
+  const AddProductScreen({super.key, this.isConsumable = true});
 
   @override
   State<AddProductScreen> createState() => _AddProductScreenState();
@@ -63,6 +65,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
   @override
   void initState() {
     super.initState();
+    // Initialize with the passed parameter
+    _isConsumable = widget.isConsumable;
     // Éliminer la latence : Initialisation synchrone
     _initializeServices();
   }
@@ -252,6 +256,12 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Handle route arguments for isConsumable parameter
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    if (args != null && args.containsKey('isConsumable')) {
+      _isConsumable = args['isConsumable'] as bool;
+    }
+
     if (_isLoading) {
       return const Scaffold(
         body: Center(

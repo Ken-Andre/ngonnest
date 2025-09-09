@@ -288,7 +288,11 @@ class _InventoryScreenState extends State<InventoryScreen> {
               subtitle: const Text('Nourriture, produits d\'hygiène, etc.'),
               onTap: () {
                 Navigator.pop(context);
-                Navigator.pushNamed(context, '/add-product');
+                Navigator.pushNamed(
+                  context, 
+                  '/add-product',
+                  arguments: const {'isConsumable': true},
+                );
               },
             ),
             ListTile(
@@ -297,7 +301,11 @@ class _InventoryScreenState extends State<InventoryScreen> {
               subtitle: const Text('Électroménager, meubles, etc.'),
               onTap: () {
                 Navigator.pop(context);
-                Navigator.pushNamed(context, '/add-product');
+                Navigator.pushNamed(
+                  context, 
+                  '/add-product',
+                  arguments: const {'isConsumable': false},
+                );
               },
             ),
           ],
