@@ -319,7 +319,10 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
       if (mounted) {
         Navigator.of(context).pushReplacementNamed('/dashboard');
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      // Log the error for debugging
+      print('Backup Error: $e');
+      print('StackTrace: $stackTrace');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

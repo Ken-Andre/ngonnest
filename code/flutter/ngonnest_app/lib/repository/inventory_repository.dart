@@ -11,7 +11,7 @@ class InventoryRepository {
 
   InventoryRepository(this._databaseService);
 
-  /// Create a new inventory item
+  /// Create a new inventory item with automatic recovery
   /// Automatically calculates rupture date for consumables using PredictionService
   /// Returns the ID of the newly created item
   Future<int> create(Objet objet) async {
@@ -22,6 +22,30 @@ class InventoryRepository {
     } catch (e, stackTrace) {
       print('Database error in InventoryRepository.create: $e');
       print('StackTrace: $stackTrace');
+
+      // Attempt automatic recovery on database errors
+      if (_isDatabaseConnectionError(e)) {
+        print('[InventoryRepository] Database connection error detected, attempting recovery...');
+        try {
+          final isValid = await _databaseService.isConnectionValid();
+          if (!isValid) {
+            // Try again after potential recovery
+            await Future.delayed(const Duration(milliseconds: 200));
+            final objetWithRuptureDate = PredictionService.updateRuptureDate(objet);
+            return await _databaseService.insertObjet(objetWithRuptureDate);
+          }
+        } catch (recoveryError, recoveryStackTrace) {
+          await ErrorLoggerService.logError(
+            component: 'InventoryRepository',
+            operation: 'create_recovery_attempt',
+            error: recoveryError,
+            stackTrace: recoveryStackTrace,
+            severity: ErrorSeverity.high,
+            metadata: {'original_error': e.toString()},
+          );
+        }
+      }
+
       await ErrorLoggerService.logError(
         component: 'InventoryRepository',
         operation: 'create',
@@ -165,5 +189,16 @@ class InventoryRepository {
   /// Get count of items expiring soon
   Future<int> getExpiringSoonCount(int idFoyer) async {
     return await _databaseService.getExpiringSoonObjetCount(idFoyer);
+  }
+
+  /// Helper method to detect database connection errors
+  /// Used to determine if automatic recovery should be attempted
+  static bool _isDatabaseConnectionError(dynamic error) {
+    final errorString = error.toString().toLowerCase();
+    return errorString.contains('database is closed') ||
+           errorString.contains('database_closed') ||
+           errorString.contains('no such table') ||
+           errorString.contains('sqlite_exception') ||
+           errorString.contains('connection') && errorString.contains('lost');
   }
 }

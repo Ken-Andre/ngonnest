@@ -51,7 +51,10 @@ class _HierarchicalCategorySelectorState extends State<HierarchicalCategorySelec
       // Charger les produits populaires de la catégorie actuelle
       _currentProducts = await _intelligenceService.getPopularProductsByCategory(currentCategory);
 
-    } catch (e) {
+    } catch (e, stackTrace) {
+      // Log the error for debugging
+      print('Init Error: $e');
+      print('StackTrace: $stackTrace');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

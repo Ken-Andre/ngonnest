@@ -52,7 +52,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
           );
         }
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      // Log the error for debugging
+      print('Internal Error: $e');
+      print('StackTrace: $stackTrace');
       setState(() {
         _isLoading = false;
       });
@@ -390,7 +393,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
           ),
         );
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      // Log the error for debugging
+      print('Deletion Error: $e');
+      print('StackTrace: $stackTrace');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

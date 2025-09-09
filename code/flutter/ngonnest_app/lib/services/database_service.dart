@@ -3,14 +3,59 @@ import '../models/foyer.dart';
 import '../models/objet.dart';
 import '../models/alert.dart';
 import '../db.dart';
+import 'error_logger_service.dart';
 
 class DatabaseService {
   static Database? _database;
+  static bool _isConnected = false;
+  static bool _isInitializing = false;
+  static DateTime? _lastConnectionCheck;
 
+  /// Enhanced getter with automatic recovery and comprehensive error logging
   Future<Database> get database async {
-    if (_database != null) return _database!;
-    _database = await initDatabase();
-    return _database!;
+    // Return existing connection if available and valid
+    if (_database != null && _isConnected) {
+      return _database!;
+    }
+
+    // Prevent concurrent initialization
+    if (_isInitializing) {
+      await _waitForInitialization();
+      return _database!;
+    }
+
+    try {
+      _isInitializing = true;
+
+      if (_database != null && !_isConnected) {
+        print('[DatabaseService] Connection lost, attempting recovery...');
+        await _logDatabaseError(
+          'connection_recovery_attempted',
+          'Database connection was lost, attempting automatic recovery',
+          severity: ErrorSeverity.medium,
+        );
+      }
+
+      _database = await initDatabase();
+      _isConnected = true;
+      _lastConnectionCheck = DateTime.now();
+
+      print('[DatabaseService] Database connection established successfully');
+      return _database!;
+    } catch (e, stackTrace) {
+      _isConnected = false;
+      await _logDatabaseError(
+        'connection_failed',
+        'Failed to establish database connection',
+        error: e,
+        stackTrace: stackTrace,
+        severity: ErrorSeverity.critical,
+        metadata: {'attempt_timestamp': DateTime.now().toIso8601String()},
+      );
+      rethrow;
+    } finally {
+      _isInitializing = false;
+    }
   }
 
   // Foyer operations
@@ -347,12 +392,79 @@ class DatabaseService {
     ''', [now.add(const Duration(days: 2)).toIso8601String(), now.toIso8601String(), idFoyer, warningDate.toIso8601String()]);
   }
 
-  // Close database
+  /// Helper method to wait for concurrent initialization to complete
+  static Future<void> _waitForInitialization() async {
+    while (_isInitializing) {
+      await Future.delayed(const Duration(milliseconds: 10));
+    }
+  }
+
+  /// Centralized logging method for database errors with metadata
+  static Future<void> _logDatabaseError(
+    String operation,
+    String message, {
+    dynamic error,
+    StackTrace? stackTrace,
+    ErrorSeverity severity = ErrorSeverity.medium,
+    Map<String, dynamic>? metadata,
+  }) async {
+    try {
+      Map<String, dynamic> enhancedMetadata = {
+        'is_connected': _isConnected,
+        'is_initializing': _isInitializing,
+        'last_connection_check': _lastConnectionCheck?.toIso8601String(),
+        ...?metadata,
+      };
+
+      await ErrorLoggerService.logError(
+        component: 'DatabaseService',
+        operation: operation,
+        error: error ?? 'Database connection lost - automatic recovery recommended',
+        stackTrace: stackTrace ?? StackTrace.current,
+        severity: severity,
+        metadata: enhancedMetadata,
+      );
+    } catch (logError) {
+      // Fallback console logging if ErrorLoggerService fails
+      print('[DatabaseService.FALLBACK] $operation: $message');
+      if (error != null) {
+        print('  Original error: $error');
+      }
+    }
+  }
+
+  /// Check if database connection is still valid
+  Future<bool> isConnectionValid() async {
+    if (_database == null) return false;
+
+    try {
+      await _database!.query('foyer', limit: 1);
+      _lastConnectionCheck = DateTime.now();
+      return true;
+    } catch (e) {
+      _isConnected = false;
+      print('[DatabaseService] Connection validation failed: $e');
+      await _logDatabaseError(
+        'connection_validation_failed',
+        'Database connection validation failed',
+        error: e,
+        stackTrace: StackTrace.current,
+        severity: ErrorSeverity.high,
+      );
+      return false;
+    }
+  }
+
+  /// Close database - ONLY CALL FROM MAIN APP SHUTDOWN
+  /// Background services should NOT call this method
   Future<void> close() async {
     if (_database != null) {
       final db = _database!;
-      _database = null; // Reset the static instance
+      _database = null;
+      _isConnected = false;
+      _lastConnectionCheck = null;
       await db.close();
+      print('[DatabaseService] Database closed successfully');
     }
   }
 }

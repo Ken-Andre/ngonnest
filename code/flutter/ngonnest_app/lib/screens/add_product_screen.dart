@@ -73,7 +73,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
       _inventoryRepository = InventoryRepository(_databaseService);
       _foyerRepository = FoyerRepository(_databaseService);
       _loadFoyerId(); // Chargement asynchrone mais sans blocage UI
-    } catch (e) {
+    } catch (e, stackTrace) {
+      // Log the error for debugging
+      print('Init Error: $e');
+      print('StackTrace: $stackTrace');
       // Gestion d'erreur pour éviter les crashes
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -103,7 +106,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
           Navigator.of(context).pop();
         }
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      // Log the error for debugging
+      print('Internal Error: $e');
+      print('StackTrace: $stackTrace');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

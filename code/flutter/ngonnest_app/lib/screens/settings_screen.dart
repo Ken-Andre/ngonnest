@@ -810,7 +810,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           duration: Duration(seconds: 2),
         ),
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      // Log the error for debugging
+      print('Export Error: $e');
+      print('StackTrace: $stackTrace');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Erreur lors de l\'export : $e'),
@@ -854,7 +857,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           duration: Duration(seconds: 2),
         ),
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      // Log the error for debugging
+      print('Import Error: $e');
+      print('StackTrace: $stackTrace');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Erreur lors de l\'import : $e'),
@@ -1027,7 +1033,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       _showDeletionSuccessDialog();
 
-    } catch (e) {
+    } catch (e, stackTrace) {
+      // Log the error for debugging
+      print('Deletion Error: $e');
+      print('StackTrace: $stackTrace');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Erreur lors de la suppression : $e'),
