@@ -11,6 +11,7 @@ import '../repository/inventory_repository.dart';
 import '../theme/app_theme.dart';
 import 'add_product_screen.dart';
 import '../theme/theme_mode_notifier.dart';
+import '../widgets/connectivity_banner.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -137,27 +138,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
       );
     }
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            _buildHeader(),
+    return Stack(
+      children: [
+        // Main scaffold with all content
+        Scaffold(
+          backgroundColor: Theme.of(context).colorScheme.background,
+          body: SafeArea(
+            child: Column(
+              children: [
+                // Header
+                _buildHeader(),
 
-            // Content
-            Expanded(
-              child: _buildDashboardContent(),
+                // Content
+                Expanded(
+                  child: _buildDashboardContent(),
+                ),
+
+                // Bottom navigation
+                _buildBottomNavigation(),
+              ],
             ),
-
-            // Bottom navigation
-            _buildBottomNavigation(),
-
-            // Status bar
-            _buildStatusBar(),
-          ],
+          ),
         ),
-      ),
+
+        // Connectivity banner overlay at bottom
+        Positioned(
+          bottom: 80, // Above bottom navigation
+          left: 16,
+          right: 16,
+          child: const ConnectivityBanner(),
+        ),
+      ],
     );
   }
 
@@ -851,39 +862,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildStatusBar() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      color: _offlineMode
-          ? Theme.of(context).colorScheme.tertiary.withOpacity(0.2)
-          : Theme.of(context).colorScheme.primary.withOpacity(0.2),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            _offlineMode ? CupertinoIcons.wifi_slash : CupertinoIcons.wifi,
-            size: 16,
-            color: _offlineMode
-                ? Theme.of(context).colorScheme.secondary
-                : Theme.of(context).colorScheme.primary,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            _offlineMode
-                ? 'Hors ligne - Données sauvegardées localement'
-                : 'Connecté - Synchronisation des données',
-            style: TextStyle(
-              fontSize: 12,
-              color: _offlineMode
-                  ? Theme.of(context).colorScheme.onSecondary
-                  : Theme.of(context).colorScheme.onPrimary,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   void _navigateToTab(int index) {
     // Navigate to actual screens instead of switching content in same screen

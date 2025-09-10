@@ -19,6 +19,7 @@ import 'services/household_service.dart';
 import 'services/notification_service.dart';
 import 'services/database_service.dart'; // Import DatabaseService
 import 'services/background_task_service.dart'; // Import BackgroundTaskService
+import 'services/connectivity_service.dart'; // Import ConnectivityService
 import 'theme/app_theme.dart';
 import 'theme/theme_mode_notifier.dart'; // Import the new file
 import 'screens/preferences_screen.dart';
@@ -97,6 +98,9 @@ void main() async {
         Provider<DatabaseService>(
           create: (context) => DatabaseService(),
         ), // Provide DatabaseService
+        ChangeNotifierProvider<ConnectivityService>(
+          create: (context) => ConnectivityService(),
+        ), // Provide ConnectivityService
       ],
       child: const MyApp(),
     ),
