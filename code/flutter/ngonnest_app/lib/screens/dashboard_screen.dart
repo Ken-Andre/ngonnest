@@ -267,10 +267,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
             _buildQuickStats(),
             const SizedBox(height: 24),
 
-            // Alerts section
-            _buildAlertsSection(),
-            const SizedBox(height: 24),
-
             // Quick actions
             _buildQuickActionsSection(),
             const SizedBox(height: 24),
@@ -791,7 +787,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       {'icon': CupertinoIcons.house, 'label': 'Accueil'},
       {'icon': CupertinoIcons.cube_box, 'label': 'Inventaire'},
       {'icon': CupertinoIcons.add, 'label': 'Ajouter'},
-      {'icon': CupertinoIcons.bell, 'label': 'Alertes'},
+      {'icon': CupertinoIcons.money_dollar, 'label': 'Budget'},
       {'icon': CupertinoIcons.gear, 'label': 'Paramètres'},
     ];
 
@@ -898,9 +894,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       case 2: // Ajouter
         Navigator.pushNamed(context, '/add-product');
         break;
-      case 3: // Alertes
-        // For now, show notifications sheet
-        _showNotificationsSheet();
+      case 3: // Budget
+        Navigator.pushNamed(context, '/budget');
         break;
       case 4: // Paramètres
         Navigator.pushNamed(context, '/settings');

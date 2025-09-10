@@ -84,16 +84,12 @@ class _InventoryScreenState extends State<InventoryScreen> {
     }
   }
 
-  /// Handle database connection errors by resetting the service state
+  /// Handle database connection errors - DatabaseService handles reconnection automatically
   Future<void> _handleDatabaseConnectionError() async {
-    try {
-      print('[InventoryScreen] Handling database connection error...');
-      // Don't close the database - let DatabaseService handle reconnection
-      // The service will automatically recover on next database access
-      print('[InventoryScreen] Database service will auto-recover on next access');
-    } catch (e) {
-      print('[InventoryScreen] Error during database error handling: $e');
-    }
+    print('[InventoryScreen] Database connection error detected - DatabaseService will auto-recover');
+    print('[InventoryScreen] No manual intervention needed - connection will be restored automatically');
+    // DatabaseService handles all reconnection logic internally
+    // No need to close or reset anything manually
   }
 
   @override

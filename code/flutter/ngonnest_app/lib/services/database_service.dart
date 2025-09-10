@@ -19,8 +19,14 @@ class DatabaseService {
 
   /// Enhanced getter with proper lifecycle management and synchronization
   Future<Database> get database async {
+    // Fast path: return existing connection if available and truly open
+    if (_database != null && _isConnected && _database!.isOpen) {
+      return _database!;
+    }
+
+    // Use synchronization for connection management
     return await _lock.synchronized(() async {
-      // Return existing connection if available and truly open
+      // Double-check after acquiring lock
       if (_database != null && _isConnected && _database!.isOpen) {
         return _database!;
       }
@@ -578,17 +584,40 @@ class DatabaseService {
     }
   }
 
-  /// Close database - ONLY CALL FROM MAIN APP SHUTDOWN
-  /// Background services should NOT call this method
+  /// Emergency close database - ONLY CALL FROM MAIN APP SHUTDOWN
+  /// This method should NEVER be called during normal app operation
+  /// It will break all database operations until app restart
   Future<void> close() async {
-    if (_database != null) {
-      final db = _database!;
-      _database = null;
-      _isConnected = false;
-      _lastConnectionCheck = null;
-      await db.close();
-      print('[DatabaseService] Database closed successfully');
-    }
+    await _lock.synchronized(() async {
+      if (_database != null) {
+        final db = _database!;
+        _database = null;
+        _isConnected = false;
+        _isInitializing = false;
+        _lastConnectionCheck = null;
+        _connectionRetryCount = 0;
+
+        try {
+          await db.close();
+          print('[DatabaseService] ⚠️  Database EMERGENCY closed successfully');
+          print('[DatabaseService] ⚠️  WARNING: All database operations will fail until app restart!');
+        } catch (e) {
+          print('[DatabaseService] Error during emergency close: $e');
+        }
+      }
+    });
+  }
+
+  /// Get database connection status for debugging
+  Map<String, dynamic> getConnectionStatus() {
+    return {
+      'is_connected': _isConnected,
+      'is_initializing': _isInitializing,
+      'has_database': _database != null,
+      'is_open': _database?.isOpen ?? false,
+      'last_check': _lastConnectionCheck?.toIso8601String(),
+      'retry_count': _connectionRetryCount,
+    };
   }
 
   /// Debug method: Check table structure
