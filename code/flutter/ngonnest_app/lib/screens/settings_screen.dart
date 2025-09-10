@@ -3,6 +3,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../theme/theme_mode_notifier.dart';
+import '../widgets/main_navigation_wrapper.dart';
+import '../services/navigation_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -43,7 +45,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     {'code': 'en', 'name': 'English'},
     {'code': 'es', 'name': 'Español'},
   ];
-
   final List<Map<String, String>> _notificationFrequencies = [
     {'code': 'quotidienne', 'name': 'Quotidienne'},
     {'code': 'hebdomadaire', 'name': 'Hebdomadaire'},
@@ -51,57 +52,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Le Consumer entoure maintenant MainNavigationWrapper
+    // Le contenu de l'écran (anciennement dans le body du Scaffold interne)
+    // est passé en tant que 'body' à MainNavigationWrapper
     return Consumer<ThemeModeNotifier>(
       builder: (context, themeModeNotifier, child) {
-        return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        elevation: 0,
-        shadowColor: Colors.transparent,
-        leading: CupertinoButton(
-          padding: EdgeInsets.zero,
-          onPressed: () => Navigator.of(context).pop(),
-          child: Icon(
-            CupertinoIcons.back,
-            color: Theme.of(context).colorScheme.onSurface,
-            size: 24,
-          ),
-        ),
-        title: Text(
-          'Paramètres',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.w600,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-        centerTitle: true,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(height: 1, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3)),
-        ),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Minimalist Header
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 16,
-                ),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
+        // MainNavigationWrapper est le widget principal
+        // Il gère probablement la barre de navigation en bas et un Scaffold
+        return MainNavigationWrapper(
+          currentIndex: 4, // Settings is index 4
+          onTabChanged: (index) => NavigationService.navigateToTab(context, index),
+          // Le contenu spécifique de l'écran Paramètres est passé ici
+          body: Builder(
+            builder: (BuildContext context) {
+              // Utiliser Builder pour accéder au contexte correct
+              // si MainNavigationWrapper crée un nouveau Scaffold
+              return Scaffold(
+                // AppBar est défini ici, à l'intérieur du Scaffold
+                // fourni par MainNavigationWrapper (espérons-le)
+                appBar: AppBar(
+                  title: const Text('Paramètres'),
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                  // Ne pas mettre automaticallyImplyLeading ici si MainNavigationWrapper gère la navigation
+                  // Sinon, si c'est un écran de premier niveau, c'est ok.
+                  automaticallyImplyLeading: false,
+                  elevation: 0,
+                  actions: [
                     Container(
+                      margin: const EdgeInsets.only(right: 16),
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
@@ -111,345 +90,296 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       child: Icon(
                         CupertinoIcons.settings,
                         size: 20,
-                        color: Theme.of(context).colorScheme.primary,
+                        color: Theme.of(context).colorScheme.onPrimary,
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    Column(
+                  ],
+                ),
+                body: SafeArea(
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Préférences',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: Theme.of(context).colorScheme.onSurface,
+                        // Language Section
+                        _buildSectionTitle('Langue'),
+                        _buildSettingCard(
+                          title: 'Langue de l\'application',
+                          subtitle: 'Choisissez votre langue préférée',
+                          child: Row(
+                            children: [
+                              SizedBox(
+                                width: 100,
+                                child: DropdownButton<String>(
+                                  value: _selectedLanguage,
+                                  underline: const SizedBox(),
+                                  items: _languages
+                                      .map(
+                                        (lang) => DropdownMenuItem(
+                                          value: lang['code'],
+                                          child: Text(
+                                            lang['name']!,
+                                            style: TextStyle(
+                                              color: Theme.of(context).colorScheme.onSurface,
+                                              fontSize: 16,
+                                            ),
+                                          ),
+                                        ),
+                                      )
+                                      .toList(),
+                                  onChanged: (value) {
+                                    setState(() => _selectedLanguage = value!);
+                                    // TODO: Implement language change functionality
+                                  },
+                                  isExpanded: true,
+                                  hint: const Text(
+                                    'Langue',
+                                    style: TextStyle(fontSize: 16),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              IconButton(
+                                onPressed: () {},
+                                icon: Icon(
+                                  CupertinoIcons.globe,
+                                  color: Theme.of(context).colorScheme.primary,
+                                  size: 24,
+                                ),
+                                tooltip: 'Sélectionnez pour changer l\'interface',
+                              ),
+                            ],
                           ),
                         ),
-                        Text(
-                          'Personnalisez votre expérience',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                        const SizedBox(height: 24),
+                        // Notifications Section
+                        _buildSectionTitle('Notifications'),
+                        _buildSettingCard(
+                          title: 'Notifications push',
+                          subtitle: 'Recevoir des alertes sur l\'app',
+                          child: Row(
+                            children: [
+                              CupertinoSwitch(
+                                value: _notificationsEnabled,
+                                onChanged: (value) {
+                                  setState(() => _notificationsEnabled = value);
+                                  // TODO: Implement notification settings
+                                },
+                                activeColor: Theme.of(context).colorScheme.primary,
+                              ),
+                              const SizedBox(width: 8),
+                              IconButton(
+                                onPressed: () {},
+                                icon: Icon(
+                                  CupertinoIcons.bell,
+                                  color: Theme.of(context).colorScheme.primary,
+                                  size: 24,
+                                ),
+                                tooltip: 'Activer rappels pour stocks bas',
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (_notificationsEnabled) ...[
+                          const SizedBox(height: 8),
+                          Container(
+                            margin: const EdgeInsets.only(left: 16),
+                            child: _buildSettingCard(
+                              title: 'Fréquence des notifications',
+                              subtitle: 'Choisissez la fréquence des rappels',
+                              child: SizedBox(
+                                width: 120,
+                                child: DropdownButton<String>(
+                                  value: _notificationFrequency,
+                                  underline: const SizedBox(),
+                                  items: _notificationFrequencies
+                                      .map(
+                                        (freq) => DropdownMenuItem(
+                                          value: freq['code'],
+                                          child: Text(
+                                            freq['name']!,
+                                            style: TextStyle(
+                                              color: Theme.of(context).colorScheme.onSurface,
+                                              fontSize: 16,
+                                            ),
+                                          ),
+                                        ),
+                                      )
+                                      .toList(),
+                                  onChanged: (value) =>
+                                      setState(() => _notificationFrequency = value!),
+                                  isExpanded: true,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 24),
+                        // Privacy Section
+                        _buildSectionTitle('Confidentialité'),
+                        _buildSettingCard(
+                          title: 'Données locales uniquement',
+                          subtitle: 'Pas de sync sans accord explicite',
+                          child: Row(
+                            children: [
+                              CupertinoSwitch(
+                                value: _localDataOnly,
+                                onChanged: (value) {
+                                  if (!value) {
+                                    _showCloudSyncConsent();
+                                  } else {
+                                    setState(() => _localDataOnly = value);
+                                  }
+                                },
+                                activeColor: Theme.of(context).colorScheme.primary,
+                              ),
+                              const SizedBox(width: 8),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        // Theme Section
+                        _buildSectionTitle('Thème'),
+                        _buildSettingCard(
+                          title:
+                              'Mode ${themeModeNotifier.themeMode == ThemeMode.light ? 'clair' : themeModeNotifier.themeMode == ThemeMode.dark ? 'sombre' : 'système'}',
+                          subtitle: 'Changer l\'apparence de l\'application',
+                          child: CupertinoSwitch(
+                            value: themeModeNotifier.themeMode == ThemeMode.dark,
+                            onChanged: (value) {
+                              themeModeNotifier.toggleTheme();
+                            },
+                            activeColor: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                        // Support Section
+                        _buildSectionTitle('Support'),
+                        _buildSettingCard(
+                          title: 'Envoyer un feedback',
+                          subtitle: 'Partagez vos suggestions',
+                          child: ElevatedButton.icon(
+                            onPressed: _showFeedbackDialog,
+                            icon: const Icon(CupertinoIcons.mail, size: 18),
+                            label: const Text('Envoyer'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Theme.of(context).colorScheme.primary,
+                              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 12,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        _buildSettingCard(
+                          title: 'Signaler un bug',
+                          subtitle: 'Décrivez le problème',
+                          child: ElevatedButton.icon(
+                            onPressed: _showBugReportDialog,
+                            icon: const Icon(Icons.bug_report, size: 18),
+                            label: const Text('Signaler'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Theme.of(context).colorScheme.primary,
+                              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 12,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        // Data Management Section
+                        _buildSectionTitle('Données'),
+                        _buildSettingCard(
+                          title: 'Exporter les données',
+                          subtitle: 'Sauvegarder vos données localement',
+                          child: ElevatedButton.icon(
+                            onPressed: _exportData,
+                            icon: const Icon(Icons.download, size: 16),
+                            label: const Text('Exporter'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Theme.of(context).colorScheme.secondary,
+                              foregroundColor: Theme.of(context).colorScheme.onSecondary,
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        _buildSettingCard(
+                          title: 'Importer des données',
+                          subtitle: 'Restaurer depuis un fichier sauvegardé',
+                          child: ElevatedButton.icon(
+                            onPressed: _importData,
+                            icon: const Icon(Icons.upload, size: 16),
+                            label: const Text('Importer'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Theme.of(context).colorScheme.secondary,
+                              foregroundColor: Theme.of(context).colorScheme.onSecondary,
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        _buildSettingCard(
+                          title: 'Supprimer toutes les données',
+                          subtitle: 'Reset complet - Action irréversible',
+                          child: ElevatedButton.icon(
+                            onPressed: _showDeleteAllDataConfirmation,
+                            icon: const Icon(Icons.delete_forever, size: 16, color: Colors.white),
+                            label: const Text('Supprimer'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red.shade600,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 48),
+                        // Save Button in content
+                        ElevatedButton(
+                          onPressed: _saveSettings,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Theme.of(context).colorScheme.primary,
+                            foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            minimumSize: const Size(double.infinity, 50),
+                          ),
+                          child: const Text(
+                            'Sauvegarder',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                           ),
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 32),
-
-              // Language Section
-              _buildSectionTitle('Langue'),
-              _buildSettingCard(
-                title: 'Langue de l\'application',
-                subtitle: 'Choisissez votre langue préférée',
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: 100,
-                      child: DropdownButton<String>(
-                        value: _selectedLanguage,
-                        underline: const SizedBox(),
-                        items: _languages
-                            .map(
-                              (lang) => DropdownMenuItem(
-                                value: lang['code'],
-                                child: Text(
-                                  lang['name']!,
-                                  style: TextStyle(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (value) {
-                          setState(() => _selectedLanguage = value!);
-                          // TODO: Implement language change functionality
-                          // When language is changed, update app locale
-                          // This requires:
-                          // 1. Integration with flutter_localizations
-                          // 2. App-level locale state management
-                          // 3. Dynamic string loading based on selected language
-                          // Example: context.read<LocaleNotifier>().setLocale(Locale(value!));
-                        },
-                        isExpanded: true,
-                        hint: const Text(
-                          'Langue',
-                          style: TextStyle(fontSize: 16),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      onPressed: () {},
-                      icon: Icon(
-                        CupertinoIcons.globe,
-                        color: Theme.of(context).colorScheme.primary,
-                        size: 24,
-                      ),
-                      tooltip: 'Sélectionnez pour changer l\'interface',
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Notifications Section
-              _buildSectionTitle('Notifications'),
-              _buildSettingCard(
-                title: 'Notifications push',
-                subtitle: 'Recevoir des alertes sur l\'app',
-                child: Row(
-                  children: [
-                    CupertinoSwitch(
-                      value: _notificationsEnabled,
-                      onChanged: (value) {
-                        setState(() => _notificationsEnabled = value);
-                        // TODO: Implement notification settings
-                        // When notifications are enabled/disabled:
-                        // 1. Update system notification permissions
-                        // 2. Register/unregister for push notifications
-                        // 3. Update background task scheduling
-                        // 4. Save preference to SharedPreferences
-                        // Example: await NotificationService.setNotificationsEnabled(value);
-                      },
-                      activeColor: Theme.of(context).colorScheme.primary,
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      onPressed: () {},
-                      icon: Icon(
-                        CupertinoIcons.bell,
-                        color: Theme.of(context).colorScheme.primary,
-                        size: 24,
-                      ),
-                      tooltip: 'Activer rappels pour stocks bas',
-                    ),
-                  ],
-                ),
-              ),
-
-              if (_notificationsEnabled) ...[
-                const SizedBox(height: 8),
-                Container(
-                  margin: const EdgeInsets.only(left: 16),
-                  child: _buildSettingCard(
-                    title: 'Fréquence des notifications',
-                    subtitle: 'Choisissez la fréquence des rappels',
-                    child: SizedBox(
-                      width: 120,
-                      child: DropdownButton<String>(
-                        value: _notificationFrequency,
-                        underline: const SizedBox(),
-                        items: _notificationFrequencies
-                            .map(
-                              (freq) => DropdownMenuItem(
-                                value: freq['code'],
-                                child: Text(
-                                  freq['name']!,
-                                  style: TextStyle(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (value) =>
-                            setState(() => _notificationFrequency = value!),
-                        isExpanded: true,
-                      ),
-                    ),
                   ),
                 ),
-              ],
-              const SizedBox(height: 24),
-
-              // Privacy Section
-              _buildSectionTitle('Confidentialité'),
-              _buildSettingCard(
-                title: 'Données locales uniquement',
-                subtitle: 'Pas de sync sans accord explicite',
-                child: Row(
-                  children: [
-                    CupertinoSwitch(
-                      value: _localDataOnly,
-                      onChanged: (value) {
-                        if (!value) {
-                          _showCloudSyncConsent();
-                        } else {
-                          setState(() => _localDataOnly = value);
-                        }
-                      },
-                      activeColor: Theme.of(context).colorScheme.primary,
-                    ),
-                    const SizedBox(width: 8),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Theme Section
-              _buildSectionTitle('Thème'),
-              _buildSettingCard(
-                title: 'Mode ${themeModeNotifier.themeMode == ThemeMode.light ? 'clair' : themeModeNotifier.themeMode == ThemeMode.dark ? 'sombre' : 'système'}',
-                subtitle: 'Changer l\'apparence de l\'application',
-                child: CupertinoSwitch(
-                  value: themeModeNotifier.themeMode == ThemeMode.dark,
-                  onChanged: (value) {
-                    themeModeNotifier.toggleTheme();
-                  },
-                  activeColor: Theme.of(context).colorScheme.primary,
-                ),
-              ),
-
-              const SizedBox(height: 32),
-
-              // Support Section
-              _buildSectionTitle('Support'),
-              _buildSettingCard(
-                title: 'Envoyer un feedback',
-                subtitle: 'Partagez vos suggestions',
-                child: ElevatedButton.icon(
-                  onPressed: _showFeedbackDialog,
-                  icon: const Icon(CupertinoIcons.mail, size: 18),
-                  label: const Text('Envoyer'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              _buildSettingCard(
-                title: 'Signaler un bug',
-                subtitle: 'Décrivez le problème',
-                child: ElevatedButton.icon(
-                  onPressed: _showBugReportDialog,
-                  icon: const Icon(Icons.bug_report, size: 18),
-                  label: const Text('Signaler'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Data Management Section
-              _buildSectionTitle('Données'),
-              _buildSettingCard(
-                title: 'Exporter les données',
-                subtitle: 'Sauvegarder vos données localement',
-                child: ElevatedButton.icon(
-                  onPressed: _exportData,
-                  icon: const Icon(Icons.download, size: 16),
-                  label: const Text('Exporter'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.secondary,
-                    foregroundColor: Theme.of(context).colorScheme.onSecondary,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-
-              _buildSettingCard(
-                title: 'Importer des données',
-                subtitle: 'Restaurer depuis un fichier sauvegardé',
-                child: ElevatedButton.icon(
-                  onPressed: _importData,
-                  icon: const Icon(Icons.upload, size: 16),
-                  label: const Text('Importer'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.secondary,
-                    foregroundColor: Theme.of(context).colorScheme.onSecondary,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-
-              _buildSettingCard(
-                title: 'Supprimer toutes les données',
-                subtitle: 'Reset complet - Action irréversible',
-                child: ElevatedButton.icon(
-                  onPressed: _showDeleteAllDataConfirmation,
-                  icon: const Icon(Icons.delete_forever, size: 16, color: Colors.white),
-                  label: const Text('Supprimer'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red.shade600,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 48),
-            ],
+              );
+            },
           ),
-        ),
-      ),
-
-      // Fixed Bottom Save Button
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          border: Border(
-            top: BorderSide(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1), width: 1),
-          ),
-        ),
-        child: ElevatedButton(
-          onPressed: _saveSettings,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            foregroundColor: Theme.of(context).colorScheme.onPrimary,
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            minimumSize: const Size(double.infinity, 50),
-          ),
-          child: const Text(
-            'Sauvegarder',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-          ),
-        ),
-      ),
         );
-      }
+      },
     );
   }
 
@@ -504,9 +434,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   subtitle,
                   style: TextStyle(
                     fontSize: 14,
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withOpacity(0.7),
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                   ),
                 ),
               ],
@@ -553,14 +481,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onPressed: () {
               if (_hasAcceptedCloudSync) {
                 // TODO: Implement cloud synchronization
-                // When user accepts cloud sync:
-                // 1. Authenticate with cloud service (Google Drive, iCloud, etc.)
-                // 2. Set up data synchronization
-                // 3. Schedule regular backups
-                // 4. Handle conflicts and merge strategies
-                // 5. Update local storage preferences
-                // Example: await CloudService.initializeSync();
-
                 setState(() => _localDataOnly = false);
                 Navigator.of(context).pop();
                 _showSyncEnabledMessage();
@@ -634,10 +554,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onPressed: () {
               if (feedbackMessage.trim().isNotEmpty) {
                 // TODO: Implement server-side feedback submission
-                // Current behavior: Just show confirmation dialog
-                // Future: Send feedback to NgonNest servers via API
-                // Example: await FeedbackService.submitFeedback(feedbackMessage);
-
                 Navigator.of(context).pop();
                 _showFeedbackSentMessage();
               }
@@ -730,16 +646,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onPressed: () {
               if (bugDescription.trim().isNotEmpty) {
                 // TODO: Implement bug report handling with Telegram integration
-                // When user reports a bug, automatically redirect to Telegram bot
-                // Pre-load the bug report message for user to send
-                // Example: _redirectToTelegramBotWithBugReport(bugDescription);
-                //
-                // This involves:
-                // 1. Preparing bug report data (description, device info, app version, etc.)
-                // 2. Creating Telegram deep link with pre-filled message
-                // 3. Opening Telegram app/bot with message ready to send
-                // 4. Optionally store bug report locally for backup
-
                 Navigator.of(context).pop();
                 _showBugReportedMessage();
               }
@@ -787,23 +693,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   // TODO: Implement data export functionality
-  // Export all user data to local JSON file
-  // Should include:
-  // - Household profile (foyer)
-  // - Inventory items
-  // - User preferences (settings)
-  // - Encryption with AES-256 as per Conception_Fonctionnelle_NgonNest_MVP_Sprint1.md
-  // - File saved to app local storage
-  // - User gets feedback on successful export
   Future<void> _exportData() async {
     try {
-      // Implementation example:
-      // final exportService = ExportImportService();
-      // final data = await exportService.exportAllData();
-      // final fileName = 'ngonnest_backup_${DateTime.now().toIso8601String().split('T')[0]}.json';
-      // final filePath = await _saveFileLocally(data, fileName);
-      // _showExportSuccessDialog(filePath);
-
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Fonctionnalité d\'export en cours de développement'),
@@ -811,7 +702,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       );
     } catch (e, stackTrace) {
-      // Log the error for debugging
       print('Export Error: $e');
       print('StackTrace: $stackTrace');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -824,33 +714,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   // TODO: Implement data import functionality with smart data handling
-  // Import data from JSON file with intelligent merge strategy
-  // Should handle:
-  // - File picker to select JSON file
-  // - Data validation and decryption (AES-256)
-  // - SSOT refresh after import
-  // - Missing data fallback: use current values or defaults
-  // - Example: if user had French in onboarding but import has no language,
-  //   keep current French setting instead of resetting to default
-  // - User confirmation and progress feedback
-  // - Tests: >90% success rate, verify all imported data integrity
   Future<void> _importData() async {
     try {
-      // Implementation example:
-      // final exportService = ExportImportService();
-      // final filePath = await _pickFileForImport();
-      // final importedData = await exportService.importData(filePath);
-      //
-      // // Smart merge strategy for missing data
-      // final mergedSettings = _mergeImportedData(importedData);
-      //
-      // // Apply merged settings
-      // await _applyMergedSettings(mergedSettings);
-      //
-      // // Refresh app state
-      // _refreshAppState();
-      // _showImportSuccessDialog();
-
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Fonctionnalité d\'import en cours de développement'),
@@ -858,7 +723,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       );
     } catch (e, stackTrace) {
-      // Log the error for debugging
       print('Import Error: $e');
       print('StackTrace: $stackTrace');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -870,15 +734,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  // TODO: Implement complete data deletion with confirmation
-  // Delete ALL user data and reset to initial state
-  // Should include:
-  // - Multi-step confirmation dialog (like "DELETE ALL DATA")
-  // - Clear all SQLite databases (household, inventory)
-  // - Clear all SharedPreferences
-  // - Reset to onboarding state (initial installation)
-  // - App restart or navigation to welcome screen
-  // - No recovery possible - irreversible action
   void _showDeleteAllDataConfirmation() {
     showCupertinoModalPopup<void>(
       context: context,
@@ -900,7 +755,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               '• Profil du foyer\n'
               '• Inventaire complet\n'
               '• Historique d\'achats\n'
-              '• Préférences et paramètres\n\n'
+              '• Préférences et paramètres\n'
               'L\'application retournera à son état initial.',
               textAlign: TextAlign.center,
             ),
@@ -930,7 +785,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _showFinalDeletionConfirmation() {
     String confirmationText = '';
     bool isTextValid = false;
-
     showCupertinoModalPopup<void>(
       context: context,
       builder: (BuildContext context) => StatefulBuilder(
@@ -948,14 +802,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 color: Colors.transparent,
                 child: Container(
                   height: 40,
-                  // padding: const EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.surface,
-                    // borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: isTextValid
                           ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.error,
+                          : Theme.of(context).colorScheme.error ??
+                              Colors.red, // Fallback si error n'existe pas
                     ),
                   ),
                   child: TextField(
@@ -966,10 +819,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         isTextValid = confirmationText == 'SUPPRIMER';
                       });
                     },
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       hintText: 'SUPPRIMER',
                       hintStyle: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                        // color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
                         fontFamily: 'monospace',
                         fontWeight: FontWeight.normal,
                       ),
@@ -999,10 +852,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   color: isTextValid ? Colors.red : Colors.grey,
                 ),
               ),
-              onPressed: isTextValid ? () {
-                Navigator.of(context).pop();
-                _performCompleteDataDeletion();
-              } : null,
+              onPressed: isTextValid
+                  ? () {
+                      Navigator.of(context).pop();
+                      _performCompleteDataDeletion();
+                    }
+                  : null,
             ),
           ],
         ),
@@ -1011,30 +866,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   // TODO: Implement complete data deletion
-  // Execute the irreversible deletion process
   Future<void> _performCompleteDataDeletion() async {
     try {
-      // Implementation example:
-      // // 1. Delete all SQLite data
-      // await DatabaseService.deleteAllData();
-      //
-      // // 2. Clear SharedPreferences
-      // final prefs = await SharedPreferences.getInstance();
-      // await prefs.clear();
-      //
-      // // 3. Clear any cached data
-      // await _clearAllCache();
-      //
-      // // 4. Reset app to initial state
-      // await _resetToInitialState();
-      //
-      // // 5. Navigate to onboarding/welcome screen
-      // _navigateToWelcomeScreen();
-
       _showDeletionSuccessDialog();
-
     } catch (e, stackTrace) {
-      // Log the error for debugging
       print('Deletion Error: $e');
       print('StackTrace: $stackTrace');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1061,7 +896,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onPressed: () {
               Navigator.of(context).pop();
               // TODO: Implement app restart or navigation to welcome screen
-              // Example: SystemNavigator.pop(); // Or navigate to OnboardingScreen
             },
           ),
         ],
@@ -1071,24 +905,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _saveSettings() {
     // TODO: Implement comprehensive settings persistence
-    // When user saves settings, store all preferences persistently:
-    // 1. Save to SharedPreferences: language, notifications, cloud sync, etc.
-    // 2. Validate settings before saving (e.g., cloud sync authentication)
-    // 3. Handle save errors and provide user feedback
-    // 4. Update any running services (notifications, background tasks)
-    // 5. Ensure settings are loaded on next app start
-    //
-    // Example implementation:
-    // final prefs = await SharedPreferences.getInstance();
-    // await prefs.setString('language', _selectedLanguage);
-    // await prefs.setBool('notifications_enabled', _notificationsEnabled);
-    // await prefs.setBool('local_data_only', _localDataOnly);
-    // await prefs.setString('notification_frequency', _notificationFrequency);
-    //
-    // Then show success confirmation
-
-    // Here we would save to database/local storage
-    // For now, just show a confirmation
     showCupertinoModalPopup<void>(
       context: context,
       builder: (BuildContext context) => CupertinoAlertDialog(

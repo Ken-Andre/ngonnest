@@ -1,6 +1,6 @@
 # NgonNest
 
-NgonNest est une application mobile de gestion de commandes pour les restaurants, conçue pour fonctionner en mode hors‑ligne et faciliter l'expansion régionale et internationale. Ce dépôt GitHub constitue la **référence unique (Single Source of Truth)** du projet, centralisant tout le code s la documentation technique et fonctionnelle, ainsi que les tickets de suivi source, la documentation technique et fonctionnelle, ainsi que les tickets de suivi【535510735933765†screenshot】.】.
+NgonNest est une application mobile de gestion de commandes pour la gestion de son domicile, conçue pour fonctionner en mode hors‑ligne et faciliter l'expansion régionale et internationale. Ce dépôt GitHub constitue la **référence unique (Single Source of Truth)** du projet, centralisant tout le code s la documentation technique et fonctionnelle, ainsi que les tickets de suivi source, la documentation technique et fonctionnelle, ainsi que les tickets de suivi【535510735933765†screenshot】.】.
 
 - `code/flutter/` – contient l'application mobile Flutter. Un fichier `.gitkeep` est présent pour conserver l'arborescence.
 - `code/telegram_bot/` – contiendra le code du bot Telegram qui permet de créer automatiquement des issues GitHub depuis l'application【845134010872208†screenshot】.
@@ -25,7 +25,29 @@ flutter pub get
 flutter run
 ```
 
-L'application repose sur une base de données locale SQLite pour permettre une utilisation hors‑ligne et la synchronisation ultérieure lorsqu'une connexion est disponible. Les tests unitaires et fonctionnels se trouvent dans le dossier `docs/tests` et seront ajoutés progressivement.
+L'application repose sur une base de données locale SQLite pour permettre une utilisation hors‑ligne et la synchronisation ultérieure lorsqu'une connexion est disponible. 
+
+## Fonctionnalités Implémentées
+
+### Gestion de la Connectivité
+- **Bannière de connectivité globale** : Affichage automatique du statut réseau sur tous les écrans
+- **Service de surveillance réseau** : Détection en temps réel des changements de connectivité
+- **Interface adaptative** : Support automatique des thèmes light/dark
+- **Tests unitaires** : Couverture complète des widgets et services de connectivité
+
+### Navigation Cohérente
+- **MainNavigationWrapper** : Structure de navigation unifiée pour tous les écrans principaux
+- **Barre de navigation intégrée** : 5 onglets adaptés au contexte camerounais (Accueil, Inventaire, Ajouter, Budget, Paramètres)
+- **Navigation fluide** : Transitions cohérentes avec animations de 200ms et feedback visuel immédiat
+- **Interface harmonisée** : Styles et couleurs cohérents respectant le thème de l'application
+- **Intégration complète** : Implémentée sur Dashboard, Inventory et Budget screens
+
+### Console Développeur
+- **Interface de debug** : Écran dédié pour visualiser les logs et erreurs
+- **Filtrage avancé** : Tri par sévérité et type d'erreur
+- **Métadonnées système** : Informations contextuelles pour le debug
+
+Les tests unitaires et fonctionnels se trouvent dans le dossier `code/flutter/ngonnest_app/test/` et sont maintenus à jour avec les nouvelles fonctionnalités.
 
 ## Lancer le bot Telegram
 

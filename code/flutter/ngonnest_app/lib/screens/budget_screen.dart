@@ -50,7 +50,9 @@ class BudgetScreen extends StatelessWidget {
                             'Suivez vos achats et dépenses produits ménagers',
                             style: TextStyle(
                               fontSize: 14,
-                              color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.9),
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onPrimary.withOpacity(0.9),
                             ),
                           ),
                         ],
@@ -60,7 +62,9 @@ class BudgetScreen extends StatelessWidget {
                       width: 60,
                       height: 60,
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.2),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onPrimary.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
@@ -150,7 +154,9 @@ class BudgetScreen extends StatelessWidget {
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.outline.withOpacity(0.5),
                   ),
                 ),
                 child: Row(
@@ -166,7 +172,9 @@ class BudgetScreen extends StatelessWidget {
                         'Fonctionnalités avancées : Alertes de dépassement de budget, Suivi des achats par produit',
                         style: TextStyle(
                           fontSize: 14,
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withOpacity(0.7),
                         ),
                       ),
                     ),
@@ -205,11 +213,7 @@ class BudgetScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(
-              icon,
-              size: 24,
-              color: color,
-            ),
+            Icon(icon, size: 24, color: color),
             const SizedBox(height: 8),
             Text(
               value,
@@ -283,7 +287,9 @@ class BudgetScreen extends StatelessWidget {
                   fontSize: 14,
                   color: isOverBudget
                       ? Theme.of(context).colorScheme.error
-                      : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                      : Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withOpacity(0.7),
                   fontWeight: FontWeight.w500,
                 ),
               ),

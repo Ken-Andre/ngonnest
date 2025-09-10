@@ -46,7 +46,7 @@ class AppWithConnectivityOverlay extends StatelessWidget {
 Widget wrapper qui fournit une structure de navigation cohérente pour tous les écrans principaux :
 
 ```dart
-class MainNavigationWrapper extends StatefulWidget {
+class MainNavigationWrapper extends StatelessWidget {
   final Widget body;
   final int currentIndex;
   final Function(int) onTabChanged;
@@ -58,26 +58,33 @@ class MainNavigationWrapper extends StatefulWidget {
 MainNavigationWrapper(
   body: DashboardScreen(),
   currentIndex: 0,
-  onTabChanged: (index) => _navigateToTab(index),
+  onTabChanged: (index) => NavigationService.navigateToTab(context, index),
 )
 ```
 
-#### _buildBottomNavigation
-Barre de navigation spécifique au contexte  avec 5 onglets principaux :
+**Caractéristiques :**
+- Encapsule automatiquement le contenu dans un Scaffold
+- Intègre la barre de navigation en bas avec animations fluides
+- Utilise les couleurs du thème pour compatibilité light/dark
+- Gère la mise en évidence de l'onglet actuel
+- Transitions animées de 200ms pour les changements d'état
 
-```dart
-class CameroonBottomNavigation extends StatelessWidget {
-  final int currentIndex;
-  final Function(int) onTap;
-}
-```
+#### Barre de Navigation Intégrée
+Barre de navigation avec 5 onglets principaux adaptés au contexte camerounais :
 
 **Onglets disponibles :**
-- **Accueil** (index 0) : Dashboard principal
-- **Produits** (index 1) : Liste des produits/inventaire
+- **Accueil** (index 0) : Dashboard principal avec vue d'ensemble
+- **Inventaire** (index 1) : Liste des produits et gestion de l'inventaire
 - **Ajouter** (index 2) : Ajout de nouveaux produits
-- **Budget** (index 3) : Gestion du budget
-- **Profil** (index 3) : Paramètres et profil utilisateur
+- **Budget** (index 3) : Gestion du budget et suivi des dépenses
+- **Paramètres** (index 4) : Configuration et profil utilisateur
+
+**Icônes utilisées :**
+- Accueil : `CupertinoIcons.house`
+- Inventaire : `CupertinoIcons.cube_box`
+- Ajouter : `CupertinoIcons.add`
+- Budget : `CupertinoIcons.money_dollar`
+- Paramètres : `CupertinoIcons.gear`
 
 ### Structure du Projet
 
@@ -85,17 +92,22 @@ class CameroonBottomNavigation extends StatelessWidget {
 lib/
 ├── widgets/
 │   ├── connectivity_banner.dart           # Bannière de connectivité
-│   ├── main_navigation_wrapper.dart       # Wrapper de navigation cohérente
-│   └── cameroon_bottom_navigation.dart    # Barre de navigation camerounaise
+│   └── main_navigation_wrapper.dart       # Wrapper de navigation cohérente
 ├── screens/
+│   ├── dashboard_screen.dart              # Écran principal avec navigation
+│   ├── inventory_screen.dart              # Écran inventaire avec navigation
+│   ├── budget_screen.dart                 # Écran budget avec navigation
 │   ├── developer_console_screen.dart      # Console développeur
 │   └── [autres écrans...]
 ├── services/
-│   └── connectivity_service.dart          # Service de connectivité
+│   ├── connectivity_service.dart          # Service de connectivité
+│   └── navigation_service.dart            # Service de navigation
 ├── main.dart                              # Point d'entrée avec overlay global
 └── test/
-    └── widgets/
-        └── connectivity_banner_test.dart  # Tests unitaires bannière
+    ├── widgets/
+    │   └── connectivity_banner_test.dart  # Tests unitaires bannière
+    └── integration/
+        └── connectivity_integration_test.dart # Tests d'intégration
 ```
 
 ## Installation
@@ -132,9 +144,12 @@ Les tests unitaires pour ConnectivityBanner se trouvent dans `test/widgets/conne
 
 #### Navigation Cohérente
 - ✅ Widget MainNavigationWrapper pour structure unifiée
-- ✅ Widget CameroonBottomNavigation avec 4 onglets principaux
-- ✅ Définition des routes et index pour navigation fluide
+- ✅ Barre de navigation intégrée avec 5 onglets principaux
+- ✅ Intégration sur Dashboard, Inventory et Budget screens
+- ✅ Animations fluides et feedback visuel immédiat
+- ✅ Utilisation du NavigationService pour la gestion des routes
 - ✅ Interface harmonisée respectant le thème de l'application
+- ✅ Support complet des couleurs de thème light/dark
 
 ### Tests
 Pour tester la bannière de connectivité :
