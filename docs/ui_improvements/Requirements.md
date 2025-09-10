@@ -2,47 +2,49 @@
 
 ## Introduction
 
-Ce document décrit les besoins fonctionnels identifiés lors de l'analyse de l'application NgonNest. L'objectif est d'améliorer l'expérience utilisateur en renforçant la navigation, la recherche et la gestion des préférences.
+This document outlines functional requirements identified during a review of the NgonNest application. The goal is to improve the user experience by strengthening navigation, search, and preference management.
 
 ## Requirements
 
-### Requirement 1: Tableau de bord interactif
-**User Story:** En tant qu'utilisateur, je veux pouvoir appuyer sur les cartes de statistiques du dashboard afin d'accéder rapidement aux listes détaillées.
+### Requirement 1: Interactive dashboard
+**User Story:** As a user, I want to tap dashboard statistic cards to quickly access the related detailed lists.
 
 **Acceptance Criteria:**
-1. WHEN l'utilisateur touche la carte "Articles totaux" THEN l'application SHALL ouvrir la liste complète de l'inventaire.
-2. WHEN l'utilisateur touche la carte "Urgences" THEN l'application SHALL afficher la liste filtrée des articles urgents.
-3. WHEN l'état de synchronisation change THEN un indicateur SHALL informer l'utilisateur du temps depuis la dernière synchronisation.
+1. When the user taps the “Total items” card, the app shall open the full inventory list.
+2. When the user taps the “Urgent items” card, the app shall show the filtered list of urgent items.
+3. When the sync status changes, a banner shall update within 1 second and display the time since last sync. The banner turns red if no sync occurred for 30 seconds.
 
-### Requirement 2: Recherche et filtres dans l'inventaire
-**User Story:** En tant qu'utilisateur, je veux rechercher et filtrer mes articles afin de retrouver rapidement ce que je cherche.
-
-**Acceptance Criteria:**
-1. WHEN l'utilisateur saisit du texte dans la barre de recherche THEN la liste SHALL se filtrer en temps réel.
-2. WHEN l'utilisateur applique un filtre par pièce ou date d'expiration THEN seuls les articles correspondants SHALL être affichés.
-3. WHEN l'utilisateur met à jour la quantité depuis la liste THEN le changement SHALL être sauvegardé immédiatement.
-
-### Requirement 3: Alertes de budget personnalisées
-**User Story:** En tant qu'utilisateur, je veux définir des budgets par catégorie et être alerté en cas de dépassement.
+### Requirement 2: Inventory search and filters
+**User Story:** As a user, I want to search and filter my items to find what I need quickly.
 
 **Acceptance Criteria:**
-1. WHEN une dépense dépasse le budget mensuel THEN une alerte SHALL être affichée.
-2. WHEN l'utilisateur crée une nouvelle catégorie THEN elle SHALL apparaître dans l'écran Budget avec son plafond.
-3. WHEN l'utilisateur consulte l'historique THEN les dépenses SHALL être groupées par mois.
+1. When the user types in the search bar, the list shall refresh with matching items within 150 ms after the last keystroke.
+2. When the user applies a room or expiry-date filter, only matching items shall be displayed and the filter state shall persist when navigating back.
+3. When the user updates an item quantity from the list, the change shall be saved immediately and reflected in under 500 ms. If no item matches the query, an empty-state message shall be shown.
 
-### Requirement 4: Paramètres persistants et multilingues
-**User Story:** En tant qu'utilisateur, je veux que mes préférences (langue, notifications) soient sauvegardées et appliquées partout.
-
-**Acceptance Criteria:**
-1. WHEN l'utilisateur modifie la langue THEN l'interface SHALL se mettre à jour sans redémarrage.
-2. WHEN les notifications sont désactivées THEN aucune alerte SHALL être envoyée.
-3. WHEN l'utilisateur réouvre l'application THEN les réglages précédents SHALL être restaurés depuis `SharedPreferences`.
-
-### Requirement 5: Accessibilité et feedback clair
-**User Story:** En tant qu'utilisateur, je veux une interface accessible et des messages d'erreur explicites pour comprendre les problèmes.
+### Requirement 3: Custom budget alerts
+**User Story:** As a user, I want to define budgets per category and be alerted when spending exceeds them.
 
 **Acceptance Criteria:**
-1. WHEN le mode sombre est activé THEN tous les textes SHALL conserver un contraste ≥4.5:1.
-2. WHEN une erreur de synchronisation se produit THEN un message SHALL proposer une action de résolution.
-3. WHEN une opération est réussie THEN un feedback visuel (SnackBar ou toast) SHALL confirmer l'action.
+1. When monthly spending for a category exceeds 100 % of its limit, the app shall display a red alert banner and, if notification permission is granted, send a local notification within 5 seconds.
+2. When the user creates a new category, it shall appear on the Budget screen with its configured limit.
+3. When the user views history, expenses shall be grouped by month and the list shall load within 2 seconds.
+
+### Requirement 4: Persistent and multilingual settings
+**User Story:** As a user, I want my preferences (language, notifications) saved and applied throughout the app.
+
+**Acceptance Criteria:**
+1. When the user changes the language, the UI shall update immediately without restart and fall back to English for missing translations.
+2. When notifications are disabled, no alerts shall be scheduled or delivered.
+3. When the app is reopened, previous settings shall be restored from `SharedPreferences`.
+4. When notification permission is denied, the app shall inform the user and offer a shortcut to system settings.
+
+### Requirement 5: Accessibility and clear feedback
+**User Story:** As a user, I want an accessible interface and explicit error messages to understand issues.
+
+**Acceptance Criteria:**
+1. When dark mode is active, all text shall maintain a contrast ratio of at least 4.5:1.
+2. When a sync error occurs, a message shall appear with a retry action.
+3. When an operation succeeds, a visual confirmation (SnackBar or toast) shall appear for at least 2 seconds.
+4. When a network request exceeds 10 seconds, the app shall display a timeout message.
 

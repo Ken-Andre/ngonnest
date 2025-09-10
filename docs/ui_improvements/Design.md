@@ -1,40 +1,43 @@
 # Design Document
 
 ## Overview
-Ce document décrit l'approche de conception pour les améliorations UI/UX proposées dans NgonNest. Les changements visent une interface plus interactive, personnalisable et accessible.
+This document describes the design approach for the proposed UI/UX enhancements in NgonNest. The changes aim for a more interactive, customizable, and accessible interface.
 
 ## Architecture
-- **Dashboard** : les cartes de statistiques deviennent des widgets cliquables redirigeant vers des vues filtrées.
-- **Inventaire** : ajout d'un `SearchBar` et d'un `FilterPanel` reposant sur l'état local du `InventoryViewModel`.
-- **Budget** : intégration d'un service de suivi des dépenses par catégorie avec stockage dans la base locale.
-- **Paramètres** : utilisation de `SharedPreferences` pour la persistance et d'un `LocaleProvider` pour le changement de langue.
+- **Dashboard**: statistic cards become tappable widgets navigating to filtered views. A `SyncBanner` component displays last sync time and auto-hides when fresh (<30 s).
+- **Inventory**: a `SearchBar` and `FilterPanel` operate on the local state of `InventoryViewModel` with a 150 ms debounce for queries.
+- **Budget**: a `BudgetService` tracks spending per category, persists data in the local database, and triggers local notifications through `NotificationService` when limits are exceeded.
+- **Settings**: use `SharedPreferences` for persistence and a `LocaleProvider` backed by the `intl` package for language switching with English fallback.
 
 ## Data Flow
-1. Les vues interrogent le `Repository` local (SQLite) pour récupérer ou modifier les données.
-2. Les filtres de recherche agissent en mémoire, puis synchronisent les modifications via le `Repository`.
-3. Les alertes de budget déclenchent des notifications locales lorsque le seuil est dépassé.
+1. Views query the local `Repository` (SQLite) to read or modify data.
+2. Search filters operate in memory and persist changes via the `Repository`.
+3. Budget alerts call `NotificationService` which requests permission on first use and schedules platform-specific notifications.
 
 ## Components and Interfaces
-- `StatsCard` (dashboard) → navigue vers les écrans détaillés.
-- `InventorySearchBar` et `FilterPanel` → exposent des callbacks pour mettre à jour le `InventoryViewModel`.
-- `BudgetCategoryCard` → affiche la progression et gère les alertes.
-- `SettingsPage` → widgets de sélection de langue et de notifications reliés à `SettingsService`.
+- `StatsCard` (dashboard) → navigates to detailed screens and exposes an `onTap` callback.
+- `SyncBanner` → observes connectivity and sync time.
+- `InventorySearchBar` and `FilterPanel` → expose callbacks to update the `InventoryViewModel`.
+- `BudgetCategoryCard` → displays progress and handles alerts.
+- `SettingsPage` → contains language selector and notification toggle tied to `SettingsService` and `LocaleProvider`.
+- `NotificationService` → wraps `flutter_local_notifications` and handles permission prompts and error states.
 
 ## Data Models
-- **Item**: ajout d'attributs `room` et `expiryDate` pour le filtrage.
-- **BudgetCategory**: champs `limit`, `spent`, `month`.
-- **Settings**: `language`, `notificationsEnabled` stockés via `SharedPreferences`.
+- **Item**: adds `room` and `expiryDate` attributes for filtering.
+- **BudgetCategory**: fields `limit`, `spent`, `month`.
+- **Settings**: `language`, `notificationsEnabled`, and `lastSync` stored via `SharedPreferences`.
 
 ## Error Handling
-- Les erreurs de synchronisation affichent une bannière avec option de réessai.
-- Les actions critiques (modification de budget) sont confirmées via dialogues modaux.
+- Sync errors display a banner with a retry action and log details for diagnostics.
+- Critical actions (budget modifications) are confirmed through modal dialogs.
+- If notification permission is denied, `NotificationService` emits a warning message.
 
 ## Testing Strategy
-- Tests unitaires pour `InventoryViewModel` (filtrage, recherche).
-- Tests widget pour la navigation à partir des `StatsCard`.
-- Tests d'intégration simulant le changement de langue et la persistance des paramètres.
+- Unit tests for `InventoryViewModel` (filtering, search debounce) and `BudgetService`.
+- Widget tests verifying navigation from `StatsCard` and visibility of `SyncBanner`.
+- Integration tests simulating language change, notification permissions, and persistence of settings.
 
 ## Implementation Notes
-- Respecter les couleurs et le typographie définies dans `AppTheme`.
-- Prévoir la compatibilité avec les modes clair et sombre.
+- Follow colors and typography defined in `AppTheme`.
+- Ensure compatibility with light and dark modes and maintain ≥4.5:1 contrast.
 
