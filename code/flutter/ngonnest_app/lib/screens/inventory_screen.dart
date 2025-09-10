@@ -4,6 +4,8 @@ import '../models/objet.dart';
 import '../models/foyer.dart';
 import '../repository/inventory_repository.dart';
 import '../services/database_service.dart';
+import '../services/navigation_service.dart';
+import '../widgets/main_navigation_wrapper.dart';
 
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
@@ -102,46 +104,51 @@ class _InventoryScreenState extends State<InventoryScreen> {
       );
     }
 
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Inventaire'),
-          backgroundColor: Theme.of(context).primaryColor,
-          foregroundColor: Colors.white,
-          bottom: const TabBar(
-            tabs: [
-              Tab(
-                icon: Icon(Icons.shopping_cart),
-                text: 'Consommables',
-              ),
-              Tab(
-                icon: Icon(Icons.inventory),
-                text: 'Durables',
+    return MainNavigationWrapper(
+      currentIndex: 1, // Inventory is index 1
+      onTabChanged: (index) => NavigationService.navigateToTab(context, index),
+      body: DefaultTabController(
+        length: 2,
+        child: Scaffold(
+          appBar: AppBar(
+            title: const Text('Inventaire'),
+            backgroundColor: Theme.of(context).primaryColor,
+            foregroundColor: Colors.white,
+            automaticallyImplyLeading: false, // Remove back button since we have bottom nav
+            bottom: const TabBar(
+              tabs: [
+                Tab(
+                  icon: Icon(Icons.shopping_cart),
+                  text: 'Consommables',
+                ),
+                Tab(
+                  icon: Icon(Icons.inventory),
+                  text: 'Durables',
+                ),
+              ],
+              indicatorColor: Colors.white,
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.white70,
+            ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.refresh),
+                onPressed: _loadInventory,
               ),
             ],
-            indicatorColor: Colors.white,
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white70,
           ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: _loadInventory,
-            ),
-          ],
-        ),
-        body: TabBarView(
-          children: [
-            _buildConsommablesTab(),
-            _buildDurablesTab(),
-          ],
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () => _showAddItemDialog(context),
-          backgroundColor: Theme.of(context).primaryColor,
-          foregroundColor: Colors.white,
-          child: const Icon(Icons.add),
+          body: TabBarView(
+            children: [
+              _buildConsommablesTab(),
+              _buildDurablesTab(),
+            ],
+          ),
+          floatingActionButton: FloatingActionButton(
+            onPressed: () => _showAddItemDialog(context),
+            backgroundColor: Theme.of(context).primaryColor,
+            foregroundColor: Colors.white,
+            child: const Icon(Icons.add),
+          ),
         ),
       ),
     );

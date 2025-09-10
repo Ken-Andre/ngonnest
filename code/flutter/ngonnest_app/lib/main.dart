@@ -20,6 +20,7 @@ import 'services/notification_service.dart';
 import 'services/database_service.dart'; // Import DatabaseService
 import 'services/background_task_service.dart'; // Import BackgroundTaskService
 import 'services/connectivity_service.dart'; // Import ConnectivityService
+import 'widgets/connectivity_banner.dart'; // Import ConnectivityBanner
 import 'theme/app_theme.dart';
 import 'theme/theme_mode_notifier.dart'; // Import the new file
 import 'screens/preferences_screen.dart';
@@ -119,17 +120,44 @@ class MyApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
-      home: const SplashScreen(),
+      home: const AppWithConnectivityOverlay(child: SplashScreen()),
       routes: {
-        '/onboarding': (context) => const OnboardingScreen(),
-        '/preferences': (context) => const PreferencesScreen(),
-        '/dashboard': (context) => const DashboardScreen(),
-        '/add-product': (context) => const AddProductScreen(),
-        '/inventory': (context) => const InventoryScreen(),
-        '/budget': (context) => const BudgetScreen(),
-        '/settings': (context) => const SettingsScreen(),
-        '/developer-console': (context) => const DeveloperConsoleScreen(),
+        '/onboarding': (context) => const AppWithConnectivityOverlay(child: OnboardingScreen()),
+        '/preferences': (context) => const AppWithConnectivityOverlay(child: PreferencesScreen()),
+        '/dashboard': (context) => const AppWithConnectivityOverlay(child: DashboardScreen()),
+        '/add-product': (context) => const AppWithConnectivityOverlay(child: AddProductScreen()),
+        '/inventory': (context) => const AppWithConnectivityOverlay(child: InventoryScreen()),
+        '/budget': (context) => const AppWithConnectivityOverlay(child: BudgetScreen()),
+        '/settings': (context) => const AppWithConnectivityOverlay(child: SettingsScreen()),
+        '/developer-console': (context) => const AppWithConnectivityOverlay(child: DeveloperConsoleScreen()),
       },
+    );
+  }
+}
+
+/// Wrapper widget qui affiche la bannière de connectivité en overlay sur tous les écrans
+class AppWithConnectivityOverlay extends StatelessWidget {
+  final Widget child;
+
+  const AppWithConnectivityOverlay({
+    super.key,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        // L'écran principal
+        child,
+        // La bannière de connectivité en overlay
+        Positioned(
+          top: MediaQuery.of(context).padding.top + 8, // Respecter la safe area
+          left: 16,
+          right: 16,
+          child: const ConnectivityBanner(),
+        ),
+      ],
     );
   }
 }

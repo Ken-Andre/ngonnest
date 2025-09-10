@@ -1,35 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import '../widgets/main_navigation_wrapper.dart';
+import '../services/navigation_service.dart';
 
 class BudgetScreen extends StatelessWidget {
   const BudgetScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        elevation: 0,
-        leading: CupertinoButton(
-          padding: EdgeInsets.zero,
-          onPressed: () => Navigator.of(context).pop(),
-          child: Icon(
-            CupertinoIcons.back,
-            color: Theme.of(context).colorScheme.onSurface,
-            size: 24,
-          ),
-        ),
-        title: Text(
-          'Budget',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.w600,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-        centerTitle: true,
-      ),
+    return MainNavigationWrapper(
+      currentIndex: 3, // Budget is index 3
+      onTabChanged: (index) => NavigationService.navigateToTab(context, index),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(20),

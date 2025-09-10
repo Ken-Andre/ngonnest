@@ -167,4 +167,25 @@ class ConnectivityService extends ChangeNotifier {
       'banner_icon': _bannerIcon.toString(),
     };
   }
+
+  /// Méthode pour les tests - permet de forcer l'état de connectivité
+  void setConnectivityForTesting(bool isOnline, bool showBanner) {
+    _isOnline = isOnline;
+    _showBanner = showBanner;
+    _isInitialized = true;
+    
+    if (isOnline && showBanner) {
+      // État reconnecté
+      _bannerMessage = 'De retour en ligne';
+      _bannerColor = Colors.green;
+      _bannerIcon = Icons.wifi;
+    } else if (!isOnline && showBanner) {
+      // État offline
+      _bannerMessage = 'Vous êtes hors ligne';
+      _bannerColor = Colors.orange;
+      _bannerIcon = Icons.wifi_off;
+    }
+    
+    notifyListeners();
+  }
 }

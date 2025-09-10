@@ -7,11 +7,13 @@ import '../models/household_profile.dart';
 import '../services/household_service.dart';
 import '../services/database_service.dart';
 import '../services/error_logger_service.dart';
+import '../services/navigation_service.dart';
 import '../repository/inventory_repository.dart';
 import '../theme/app_theme.dart';
 import 'add_product_screen.dart';
 import '../theme/theme_mode_notifier.dart';
 import '../widgets/connectivity_banner.dart';
+import '../widgets/main_navigation_wrapper.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -140,9 +142,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return Stack(
       children: [
-        // Main scaffold with all content
-        Scaffold(
-          backgroundColor: Theme.of(context).colorScheme.background,
+        // Main navigation wrapper with dashboard content
+        MainNavigationWrapper(
+          currentIndex: 0, // Dashboard is index 0
+          onTabChanged: (index) => NavigationService.navigateToTab(context, index),
           body: SafeArea(
             child: Column(
               children: [
@@ -153,9 +156,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Expanded(
                   child: _buildDashboardContent(),
                 ),
-
-                // Bottom navigation
-                _buildBottomNavigation(),
               ],
             ),
           ),
@@ -530,7 +530,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         'subtitle': 'Voir mes produits',
         'icon': CupertinoIcons.cube_box,
         'color': Theme.of(context).colorScheme.primary,
-        'onTap': () => _navigateToTab(1),
+        'onTap': () => NavigationService.navigateToTab(context, 1),
       },
       {
         'title': 'Ajouter',
@@ -793,97 +793,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildBottomNavigation() {
-    final tabs = [
-      {'icon': CupertinoIcons.house, 'label': 'Accueil'},
-      {'icon': CupertinoIcons.cube_box, 'label': 'Inventaire'},
-      {'icon': CupertinoIcons.add, 'label': 'Ajouter'},
-      {'icon': CupertinoIcons.money_dollar, 'label': 'Budget'},
-      {'icon': CupertinoIcons.gear, 'label': 'Paramètres'},
-    ];
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
-        child: Row(
-          children: tabs.asMap().entries.map((entry) {
-            final index = entry.key;
-            final tab = entry.value;
-            final isSelected = false; // Since we're using navigation, no tab is selected
-
-            return Expanded(
-              child: CupertinoButton(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                onPressed: () => _navigateToTab(index),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      tab['icon'] as IconData,
-                      size: 24,
-                      color: isSelected
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withOpacity(0.7),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      tab['label'] as String,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isSelected
-                            ? Theme.of(context).colorScheme.primary
-                            : Theme.of(
-                                context,
-                              ).colorScheme.onSurface.withOpacity(0.7),
-                        fontWeight: isSelected
-                            ? FontWeight.w600
-                            : FontWeight.normal,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-      ),
-    );
-  }
-
-
-
-  void _navigateToTab(int index) {
-    // Navigate to actual screens instead of switching content in same screen
-    switch (index) {
-      case 1: // Inventaire
-        Navigator.pushNamed(context, '/inventory');
-        break;
-      case 2: // Ajouter
-        Navigator.pushNamed(context, '/add-product');
-        break;
-      case 3: // Budget
-        Navigator.pushNamed(context, '/budget');
-        break;
-      case 4: // Paramètres
-        Navigator.pushNamed(context, '/settings');
-        break;
-      default:
-        // Stay on dashboard (tab 0)
-        break;
-    }
-  }
 
   Future<void> _navigateToAddProduct() async {
     final result = await Navigator.of(
