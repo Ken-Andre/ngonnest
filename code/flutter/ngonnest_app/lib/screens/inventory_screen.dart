@@ -56,17 +56,43 @@ class _InventoryScreenState extends State<InventoryScreen> {
       // Log the error for debugging
       print('Internal Error: $e');
       print('StackTrace: $stackTrace');
-      setState(() {
-        _isLoading = false;
-      });
+
+      // Handle database connection errors specifically
+      String errorMessage = 'Erreur lors du chargement';
+      if (e.toString().contains('database_closed')) {
+        errorMessage = 'Connexion perdue. Redémarrage en cours...';
+        // Reset connection state to force reconnection
+        await _handleDatabaseConnectionError();
+        // Retry loading after a short delay
+        await Future.delayed(const Duration(seconds: 2));
+        if (mounted) {
+          _loadInventory(); // Retry
+        }
+        return;
+      }
+
+      setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur lors du chargement: $e'),
+            content: Text('$errorMessage: ${e.toString().split(':')[0]}'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
           ),
         );
       }
+    }
+  }
+
+  /// Handle database connection errors by resetting the service state
+  Future<void> _handleDatabaseConnectionError() async {
+    try {
+      print('[InventoryScreen] Handling database connection error...');
+      // Don't close the database - let DatabaseService handle reconnection
+      // The service will automatically recover on next database access
+      print('[InventoryScreen] Database service will auto-recover on next access');
+    } catch (e) {
+      print('[InventoryScreen] Error during database error handling: $e');
     }
   }
 

@@ -1,4 +1,5 @@
 import 'package:sqflite/sqflite.dart';
+import 'package:synchronized/synchronized.dart';
 import '../models/foyer.dart';
 import '../models/objet.dart';
 import '../models/alert.dart';
@@ -10,51 +11,143 @@ class DatabaseService {
   static bool _isConnected = false;
   static bool _isInitializing = false;
   static DateTime? _lastConnectionCheck;
+  static int _connectionRetryCount = 0;
+  static const int _maxRetryAttempts = 3;
+  static const Duration _connectionTimeout = Duration(seconds: 30);
+  static const Duration _connectionValidationInterval = Duration(minutes: 5);
+  static final _lock = Lock(); // Thread-safe synchronization
 
-  /// Enhanced getter with automatic recovery and comprehensive error logging
+  /// Enhanced getter with proper lifecycle management and synchronization
   Future<Database> get database async {
-    // Return existing connection if available and valid
-    if (_database != null && _isConnected) {
-      return _database!;
+    return await _lock.synchronized(() async {
+      // Return existing connection if available and truly open
+      if (_database != null && _isConnected && _database!.isOpen) {
+        return _database!;
+      }
+
+      // Prevent concurrent initialization
+      if (_isInitializing) {
+        await _waitForInitialization();
+        if (_database != null && _isConnected && _database!.isOpen) {
+          return _database!;
+        }
+      }
+
+      return await _establishDatabaseConnection();
+    });
+  }
+
+  /// Establish database connection with retry logic and timeout
+  Future<Database> _establishDatabaseConnection() async {
+    _isInitializing = true;
+
+    for (int attempt = 1; attempt <= _maxRetryAttempts; attempt++) {
+      try {
+        print('[DatabaseService] Establishing database connection (attempt $attempt/$_maxRetryAttempts)...');
+
+        if (_database != null && !_isConnected) {
+          print('[DatabaseService] Connection lost, attempting recovery...');
+          await _logDatabaseError(
+            'connection_recovery_attempted',
+            'Database connection was lost, attempting automatic recovery',
+            severity: ErrorSeverity.medium,
+            metadata: {'attempt': attempt, 'max_attempts': _maxRetryAttempts},
+          );
+        }
+
+        // Use timeout for database initialization
+        _database = await initDatabase().timeout(_connectionTimeout);
+
+        // Validate connection immediately after creation
+        await _validateNewConnection();
+
+        _isConnected = true;
+        _lastConnectionCheck = DateTime.now();
+        _connectionRetryCount = 0;
+
+        print('[DatabaseService] Database connection established successfully');
+        return _database!;
+
+      } catch (e, stackTrace) {
+        _isConnected = false;
+        _connectionRetryCount++;
+
+        print('[DatabaseService] Connection attempt $attempt failed: $e');
+
+        await _logDatabaseError(
+          'connection_failed',
+          'Failed to establish database connection',
+          error: e,
+          stackTrace: stackTrace,
+          severity: attempt == _maxRetryAttempts ? ErrorSeverity.critical : ErrorSeverity.high,
+          metadata: {
+            'attempt': attempt,
+            'max_attempts': _maxRetryAttempts,
+            'retry_count': _connectionRetryCount,
+            'timestamp': DateTime.now().toIso8601String()
+          },
+        );
+
+        if (attempt == _maxRetryAttempts) {
+          print('[DatabaseService] All connection attempts failed, giving up');
+          rethrow;
+        }
+
+        // Wait before retrying (exponential backoff)
+        final waitTime = Duration(seconds: attempt * 2);
+        print('[DatabaseService] Waiting ${waitTime.inSeconds}s before retry...');
+        await Future.delayed(waitTime);
+      }
     }
 
-    // Prevent concurrent initialization
-    if (_isInitializing) {
-      await _waitForInitialization();
-      return _database!;
+    _isInitializing = false;
+    throw Exception('Failed to establish database connection after $_maxRetryAttempts attempts');
+  }
+
+  /// Validate that a newly created connection is working
+  Future<void> _validateNewConnection() async {
+    try {
+      // Simple validation query
+      await _database!.rawQuery('SELECT 1');
+      print('[DatabaseService] New connection validated successfully');
+    } catch (e) {
+      print('[DatabaseService] New connection validation failed: $e');
+      _isConnected = false;
+      await _logDatabaseError(
+        'connection_validation_failed',
+        'Failed to validate new database connection',
+        error: e,
+        severity: ErrorSeverity.high,
+      );
+      throw e;
+    }
+  }
+
+  /// Check if current connection is still valid
+  Future<bool> _isConnectionStillValid() async {
+    if (_database == null) return false;
+
+    // Check if we need to validate based on time interval
+    final now = DateTime.now();
+    if (_lastConnectionCheck != null &&
+        now.difference(_lastConnectionCheck!) < _connectionValidationInterval) {
+      return true; // Skip validation if recently checked
     }
 
     try {
-      _isInitializing = true;
-
-      if (_database != null && !_isConnected) {
-        print('[DatabaseService] Connection lost, attempting recovery...');
-        await _logDatabaseError(
-          'connection_recovery_attempted',
-          'Database connection was lost, attempting automatic recovery',
-          severity: ErrorSeverity.medium,
-        );
-      }
-
-      _database = await initDatabase();
-      _isConnected = true;
-      _lastConnectionCheck = DateTime.now();
-
-      print('[DatabaseService] Database connection established successfully');
-      return _database!;
-    } catch (e, stackTrace) {
+      await _database!.rawQuery('SELECT 1').timeout(const Duration(seconds: 5));
+      _lastConnectionCheck = now;
+      return true;
+    } catch (e) {
+      print('[DatabaseService] Connection validation failed: $e');
       _isConnected = false;
       await _logDatabaseError(
-        'connection_failed',
-        'Failed to establish database connection',
+        'connection_validation_failed',
+        'Database connection validation failed during periodic check',
         error: e,
-        stackTrace: stackTrace,
-        severity: ErrorSeverity.critical,
-        metadata: {'attempt_timestamp': DateTime.now().toIso8601String()},
+        severity: ErrorSeverity.medium,
       );
-      rethrow;
-    } finally {
-      _isInitializing = false;
+      return false;
     }
   }
 
