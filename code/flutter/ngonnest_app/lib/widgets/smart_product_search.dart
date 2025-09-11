@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_typeahead/flutter_typeahead.dart';
 import '../models/product_template.dart';
 import '../services/product_intelligence_service.dart';
 
@@ -13,6 +12,7 @@ class SmartProductSearch extends StatefulWidget {
   final int? familySize;
   final bool enabled;
   final InputDecoration? decoration;
+  final TextEditingController? controller; // Controller externe pour persistance
 
   const SmartProductSearch({
     super.key,
@@ -23,6 +23,7 @@ class SmartProductSearch extends StatefulWidget {
     this.familySize,
     this.enabled = true,
     this.decoration,
+    this.controller,
   });
 
   @override
@@ -30,12 +31,44 @@ class SmartProductSearch extends StatefulWidget {
 }
 
 class _SmartProductSearchState extends State<SmartProductSearch> {
-  final TextEditingController _controller = TextEditingController();
+  late TextEditingController _controller;
   final ProductIntelligenceService _intelligenceService = ProductIntelligenceService();
+  final FocusNode _focusNode = FocusNode();
+  List<ProductTemplate> _suggestions = [];
+  bool _showSuggestions = false;
+  bool _isInternalController = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Utiliser le controller externe ou créer un interne
+    if (widget.controller != null) {
+      _controller = widget.controller!;
+      _isInternalController = false;
+    } else {
+      _controller = TextEditingController();
+      _isInternalController = true;
+    }
+    
+    // Écouter les changements du controller pour maintenir la synchronisation
+    _controller.addListener(_onControllerChanged);
+  }
+
+  void _onControllerChanged() {
+    // S'assurer que les suggestions sont mises à jour quand le controller change
+    if (_controller.text.isNotEmpty && !_showSuggestions) {
+      _onTextChanged(_controller.text);
+    }
+  }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller.removeListener(_onControllerChanged);
+    // Ne disposer que si c'est notre controller interne
+    if (_isInternalController) {
+      _controller.dispose();
+    }
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -52,7 +85,7 @@ class _SmartProductSearchState extends State<SmartProductSearch> {
       }
     }
 
-    // Recherche dans tous les produits de la catégorie actuelle
+    // Recherche dans tous les produits de la catégorie actuelle d'abord
     try {
       final products = await _intelligenceService.getProductsByCategory(widget.category);
       print('DEBUG: All products for ${widget.category}: ${products.length} items');
@@ -61,11 +94,33 @@ class _SmartProductSearchState extends State<SmartProductSearch> {
         product.name.toLowerCase().contains(query.toLowerCase())
       ).toList();
 
-      print('DEBUG: Filtered products for query "$query": ${filtered.length} items');
+      print('DEBUG: Filtered products for query "$query" in ${widget.category}: ${filtered.length} items');
+
+      // Si aucun résultat dans la catégorie actuelle, chercher dans TOUTES les catégories
+      if (filtered.isEmpty) {
+        print('DEBUG: No results in ${widget.category}, searching in ALL categories...');
+        
+        // Récupérer toutes les catégories et chercher dans chacune
+        final allCategories = _intelligenceService.getAllCategories();
+        List<ProductTemplate> allResults = [];
+        
+        for (final category in allCategories) {
+          final categoryId = category['id'] as String;
+          if (categoryId != widget.category) { // Éviter de rechercher à nouveau dans la catégorie actuelle
+            final categoryResults = await _intelligenceService.searchProducts(query, categoryId);
+            allResults.addAll(categoryResults);
+          }
+        }
+        
+        print('DEBUG: Found ${allResults.length} results across all categories');
+        
+        // Tri par popularité et pertinence
+        allResults.sort((a, b) => b.popularity.compareTo(a.popularity));
+        return allResults.take(8).toList();
+      }
 
       // Tri par popularité et pertinence
       filtered.sort((a, b) => b.popularity.compareTo(a.popularity));
-
       return filtered.take(8).toList(); // Limite à 8 résultats
     } catch (e) {
       print('Erreur recherche dans ${widget.category}: $e');
@@ -73,18 +128,56 @@ class _SmartProductSearchState extends State<SmartProductSearch> {
     }
   }
 
+  void _onTextChanged(String text) async {
+    widget.onTextChanged?.call(text);
+    
+    if (text.isEmpty) {
+      setState(() {
+        _suggestions = [];
+        _showSuggestions = false;
+      });
+      return;
+    }
+
+    final suggestions = await _getSuggestions(text);
+    setState(() {
+      _suggestions = suggestions;
+      _showSuggestions = suggestions.isNotEmpty;
+    });
+  }
+
+  void _onSuggestionSelected(ProductTemplate product) {
+    _controller.text = product.name;
+    
+    // Informer le parent que la catégorie pourrait changer
+    if (product.category != widget.category) {
+      print('DEBUG: Product category (${product.category}) differs from current category (${widget.category})');
+    }
+    
+    widget.onProductSelected?.call(product);
+    widget.onTextChanged?.call(product.name);
+    setState(() {
+      _showSuggestions = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    final fieldContent = TypeAheadField<ProductTemplate>(
-      controller: _controller,
-      builder: (context, controller, focusNode) {
-        return TextField(
-          controller: controller,
-          focusNode: focusNode,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Champ de texte principal
+        TextField(
+          controller: _controller,
+          focusNode: _focusNode,
           readOnly: !widget.enabled,
-          onChanged: (text) {
-            // Synchroniser le texte saisi avec le parent
-            widget.onTextChanged?.call(text);
+          onChanged: _onTextChanged,
+          onTap: () {
+            if (_suggestions.isNotEmpty) {
+              setState(() {
+                _showSuggestions = true;
+              });
+            }
           },
           decoration: widget.decoration ??
               InputDecoration(
@@ -95,48 +188,48 @@ class _SmartProductSearchState extends State<SmartProductSearch> {
                   borderSide: BorderSide.none,
                 ),
                 filled: true,
-                fillColor: widget.enabled ? Theme.of(context).colorScheme.surface : Theme.of(context).colorScheme.surface.withOpacity(0.5),
+                fillColor: widget.enabled 
+                  ? Theme.of(context).colorScheme.surface 
+                  : Theme.of(context).colorScheme.surface.withOpacity(0.5),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
           style: TextStyle(
-            color: widget.enabled ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+            color: widget.enabled 
+              ? Theme.of(context).colorScheme.onSurface 
+              : Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
             fontSize: 16,
           ),
-        );
-      },
-      suggestionsCallback: _getSuggestions,
-      itemBuilder: (context, product) {
-        return _buildSuggestionItem(product);
-      },
-      onSelected: (product) {
-        _controller.text = product.name;
-        widget.onProductSelected?.call(product);
-      },
-      emptyBuilder: (context) => _buildEmptyState(),
-      decorationBuilder: (context, child) {
-        return Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            color: Theme.of(context).colorScheme.surface,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
-              ),
-            ],
+        ),
+        
+        // Suggestions dropdown
+        if (_showSuggestions && _suggestions.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Container(
+            constraints: const BoxConstraints(maxHeight: 300),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              color: Theme.of(context).colorScheme.surface,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: _suggestions.length,
+              itemBuilder: (context, index) {
+                return InkWell(
+                  onTap: () => _onSuggestionSelected(_suggestions[index]),
+                  child: _buildSuggestionItem(_suggestions[index]),
+                );
+              },
+            ),
           ),
-          margin: const EdgeInsets.symmetric(horizontal: 8),
-          child: child,
-        );
-      },
-      constraints: const BoxConstraints(maxHeight: 300),
-    );
-
-    // Utiliser readOnly au lieu d'IgnorePointer pour une meilleure compatibilité
-    return AbsorbPointer(
-      absorbing: !widget.enabled,
-      child: fieldContent,
+        ],
+      ],
     );
   }
 
@@ -339,5 +432,12 @@ class _SmartProductSearchState extends State<SmartProductSearch> {
   /// Définir le texte de recherche programmatiquement
   void setText(String text) {
     _controller.text = text;
+  }
+
+  /// Forcer la persistance du texte (éviter que le champ se vide)
+  void persistText(String text) {
+    if (_controller.text != text) {
+      _controller.text = text;
+    }
   }
 }

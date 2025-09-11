@@ -127,7 +127,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
             children: [
               // Header
               Container(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
@@ -137,7 +137,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   children: [
@@ -148,16 +148,16 @@ class _BudgetScreenState extends State<BudgetScreen> {
                           Text(
                             'Contrôle budgétaire',
                             style: TextStyle(
-                              fontSize: 20,
+                              fontSize: 18,
                               fontWeight: FontWeight.w600,
                               color: Theme.of(context).colorScheme.onPrimary,
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 6),
                           Text(
                             'Suivez vos achats et dépenses produits ménagers',
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: 12,
                               color: Theme.of(
                                 context,
                               ).colorScheme.onPrimary.withOpacity(0.9),
@@ -167,17 +167,17 @@ class _BudgetScreenState extends State<BudgetScreen> {
                       ),
                     ),
                     Container(
-                      width: 60,
-                      height: 60,
+                      width: 50,
+                      height: 50,
                       decoration: BoxDecoration(
                         color: Theme.of(
                           context,
                         ).colorScheme.onPrimary.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(
                         CupertinoIcons.money_dollar,
-                        size: 32,
+                        size: 28,
                         color: Theme.of(context).colorScheme.onPrimary,
                       ),
                     ),

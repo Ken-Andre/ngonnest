@@ -11,7 +11,7 @@ import '../services/error_logger_service.dart';
 import '../services/navigation_service.dart';
 import '../widgets/error_feedback_widget.dart';
 import '../widgets/smart_product_search.dart';
-import '../widgets/hierarchical_category_selector.dart';
+
 import '../widgets/smart_quantity_selector.dart';
 import '../widgets/dropdown_categories_durables.dart';
 import '../widgets/main_navigation_wrapper.dart';
@@ -147,33 +147,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
     }
   }
 
-  /// Gestionnaire de sélection de produit depuis les suggestions
-  void _onProductTemplateSelected(ProductTemplate product) {
-    setState(() {
-      _selectedProductTemplate = product;
-      // Pré-remplir automatiquement depuis le template
-      _productNameController.text = product.name;
-      if (product.defaultQuantity != null) {
-        _initialQuantityController.text = product.defaultQuantity.toString();
-      }
-      if (product.defaultFrequency != null && _isConsumable) {
-        _frequencyController.text = product.defaultFrequency.toString();
-      }
-      // Automatiquement ajuster l'unité si spécifiée dans le template
-      if (product.unit.isNotEmpty) {
-        _selectedUnit = product.unit;
-      }
-    });
 
-    // Validation automatique après remplissage
-    _validateProductName(product.name);
-    if (product.defaultQuantity != null) {
-      _validateQuantity(product.defaultQuantity.toString());
-    }
-    if (product.defaultFrequency != null) {
-      _validateFrequency(product.defaultFrequency.toString());
-    }
-  }
 
   @override
   void dispose() {
@@ -408,9 +382,11 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 // Product name with smart suggestions
                 _buildSectionTitle('Nom du produit'),
                 SmartProductSearch(
-                  category: _isConsumable ? 'hygiene' : 'durables',
+                  controller: _productNameController, // Utiliser le controller externe
+                  category: _isConsumable ? _selectedCategory : 'durables',
                   onProductSelected: (product) {
                     setState(() {
+                      // Mettre à jour automatiquement la catégorie selon le produit sélectionné
                       _selectedCategory = product.category;
                       _productNameController.text = product.name;
                       if (product.defaultQuantity != null) {
@@ -419,10 +395,21 @@ class _AddProductScreenState extends State<AddProductScreen> {
                             .toString();
                       }
                     });
+                    
+                    // Afficher un message si la catégorie a changé
+                    if (product.category != _selectedCategory) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Catégorie mise à jour vers "${product.category}"'),
+                          backgroundColor: Colors.blue,
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    }
                   },
                   onTextChanged: (text) {
-                    // Synchroniser le texte saisi manuellement avec le controller
-                    _productNameController.text = text;
+                    // Le controller externe est déjà synchronisé
+                    // Pas besoin de faire _productNameController.text = text;
                   },
                   hintText: _isConsumable
                       ? 'Tapez pour voir les suggestions de consommables...'
@@ -536,18 +523,43 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   ),
                 ],
 
-                // Hierarchical Category Selector for consumables
+                // Simple Category Selector for consumables
                 if (_isConsumable) ...[
-                  _buildSectionTitle('Navigation par catégories'),
-                  HierarchicalCategorySelector(
-                    onCategorySelected: (categoryId) {
-                      setState(() => _selectedCategory = categoryId);
-                    },
-                    onProductSelected: _onProductTemplateSelected,
-                    familySize: _getHouseholdSize(),
-                    enabled: !_isLoading,
+                  _buildSectionTitle('Catégorie'),
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 24),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
+                      ),
+                    ),
+                    child: DropdownButtonFormField<String>(
+                      initialValue: _selectedCategory,
+                      decoration: const InputDecoration(
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'hygiene', child: Text('🧴 Hygiène')),
+                        DropdownMenuItem(value: 'menage', child: Text('🧹 Ménage & Entretien')),
+                        DropdownMenuItem(value: 'nourriture', child: Text('🍳 Nourriture & Boissons')),
+                        DropdownMenuItem(value: 'bureau', child: Text('📋 Fournitures Bureau')),
+                        DropdownMenuItem(value: 'maintenance', child: Text('🔧 Maintenance & Réparation')),
+                        DropdownMenuItem(value: 'securite', child: Text('🛡️ Sécurité & Protection')),
+                        DropdownMenuItem(value: 'evenementiel', child: Text('🎉 Événementiel')),
+                        DropdownMenuItem(value: 'autre', child: Text('📦 Autre')),
+                      ],
+                      onChanged: _isLoading ? null : (value) {
+                        if (value != null) {
+                          setState(() => _selectedCategory = value);
+                        }
+                      },
+                      hint: const Text('Choisir une catégorie'),
+                    ),
                   ),
-                  const SizedBox(height: 24),
                 ],
 
                 // Smart Quantity Selector
