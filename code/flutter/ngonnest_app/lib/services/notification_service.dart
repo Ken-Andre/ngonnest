@@ -204,6 +204,46 @@ class NotificationService {
     );
   }
 
+  static Future<void> showBudgetAlert({
+    required int id,
+    required String categoryName,
+    required double spentAmount,
+    required double limitAmount,
+    required int percentage,
+  }) async {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+          'budget_alert_channel',
+          'Alertes budget',
+          channelDescription: 'Notifications pour les dépassements de budget',
+          importance: Importance.high,
+          priority: Priority.high,
+          showWhen: true,
+          icon: '@mipmap/ic_launcher',
+          color: Color(0xFFFF4444), // Red
+        );
+
+    const DarwinNotificationDetails iOSPlatformChannelSpecifics =
+        DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        );
+
+    const NotificationDetails platformChannelSpecifics = NotificationDetails(
+      android: androidPlatformChannelSpecifics,
+      iOS: iOSPlatformChannelSpecifics,
+    );
+
+    await _flutterLocalNotificationsPlugin.show(
+      id,
+      'Budget dépassé - $categoryName',
+      'Vous avez dépensé ${spentAmount.toStringAsFixed(2)} € sur ${limitAmount.toStringAsFixed(2)} € ($percentage%)',
+      platformChannelSpecifics,
+      payload: 'budget_alert_$id',
+    );
+  }
+
   static Future<void> scheduleRecurringReminder({
     required int id,
     required String title,

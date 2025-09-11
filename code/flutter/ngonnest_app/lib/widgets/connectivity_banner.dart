@@ -50,8 +50,8 @@ class ConnectivityBanner extends StatelessWidget {
       message = 'Vous êtes hors ligne';
     } else {
       // État reconnecté - utiliser colorScheme.secondary
-      backgroundColor = colorScheme.secondary;
-      textColor = colorScheme.onSecondary;
+      backgroundColor = Theme.of(context).colorScheme.primary;
+      textColor = Theme.of(context).colorScheme.onSecondary;
       icon = Icons.wifi;
       message = 'De retour en ligne';
     }
@@ -71,7 +71,11 @@ class ConnectivityBanner extends StatelessWidget {
     );
   }
 
-  Widget _buildStaticBanner(BuildContext context, ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildStaticBanner(
+    BuildContext context,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
     // Mode test avec paramètres explicites
     Color backgroundColor;
     Color textColor;
@@ -117,7 +121,9 @@ class ConnectivityBanner extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(16), // Utilise le borderRadius du thème
+        borderRadius: BorderRadius.circular(
+          16,
+        ), // Utilise le borderRadius du thème
         boxShadow: [
           BoxShadow(
             color: theme.shadowColor.withValues(alpha: 0.1),
@@ -129,11 +135,7 @@ class ConnectivityBanner extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: 20,
-            color: textColor,
-          ),
+          Icon(icon, size: 20, color: textColor),
           const SizedBox(width: 12),
           Text(
             message,

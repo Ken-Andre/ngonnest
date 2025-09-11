@@ -14,6 +14,7 @@ import 'add_product_screen.dart';
 import '../theme/theme_mode_notifier.dart';
 import '../widgets/connectivity_banner.dart';
 import '../widgets/main_navigation_wrapper.dart';
+import '../widgets/sync_banner.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -28,7 +29,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   late InventoryRepository _inventoryRepository;
   bool _isLoading = true;
   bool _offlineMode = false;
-
+  DateTime? _lastSyncTime;
 
   // Real data for demonstration
   int _totalItems = 0;
@@ -55,8 +56,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final foyer = await HouseholdService.getFoyer();
       if (foyer != null) {
         final totalItems = await _inventoryRepository.getTotalCount(foyer.id!);
-        final expiringSoon = await _inventoryRepository.getExpiringSoonCount(foyer.id!);
-        final alerts = await _databaseService.getAlerts(idFoyer: foyer.id!, unreadOnly: true);
+        final expiringSoon = await _inventoryRepository.getExpiringSoonCount(
+          foyer.id!,
+        );
+        final alerts = await _databaseService.getAlerts(
+          idFoyer: foyer.id!,
+          unreadOnly: true,
+        );
 
         setState(() {
           _foyerProfile = foyer;
@@ -64,6 +70,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _expiringSoon = expiringSoon;
           _urgentAlerts = alerts.length;
           _notifications = alerts;
+          _lastSyncTime =
+              DateTime.now(); // Update sync time on successful data load
         });
 
         // Log succès du chargement du dashboard
@@ -99,9 +107,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              _getUserFriendlyErrorMessage(e),
-            ),
+            content: Text(_getUserFriendlyErrorMessage(e)),
             backgroundColor: Colors.orange,
             duration: const Duration(seconds: 3),
           ),
@@ -135,8 +141,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        backgroundColor: AppTheme.primaryGreen, // Match splash screen background during loading
-        body: const Center(child: CupertinoActivityIndicator(radius: 20, color: Colors.white)),
+        backgroundColor: AppTheme
+            .primaryGreen, // Match splash screen background during loading
+        body: const Center(
+          child: CupertinoActivityIndicator(radius: 20, color: Colors.white),
+        ),
       );
     }
 
@@ -145,7 +154,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         // Main navigation wrapper with dashboard content
         MainNavigationWrapper(
           currentIndex: 0, // Dashboard is index 0
-          onTabChanged: (index) => NavigationService.navigateToTab(context, index),
+          onTabChanged: (index) =>
+              NavigationService.navigateToTab(context, index),
           body: SafeArea(
             child: Column(
               children: [
@@ -153,9 +163,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 _buildHeader(),
 
                 // Content
-                Expanded(
-                  child: _buildDashboardContent(),
-                ),
+                Expanded(child: _buildDashboardContent()),
               ],
             ),
           ),
@@ -188,6 +196,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Row(
         children: [
           Expanded(
+            flex: 3,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -269,27 +278,57 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return RefreshIndicator(
       onRefresh: _loadDashboardData,
       color: Theme.of(context).colorScheme.primary,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Quick stats
-            _buildQuickStats(),
-            const SizedBox(height: 24),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: constraints.maxHeight,
+                maxWidth: constraints.maxWidth,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Quick stats
+                  _buildQuickStats(),
+                  const SizedBox(height: 16),
 
-            // Quick actions
-            _buildQuickActionsSection(),
-            const SizedBox(height: 24),
+                  // Sync banner
+                  if (_lastSyncTime != null)
+                    Center(
+                      child: SyncBanner(
+                        lastSyncTime: _lastSyncTime,
+                        onTap: _loadDashboardData,
+                      ),
+                    ),
+                  const SizedBox(height: 24),
 
-            // Household info
-            if (_foyerProfile != null) _buildHouseholdInfoSection(),
-            const SizedBox(height: 24),
+                  // Alerts section
+                  if (_notifications.isNotEmpty) ...[
+                    _buildAlertsSection(),
+                    const SizedBox(height: 24),
+                  ],
 
-            // Recent items placeholder
-            _buildRecentItemsSection(),
-          ],
-        ),
+                  // Quick actions
+                  _buildQuickActionsSection(),
+                  const SizedBox(height: 24),
+
+                  // Household info
+                  if (_foyerProfile != null) _buildHouseholdInfoSection(),
+                  const SizedBox(height: 24),
+
+                  // Recent items placeholder
+                  _buildRecentItemsSection(),
+
+                  // Add bottom padding to account for connectivity banner
+                  const SizedBox(height: 100),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -301,69 +340,94 @@ class _DashboardScreenState extends State<DashboardScreen> {
         'value': _totalItems.toString(),
         'label': 'Articles totaux',
         'color': Theme.of(context).colorScheme.primary,
+        'onTap': () => NavigationService.navigateToTab(
+          context,
+          1,
+        ), // Navigate to inventory
       },
       {
         'icon': CupertinoIcons.time,
         'value': _expiringSoon.toString(),
         'label': 'À surveiller',
         'color': Theme.of(context).colorScheme.secondary,
+        'onTap': () =>
+            _navigateToUrgentItems(), // Navigate to filtered urgent items
       },
       {
         'icon': CupertinoIcons.exclamationmark_triangle,
         'value': _urgentAlerts.toString(),
         'label': 'Urgences',
         'color': Theme.of(context).colorScheme.error,
+        'onTap': () => _showNotificationsSheet(), // Show notifications
       },
     ];
 
     return Row(
       children: stats.map((stat) {
-        final isLast = stat == stats.last;
         return Expanded(
           child: Container(
-            margin: EdgeInsets.only(right: isLast ? 0 : 12),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                Icon(
-                  stat['icon'] as IconData,
-                  size: 28,
-                  color: stat['color'] as Color,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  stat['value'] as String,
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onSurface,
+            margin: const EdgeInsets.symmetric(horizontal: 6),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: stat['onTap'] as VoidCallback,
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  constraints: const BoxConstraints(minHeight: 100),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        stat['icon'] as IconData,
+                        size: 28,
+                        color: stat['color'] as Color,
+                      ),
+                      const SizedBox(height: 8),
+                      Flexible(
+                        child: Text(
+                          stat['value'] as String,
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                          textAlign: TextAlign.center,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Flexible(
+                        child: Text(
+                          stat['label'] as String,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withOpacity(0.7),
+                          ),
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  stat['label'] as String,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withOpacity(0.7),
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
+              ),
             ),
           ),
         );
@@ -496,6 +560,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 context,
                               ).colorScheme.onSurface.withOpacity(0.7),
                             ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
@@ -555,15 +621,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
         const SizedBox(height: 16),
         Row(
           children: actions.map((action) {
-            final isLast = action == actions.last;
             return Expanded(
               child: Container(
-                margin: EdgeInsets.only(right: isLast ? 0 : 12),
+                margin: const EdgeInsets.symmetric(horizontal: 6),
                 child: CupertinoButton(
                   padding: EdgeInsets.zero,
                   onPressed: action['onTap'] as VoidCallback,
                   child: Container(
                     padding: const EdgeInsets.all(20),
+                    constraints: const BoxConstraints(minHeight: 120),
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(16),
@@ -578,6 +644,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ],
                     ),
                     child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Container(
                           width: 50,
@@ -593,25 +660,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        Text(
-                          action['title'] as String,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Theme.of(context).colorScheme.onSurface,
+                        Flexible(
+                          child: Text(
+                            action['title'] as String,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                            textAlign: TextAlign.center,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 4),
-                        Text(
-                          action['subtitle'] as String,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withOpacity(0.7),
+                        Flexible(
+                          child: Text(
+                            action['subtitle'] as String,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withOpacity(0.7),
+                            ),
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          textAlign: TextAlign.center,
                         ),
                       ],
                     ),
@@ -667,7 +741,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
             'Type de logement',
             LogementType.getDisplayName(_foyerProfile!.typeLogement),
           ),
-          _buildInfoRow('Langue', Language.getDisplayName(_foyerProfile!.langue)),
+          _buildInfoRow(
+            'Langue',
+            Language.getDisplayName(_foyerProfile!.langue),
+          ),
         ],
       ),
     );
@@ -677,21 +754,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 16,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+          Expanded(
+            flex: 2,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 16,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.onSurface,
+          const SizedBox(width: 16),
+          Expanded(
+            flex: 3,
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+              textAlign: TextAlign.right,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
@@ -751,13 +837,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   size: 20,
                 ),
                 const SizedBox(width: 12),
-                Text(
-                  'Aucun article ajouté pour le moment',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onBackground.withOpacity(0.7),
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    'Aucun article ajouté pour le moment',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onBackground.withOpacity(0.7),
+                    ),
                   ),
                 ),
               ],
@@ -793,8 +882,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-
-
   Future<void> _navigateToAddProduct() async {
     final result = await Navigator.of(
       context,
@@ -806,7 +893,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  void _navigateToUrgentItems() {
+    // Navigate to inventory screen with urgent items filter
+    // For now, navigate to inventory tab - filtering will be implemented in task 2
+    NavigationService.navigateToTab(context, 1);
 
+    // Show a snackbar to indicate we're showing urgent items
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Affichage des articles urgents'),
+        backgroundColor: Theme.of(context).colorScheme.secondary,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
 
   void _showNotificationsSheet() {
     showCupertinoModalPopup<void>(
@@ -825,14 +925,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Notifications',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: Theme.of(context).colorScheme.onSurface,
+                    Expanded(
+                      child: Text(
+                        'Notifications',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     CupertinoButton(
@@ -872,9 +974,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         children: [
                           Icon(
                             _getNotificationIcon(notification.typeAlerte),
-                            color: _getNotificationColor(
-                              notification.urgences,
-                            ),
+                            color: _getNotificationColor(notification.urgences),
                             size: 20,
                           ),
                           const SizedBox(width: 12),
@@ -901,6 +1001,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       context,
                                     ).colorScheme.onSurface.withOpacity(0.7),
                                   ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ],
                             ),

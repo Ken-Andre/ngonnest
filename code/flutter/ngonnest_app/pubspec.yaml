@@ -30,6 +30,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: any
   sqflite: ^2.3.3
   flutter_local_notifications: ^19.4.1
   shared_preferences: ^2.2.3
@@ -69,6 +72,9 @@ flutter:
 
   # Cupertino icons enabled for mobile prototype design
   uses-material-design: true
+  
+  # Enable internationalization
+  generate: true
 
   # To add assets to your application, add an assets section, like this:
   # assets:

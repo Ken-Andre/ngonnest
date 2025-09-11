@@ -7,6 +7,7 @@ class Objet {
   final String nom;
   final String categorie;
   final TypeObjet type;
+  final String? room; // Room/location where the item is stored
   final DateTime? dateAchat;
   final int? dureeViePrevJours;
   final DateTime? dateRupturePrev;
@@ -28,6 +29,7 @@ class Objet {
     required this.nom,
     required this.categorie,
     required this.type,
+    this.room,
     this.dateAchat,
     this.dureeViePrevJours,
     this.dateRupturePrev,
@@ -51,6 +53,7 @@ class Objet {
       'nom': nom,
       'categorie': categorie,
       'type': type.toString().split('.').last,
+      'room': room,
       'date_achat': dateAchat?.toIso8601String(),
       'duree_vie_prev_jours': dureeViePrevJours,
       'date_rupture_prev': dateRupturePrev?.toIso8601String(),
@@ -75,6 +78,7 @@ class Objet {
       nom: map['nom'],
       categorie: map['categorie'],
       type: TypeObjet.values.firstWhere((e) => e.toString().split('.').last == map['type']),
+      room: map['room'],
       dateAchat: map['date_achat'] != null ? DateTime.parse(map['date_achat']) : null,
       dureeViePrevJours: map['duree_vie_prev_jours'],
       dateRupturePrev: map['date_rupture_prev'] != null ? DateTime.parse(map['date_rupture_prev']) : null,
@@ -100,6 +104,7 @@ class Objet {
     String? nom,
     String? categorie,
     TypeObjet? type,
+    String? room,
     DateTime? dateAchat,
     int? dureeViePrevJours,
     DateTime? dateRupturePrev,
@@ -121,6 +126,7 @@ class Objet {
       nom: nom ?? this.nom,
       categorie: categorie ?? this.categorie,
       type: type ?? this.type,
+      room: room ?? this.room,
       dateAchat: dateAchat ?? this.dateAchat,
       dureeViePrevJours: dureeViePrevJours ?? this.dureeViePrevJours,
       dateRupturePrev: dateRupturePrev ?? this.dateRupturePrev,

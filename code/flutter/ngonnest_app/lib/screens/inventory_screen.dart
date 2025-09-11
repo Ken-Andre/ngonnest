@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/objet.dart';
-import '../models/foyer.dart';
 import '../repository/inventory_repository.dart';
 import '../services/database_service.dart';
 import '../services/navigation_service.dart';
 import '../widgets/main_navigation_wrapper.dart';
+import '../widgets/inventory_search_bar.dart';
+import '../widgets/inventory_filter_panel.dart';
+import '../widgets/quick_quantity_update.dart';
 
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
@@ -19,7 +21,12 @@ class _InventoryScreenState extends State<InventoryScreen> {
   late InventoryRepository _inventoryRepository;
   List<Objet> _consommables = [];
   List<Objet> _durables = [];
+  List<Objet> _filteredConsommables = [];
+  List<Objet> _filteredDurables = [];
   bool _isLoading = true;
+  String _searchQuery = '';
+  InventoryFilterState _filterState = const InventoryFilterState();
+  bool _isFilterExpanded = false;
 
   @override
   void initState() {
@@ -43,6 +50,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
           _durables = durables;
           _isLoading = false;
         });
+        _applySearchAndFilters();
       } else {
         setState(() => _isLoading = false);
         if (mounted) {
@@ -94,6 +102,104 @@ class _InventoryScreenState extends State<InventoryScreen> {
     // No need to close or reset anything manually
   }
 
+  void _applySearchAndFilters() {
+    List<Objet> filteredConsommables = _consommables;
+    List<Objet> filteredDurables = _durables;
+
+    // Apply search filter
+    if (_searchQuery.isNotEmpty) {
+      final query = _searchQuery.toLowerCase();
+      filteredConsommables = filteredConsommables.where((objet) {
+        return objet.nom.toLowerCase().contains(query) ||
+               objet.categorie.toLowerCase().contains(query) ||
+               (objet.room?.toLowerCase().contains(query) ?? false);
+      }).toList();
+      
+      filteredDurables = filteredDurables.where((objet) {
+        return objet.nom.toLowerCase().contains(query) ||
+               objet.categorie.toLowerCase().contains(query) ||
+               (objet.room?.toLowerCase().contains(query) ?? false);
+      }).toList();
+    }
+
+    // Apply room filter
+    if (_filterState.selectedRoom != null) {
+      filteredConsommables = filteredConsommables.where((objet) {
+        return objet.room == _filterState.selectedRoom;
+      }).toList();
+      
+      filteredDurables = filteredDurables.where((objet) {
+        return objet.room == _filterState.selectedRoom;
+      }).toList();
+    }
+
+    // Apply expiry filter (only for consumables)
+    if (_filterState.expiryFilter != ExpiryFilter.all) {
+      final now = DateTime.now();
+      filteredConsommables = filteredConsommables.where((objet) {
+        if (objet.dateRupturePrev == null) return false;
+        
+        final daysUntilExpiry = objet.dateRupturePrev!.difference(now).inDays;
+        
+        switch (_filterState.expiryFilter) {
+          case ExpiryFilter.expiringSoon:
+            return daysUntilExpiry >= 0 && daysUntilExpiry <= 7;
+          case ExpiryFilter.expired:
+            return daysUntilExpiry < 0;
+          case ExpiryFilter.all:
+            return true;
+        }
+      }).toList();
+    }
+
+    setState(() {
+      _filteredConsommables = filteredConsommables;
+      _filteredDurables = filteredDurables;
+    });
+  }
+
+  void _onSearchChanged(String query) {
+    setState(() {
+      _searchQuery = query;
+    });
+    _applySearchAndFilters();
+  }
+
+  void _onFilterChanged(InventoryFilterState newFilterState) {
+    setState(() {
+      _filterState = newFilterState;
+    });
+    _applySearchAndFilters();
+  }
+
+  List<String> _getAvailableRooms() {
+    final rooms = <String>{};
+    for (final objet in [..._consommables, ..._durables]) {
+      if (objet.room != null && objet.room!.isNotEmpty) {
+        rooms.add(objet.room!);
+      }
+    }
+    return rooms.toList()..sort();
+  }
+
+  Future<void> _updateQuantity(Objet objet, double newQuantity) async {
+    try {
+      final updatedObjet = objet.copyWith(quantiteRestante: newQuantity);
+      await _inventoryRepository.updateObjet(updatedObjet);
+      
+      // Update local lists
+      final index = _consommables.indexWhere((o) => o.id == objet.id);
+      if (index != -1) {
+        setState(() {
+          _consommables[index] = updatedObjet;
+        });
+        _applySearchAndFilters();
+      }
+    } catch (e) {
+      rethrow; // Let the widget handle the error display
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -137,11 +243,41 @@ class _InventoryScreenState extends State<InventoryScreen> {
               ),
             ],
           ),
-          body: TabBarView(
-            children: [
-              _buildConsommablesTab(),
-              _buildDurablesTab(),
-            ],
+          body: SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return Column(
+                  children: [
+                    InventorySearchBar(
+                      onSearchChanged: _onSearchChanged,
+                      hintText: 'Rechercher par nom, catégorie ou pièce...',
+                      initialValue: _searchQuery,
+                    ),
+                    const SizedBox(height: 8),
+                    InventoryFilterPanel(
+                      filterState: _filterState,
+                      onFilterChanged: _onFilterChanged,
+                      availableRooms: _getAvailableRooms(),
+                      isExpanded: _isFilterExpanded,
+                      onToggleExpanded: () {
+                        setState(() {
+                          _isFilterExpanded = !_isFilterExpanded;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: TabBarView(
+                        children: [
+                          _buildConsommablesTab(),
+                          _buildDurablesTab(),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
           ),
           floatingActionButton: FloatingActionButton(
             onPressed: () => _showAddItemDialog(context),
@@ -186,11 +322,42 @@ class _InventoryScreenState extends State<InventoryScreen> {
       );
     }
 
+    if (_filteredConsommables.isEmpty && _searchQuery.isNotEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.search_off,
+              size: 64,
+              color: Colors.grey,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Aucun consommable trouvé pour "$_searchQuery"',
+              style: const TextStyle(
+                fontSize: 18,
+                color: Colors.grey,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Essayez avec un autre terme de recherche',
+              style: TextStyle(
+                color: Colors.grey,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: _consommables.length,
+      itemCount: _filteredConsommables.length,
       itemBuilder: (context, index) {
-        final objet = _consommables[index];
+        final objet = _filteredConsommables[index];
         return _buildObjetCard(objet);
       },
     );
@@ -228,11 +395,42 @@ class _InventoryScreenState extends State<InventoryScreen> {
       );
     }
 
+    if (_filteredDurables.isEmpty && _searchQuery.isNotEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.search_off,
+              size: 64,
+              color: Colors.grey,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Aucun bien durable trouvé pour "$_searchQuery"',
+              style: const TextStyle(
+                fontSize: 18,
+                color: Colors.grey,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Essayez avec un autre terme de recherche',
+              style: TextStyle(
+                color: Colors.grey,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: _durables.length,
+      itemCount: _filteredDurables.length,
       itemBuilder: (context, index) {
-        final objet = _durables[index];
+        final objet = _filteredDurables[index];
         return _buildObjetCard(objet);
       },
     );
@@ -261,10 +459,67 @@ class _InventoryScreenState extends State<InventoryScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(objet.categorie),
+            if (objet.room != null && objet.room!.isNotEmpty) ...[
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.room,
+                    size: 14,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  ),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text(
+                      objet.room!,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ],
             if (objet.type == TypeObjet.consommable) ...[
-              Text('Quantité: ${objet.quantiteRestante} ${objet.unite}'),
-              if (objet.dateRupturePrev != null)
-                Text('Rupture prévue: ${_formatDate(objet.dateRupturePrev)}'),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const Flexible(
+                    child: Text('Quantité: ', style: TextStyle(fontSize: 12)),
+                  ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    flex: 2,
+                    child: QuickQuantityUpdate(
+                      objet: objet,
+                      onQuantityChanged: (newQuantity) => _updateQuantity(objet, newQuantity),
+                    ),
+                  ),
+                ],
+              ),
+              if (objet.dateRupturePrev != null) ...[
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.schedule,
+                      size: 14,
+                      color: _getExpiryColor(objet.dateRupturePrev!),
+                    ),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        'Rupture prévue: ${_formatDate(objet.dateRupturePrev)}',
+                        style: TextStyle(
+                          color: _getExpiryColor(objet.dateRupturePrev!),
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ] else ...[
               if (objet.dateAchat != null)
                 Text('Acheté le: ${_formatDate(objet.dateAchat)}'),
@@ -362,7 +617,13 @@ class _InventoryScreenState extends State<InventoryScreen> {
               color: objet.type == TypeObjet.consommable ? Colors.green : Colors.blue,
             ),
             const SizedBox(width: 8),
-            Expanded(child: Text(objet.nom)),
+            Expanded(
+              child: Text(
+                objet.nom,
+                overflow: TextOverflow.ellipsis,
+                softWrap: false,
+              ),
+            ),
           ],
         ),
         content: SingleChildScrollView(
@@ -373,6 +634,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
               // Informations de base
               _buildDetailRow('Catégorie', objet.categorie),
               _buildDetailRow('Type', objet.type == TypeObjet.consommable ? "Consommable" : "Durable"),
+              if (objet.room != null && objet.room!.isNotEmpty)
+                _buildDetailRow('Pièce', objet.room!),
 
               const Divider(height: 24),
 
@@ -499,7 +762,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   Future<void> _deleteObjet(Objet objet) async {
     try {
       await _inventoryRepository.delete(objet.id!);
-      _loadInventory();
+      await _loadInventory();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -534,7 +797,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
+          Container(
             width: 140,
             child: Text(
               '$label :',
@@ -552,10 +815,24 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 fontSize: 14,
                 color: Theme.of(context).colorScheme.onSurface,
               ),
+              softWrap: true,
             ),
           ),
         ],
       ),
     );
+  }
+
+  Color _getExpiryColor(DateTime expiryDate) {
+    final now = DateTime.now();
+    final daysUntilExpiry = expiryDate.difference(now).inDays;
+    
+    if (daysUntilExpiry < 0) {
+      return Colors.red; // Expired
+    } else if (daysUntilExpiry <= 7) {
+      return Colors.orange; // Expiring soon
+    } else {
+      return Theme.of(context).colorScheme.onSurface.withOpacity(0.6); // Normal
+    }
   }
 }

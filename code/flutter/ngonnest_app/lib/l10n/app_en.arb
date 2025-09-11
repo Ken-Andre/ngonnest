@@ -1,0 +1,143 @@
+{
+  "appTitle": "NgonNest",
+  "@appTitle": {
+    "description": "The title of the application"
+  },
+  "dashboard": "Dashboard",
+  "@dashboard": {
+    "description": "Dashboard screen title"
+  },
+  "inventory": "Inventory",
+  "@inventory": {
+    "description": "Inventory screen title"
+  },
+  "budget": "Budget",
+  "@budget": {
+    "description": "Budget screen title"
+  },
+  "settings": "Settings",
+  "@settings": {
+    "description": "Settings screen title"
+  },
+  "language": "Language",
+  "@language": {
+    "description": "Language setting label"
+  },
+  "notifications": "Notifications",
+  "@notifications": {
+    "description": "Notifications setting label"
+  },
+  "notificationsEnabled": "Enable notifications",
+  "@notificationsEnabled": {
+    "description": "Enable notifications setting"
+  },
+  "notificationsDisabled": "Disable notifications",
+  "@notificationsDisabled": {
+    "description": "Disable notifications setting"
+  },
+  "theme": "Theme",
+  "@theme": {
+    "description": "Theme setting label"
+  },
+  "lightMode": "Light mode",
+  "@lightMode": {
+    "description": "Light theme mode"
+  },
+  "darkMode": "Dark mode",
+  "@darkMode": {
+    "description": "Dark theme mode"
+  },
+  "systemMode": "System mode",
+  "@systemMode": {
+    "description": "System theme mode"
+  },
+  "save": "Save",
+  "@save": {
+    "description": "Save button text"
+  },
+  "cancel": "Cancel",
+  "@cancel": {
+    "description": "Cancel button text"
+  },
+  "ok": "OK",
+  "@ok": {
+    "description": "OK button text"
+  },
+  "error": "Error",
+  "@error": {
+    "description": "Error message title"
+  },
+  "success": "Success",
+  "@success": {
+    "description": "Success message title"
+  },
+  "settingsSaved": "Settings saved successfully",
+  "@settingsSaved": {
+    "description": "Settings saved confirmation message"
+  },
+  "notificationPermissionDenied": "Notification permission denied. You can enable it in system settings.",
+  "@notificationPermissionDenied": {
+    "description": "Message when notification permission is denied"
+  },
+  "openSystemSettings": "Open System Settings",
+  "@openSystemSettings": {
+    "description": "Button to open system settings"
+  },
+  "intelligentHouseholdManagement": "Intelligent household management",
+  "@intelligentHouseholdManagement": {
+    "description": "App tagline"
+  },
+  "languageOfApp": "Application language",
+  "choosePreferredLanguage": "Choose your preferred language",
+  "selectToChangeInterface": "Select to change the interface",
+  "receiveAppAlerts": "Receive app alerts",
+  "enableRemindersForLowStock": "Enable reminders for low stock",
+  "notificationFrequency": "Notification frequency",
+  "chooseReminderFrequency": "Choose reminder frequency",
+  "daily": "Daily",
+  "weekly": "Weekly",
+  "privacy": "Privacy",
+  "localDataOnly": "Local data only",
+  "noSyncWithoutExplicitConsent": "No sync without explicit consent",
+  "changeAppAppearance": "Change app appearance",
+  "support": "Support",
+  "sendFeedback": "Send feedback",
+  "shareYourSuggestions": "Share your suggestions",
+  "send": "Send",
+  "reportBug": "Report bug",
+  "describeProblem": "Describe the problem",
+  "report": "Report",
+  "data": "Data",
+  "exportData": "Export data",
+  "backupDataLocally": "Backup data locally",
+  "export": "Export",
+  "importData": "Import data",
+  "restoreFromBackupFile": "Restore from backup file",
+  "import": "Import",
+  "deleteAllData": "Delete all data",
+  "completeResetIrreversible": "Complete reset - Irreversible action",
+  "delete": "Delete",
+  "languageChangedSuccessfully": "Language changed successfully",
+  "errorActivatingNotifications": "Error activating notifications",
+  "cloudSynchronization": "Cloud Synchronization",
+  "cloudSyncAllowsOnlineBackup": "Cloud synchronization allows backing up your data online. Do you accept this functionality?",
+  "acceptCloudSync": "I accept cloud synchronization",
+  "accept": "Accept",
+  "syncEnabled": "Synchronization enabled",
+  "cloudSyncActivated": "Cloud synchronization has been activated. Your data will be automatically backed up.",
+  "sendFeedbackTitle": "Send feedback",
+  "feedbackMessage": "We would like to know your opinion about the application.",
+  "typeMessageHere": "Type your message here...",
+  "reportBugTitle": "Report bug",
+  "bugReportWillBeSent": "Your report will be sent to our development team.",
+  "continueContactTelegram": "To continue contacting us, join our Telegram bot:",
+  "telegramLinkCopied": "Telegram link copied!",
+  "feedbackSent": "Feedback sent",
+  "feedbackSentSuccessfully": "Your feedback has been sent successfully.",
+  "bugReportSent": "Bug report sent",
+  "bugReportSentSuccessfully": "Your bug report has been sent successfully.",
+  "deleteAllDataConfirmation": "Delete all data?",
+  "deleteAllDataWarning": "This action will permanently delete all your inventory, budget and settings data. This action cannot be undone.",
+  "dataDeleted": "Data deleted",
+  "allDataDeletedRestart": "All your data has been deleted.\\nThe application will restart."
+}

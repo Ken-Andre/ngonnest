@@ -7,7 +7,7 @@ Future<Database> initDatabase() async {
 
   final database = await openDatabase(
     path,
-    version: 5, // Migration v5: forcer ajout colonne commentaires durables
+    version: 6, // Migration v6: add budget_categories table
     onCreate: (db, version) async {
       // Table foyer
       await db.execute('''
@@ -64,17 +64,17 @@ Future<Database> initDatabase() async {
         )
       ''');
 
-      // Table budget (pour gérer le budget des catégories)
+      // Table budget_categories (pour gérer les catégories de budget)
       await db.execute('''
-        CREATE TABLE budget (
+        CREATE TABLE budget_categories (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
-          id_foyer INTEGER NOT NULL,
-          categorie TEXT NOT NULL,
-          montant_alloue REAL NOT NULL,
-          montant_depense REAL NOT NULL DEFAULT 0,
-          date_mise_a_jour TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY (id_foyer) REFERENCES foyer (id) ON DELETE CASCADE,
-          UNIQUE(id_foyer, categorie)
+          name TEXT NOT NULL,
+          limit_amount REAL NOT NULL,
+          spent_amount REAL NOT NULL DEFAULT 0,
+          month TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          UNIQUE(name, month)
         )
       ''');
 
@@ -144,7 +144,7 @@ Future<Database> initDatabase() async {
         }
       }
 
-      // Migration to version 4: Force add commentaires column for legacy databases
+      // Migration to version 5: Force add commentaires column for legacy databases
       if (oldVersion < 5) {
         // Toujours vérifier et ajouter colonne commentaires (même si déjà fait en v4)
         final objetColumns = await db.rawQuery("PRAGMA table_info(objet)");
@@ -155,6 +155,28 @@ Future<Database> initDatabase() async {
           print('✅ Migration v5: Force added commentaires column to objet table');
         } else {
           print('✅ Migration v5: Commentaires column already exists');
+        }
+      }
+
+      // Migration to version 6: Add budget_categories table
+      if (oldVersion < 6) {
+        final tables = await db.rawQuery("SELECT name FROM sqlite_master WHERE type='table' AND name='budget_categories'");
+        if (tables.isEmpty) {
+          await db.execute('''
+            CREATE TABLE budget_categories (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              name TEXT NOT NULL,
+              limit_amount REAL NOT NULL,
+              spent_amount REAL NOT NULL DEFAULT 0,
+              month TEXT NOT NULL,
+              created_at TEXT NOT NULL,
+              updated_at TEXT NOT NULL,
+              UNIQUE(name, month)
+            )
+          ''');
+          print('✅ Migration v6: Added budget_categories table');
+        } else {
+          print('✅ Migration v6: budget_categories table already exists');
         }
       }
     },

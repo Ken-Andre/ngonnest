@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import '../l10n/app_localizations.dart';
 import '../theme/theme_mode_notifier.dart';
 import '../widgets/main_navigation_wrapper.dart';
 import '../services/navigation_service.dart';
+import '../providers/locale_provider.dart';
+import '../services/settings_service.dart';
+import '../services/notification_permission_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -18,8 +22,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _notificationsEnabled = true;
   bool _localDataOnly = true;
   bool _hasAcceptedCloudSync = false;
-  String _selectedLanguage = 'fr';
   String _notificationFrequency = 'quotidienne';
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -27,28 +31,87 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _loadSettings();
   }
 
-  // TODO: Implement settings initialization from SharedPreferences
-  // Load all saved settings when screen opens
-  // This includes: language, notifications, cloud sync preferences, etc.
+  /// Load all saved settings when screen opens
   Future<void> _loadSettings() async {
-    // Example:
-    // final prefs = await SharedPreferences.getInstance();
-    // setState(() {
-    //   _notificationsEnabled = prefs.getBool('notifications_enabled') ?? true;
-    //   _selectedLanguage = prefs.getString('language') ?? 'fr';
-    //   _localDataOnly = prefs.getBool('local_data_only') ?? true;
-    // });
+    try {
+      final notificationsEnabled = await SettingsService.getNotificationsEnabled();
+      
+      setState(() {
+        _notificationsEnabled = notificationsEnabled;
+      });
+    } catch (e) {
+      debugPrint('Error loading settings: $e');
+    }
   }
 
-  final List<Map<String, String>> _languages = [
-    {'code': 'fr', 'name': 'Français'},
-    {'code': 'en', 'name': 'English'},
-    {'code': 'es', 'name': 'Español'},
+  List<Map<String, String>> get _notificationFrequencies => [
+    {'code': 'quotidienne', 'name': AppLocalizations.of(context)?.daily ?? 'Quotidienne'},
+    {'code': 'hebdomadaire', 'name': AppLocalizations.of(context)?.weekly ?? 'Hebdomadaire'},
   ];
-  final List<Map<String, String>> _notificationFrequencies = [
-    {'code': 'quotidienne', 'name': 'Quotidienne'},
-    {'code': 'hebdomadaire', 'name': 'Hebdomadaire'},
-  ];
+
+  /// Handle notification toggle with permission handling
+  Future<void> _handleNotificationToggle(bool value) async {
+    setState(() => _isLoading = true);
+    
+    try {
+      if (value) {
+        // Enabling notifications - request permission
+        final result = await NotificationPermissionService.enableNotifications();
+        
+        switch (result) {
+          case NotificationPermissionResult.granted:
+            setState(() => _notificationsEnabled = true);
+            _showSuccessMessage(AppLocalizations.of(context)?.settingsSaved ?? 'Paramètres sauvegardés');
+            break;
+          case NotificationPermissionResult.denied:
+            NotificationPermissionService.showPermissionDeniedDialog(
+              context,
+              () => NotificationPermissionService.openSystemSettings(),
+            );
+            break;
+          case NotificationPermissionResult.error:
+            _showErrorMessage(AppLocalizations.of(context)?.errorActivatingNotifications ?? 'Erreur lors de l\'activation des notifications');
+            break;
+        }
+      } else {
+        // Disabling notifications
+        await NotificationPermissionService.disableNotifications();
+        setState(() => _notificationsEnabled = false);
+        _showSuccessMessage(AppLocalizations.of(context)?.settingsSaved ?? 'Paramètres sauvegardés');
+      }
+    } catch (e) {
+      _showErrorMessage('Erreur: $e');
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  /// Show success message
+  void _showSuccessMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  /// Show error message
+  void _showErrorMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  /// Show language changed message
+  void _showLanguageChangedMessage() {
+    _showSuccessMessage(AppLocalizations.of(context)?.languageChangedSuccessfully ?? 'Langue modifiée avec succès');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -71,7 +134,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 // AppBar est défini ici, à l'intérieur du Scaffold
                 // fourni par MainNavigationWrapper (espérons-le)
                 appBar: AppBar(
-                  title: const Text('Paramètres'),
+                  title: Text(AppLocalizations.of(context)?.settings ?? 'Paramètres'),
                   backgroundColor: Theme.of(context).colorScheme.primary,
                   foregroundColor: Theme.of(context).colorScheme.onPrimary,
                   // Ne pas mettre automaticallyImplyLeading ici si MainNavigationWrapper gère la navigation
@@ -103,68 +166,73 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Language Section
-                        _buildSectionTitle('Langue'),
-                        _buildSettingCard(
-                          title: 'Langue de l\'application',
-                          subtitle: 'Choisissez votre langue préférée',
-                          child: Row(
-                            children: [
-                              SizedBox(
-                                width: 100,
-                                child: DropdownButton<String>(
-                                  value: _selectedLanguage,
-                                  underline: const SizedBox(),
-                                  items: _languages
-                                      .map(
-                                        (lang) => DropdownMenuItem(
-                                          value: lang['code'],
-                                          child: Text(
-                                            lang['name']!,
-                                            style: TextStyle(
-                                              color: Theme.of(context).colorScheme.onSurface,
-                                              fontSize: 16,
+                        _buildSectionTitle(AppLocalizations.of(context)?.language ?? 'Langue'),
+                        Consumer<LocaleProvider>(
+                          builder: (context, localeProvider, child) {
+                            return _buildSettingCard(
+                              title: AppLocalizations.of(context)?.languageOfApp ?? 'Langue de l\'application',
+                              subtitle: AppLocalizations.of(context)?.choosePreferredLanguage ?? 'Choisissez votre langue préférée',
+                              child: Row(
+                                children: [
+                                  SizedBox(
+                                    width: 120,
+                                    child: DropdownButton<Locale>(
+                                      value: localeProvider.locale,
+                                      underline: const SizedBox(),
+                                      items: LocaleProvider.supportedLocales
+                                          .map(
+                                            (locale) => DropdownMenuItem(
+                                              value: locale,
+                                              child: Text(
+                                                localeProvider.getLocaleDisplayName(locale),
+                                                style: TextStyle(
+                                                  color: Theme.of(context).colorScheme.onSurface,
+                                                  fontSize: 16,
+                                                ),
+                                              ),
                                             ),
-                                          ),
-                                        ),
-                                      )
-                                      .toList(),
-                                  onChanged: (value) {
-                                    setState(() => _selectedLanguage = value!);
-                                    // TODO: Implement language change functionality
-                                  },
-                                  isExpanded: true,
-                                  hint: const Text(
-                                    'Langue',
-                                    style: TextStyle(fontSize: 16),
+                                          )
+                                          .toList(),
+                                      onChanged: (locale) async {
+                                        if (locale != null) {
+                                          await localeProvider.setLocale(locale);
+                                          if (mounted) {
+                                            _showLanguageChangedMessage();
+                                          }
+                                        }
+                                      },
+                                      isExpanded: true,
+                                    ),
                                   ),
-                                ),
+                                  const SizedBox(width: 8),
+                                  IconButton(
+                                    onPressed: () {},
+                                    icon: Icon(
+                                      CupertinoIcons.globe,
+                                      color: Theme.of(context).colorScheme.primary,
+                                      size: 24,
+                                    ),
+                                    tooltip: AppLocalizations.of(context)?.selectToChangeInterface ?? 'Sélectionnez pour changer l\'interface',
+                                  ),
+                                ],
                               ),
-                              const SizedBox(width: 8),
-                              IconButton(
-                                onPressed: () {},
-                                icon: Icon(
-                                  CupertinoIcons.globe,
-                                  color: Theme.of(context).colorScheme.primary,
-                                  size: 24,
-                                ),
-                                tooltip: 'Sélectionnez pour changer l\'interface',
-                              ),
-                            ],
-                          ),
+                            );
+                          },
                         ),
                         const SizedBox(height: 24),
                         // Notifications Section
-                        _buildSectionTitle('Notifications'),
+                        _buildSectionTitle(AppLocalizations.of(context)?.notifications ?? 'Notifications'),
                         _buildSettingCard(
-                          title: 'Notifications push',
-                          subtitle: 'Recevoir des alertes sur l\'app',
+                          title: _notificationsEnabled 
+                              ? (AppLocalizations.of(context)?.notificationsEnabled ?? 'Notifications activées')
+                              : (AppLocalizations.of(context)?.notificationsDisabled ?? 'Notifications désactivées'),
+                          subtitle: AppLocalizations.of(context)?.receiveAppAlerts ?? 'Recevoir des alertes sur l\'app',
                           child: Row(
                             children: [
                               CupertinoSwitch(
                                 value: _notificationsEnabled,
-                                onChanged: (value) {
-                                  setState(() => _notificationsEnabled = value);
-                                  // TODO: Implement notification settings
+                                onChanged: _isLoading ? null : (value) async {
+                                  await _handleNotificationToggle(value);
                                 },
                                 activeColor: Theme.of(context).colorScheme.primary,
                               ),
@@ -176,7 +244,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   color: Theme.of(context).colorScheme.primary,
                                   size: 24,
                                 ),
-                                tooltip: 'Activer rappels pour stocks bas',
+                                tooltip: AppLocalizations.of(context)?.enableRemindersForLowStock ?? 'Activer rappels pour stocks bas',
                               ),
                             ],
                           ),
@@ -186,8 +254,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           Container(
                             margin: const EdgeInsets.only(left: 16),
                             child: _buildSettingCard(
-                              title: 'Fréquence des notifications',
-                              subtitle: 'Choisissez la fréquence des rappels',
+                              title: AppLocalizations.of(context)?.notificationFrequency ?? 'Fréquence des notifications',
+                              subtitle: AppLocalizations.of(context)?.chooseReminderFrequency ?? 'Choisissez la fréquence des rappels',
                               child: SizedBox(
                                 width: 120,
                                 child: DropdownButton<String>(
@@ -217,10 +285,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ],
                         const SizedBox(height: 24),
                         // Privacy Section
-                        _buildSectionTitle('Confidentialité'),
+                        _buildSectionTitle(AppLocalizations.of(context)?.privacy ?? 'Confidentialité'),
                         _buildSettingCard(
-                          title: 'Données locales uniquement',
-                          subtitle: 'Pas de sync sans accord explicite',
+                          title: AppLocalizations.of(context)?.localDataOnly ?? 'Données locales uniquement',
+                          subtitle: AppLocalizations.of(context)?.noSyncWithoutExplicitConsent ?? 'Pas de sync sans accord explicite',
                           child: Row(
                             children: [
                               CupertinoSwitch(
@@ -240,11 +308,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         const SizedBox(height: 24),
                         // Theme Section
-                        _buildSectionTitle('Thème'),
+                        _buildSectionTitle(AppLocalizations.of(context)?.theme ?? 'Thème'),
                         _buildSettingCard(
                           title:
                               'Mode ${themeModeNotifier.themeMode == ThemeMode.light ? 'clair' : themeModeNotifier.themeMode == ThemeMode.dark ? 'sombre' : 'système'}',
-                          subtitle: 'Changer l\'apparence de l\'application',
+                          subtitle: AppLocalizations.of(context)?.changeAppAppearance ?? 'Changer l\'apparence de l\'application',
                           child: CupertinoSwitch(
                             value: themeModeNotifier.themeMode == ThemeMode.dark,
                             onChanged: (value) {
@@ -255,14 +323,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         const SizedBox(height: 32),
                         // Support Section
-                        _buildSectionTitle('Support'),
+                        _buildSectionTitle(AppLocalizations.of(context)?.support ?? 'Support'),
                         _buildSettingCard(
-                          title: 'Envoyer un feedback',
-                          subtitle: 'Partagez vos suggestions',
+                          title: AppLocalizations.of(context)?.sendFeedback ?? 'Envoyer un feedback',
+                          subtitle: AppLocalizations.of(context)?.shareYourSuggestions ?? 'Partagez vos suggestions',
                           child: ElevatedButton.icon(
                             onPressed: _showFeedbackDialog,
                             icon: const Icon(CupertinoIcons.mail, size: 18),
-                            label: const Text('Envoyer'),
+                            label: Text(AppLocalizations.of(context)?.send ?? 'Envoyer'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Theme.of(context).colorScheme.primary,
                               foregroundColor: Theme.of(context).colorScheme.onPrimary,
@@ -278,12 +346,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         const SizedBox(height: 16),
                         _buildSettingCard(
-                          title: 'Signaler un bug',
-                          subtitle: 'Décrivez le problème',
+                          title: AppLocalizations.of(context)?.reportBug ?? 'Signaler un bug',
+                          subtitle: AppLocalizations.of(context)?.describeProblem ?? 'Décrivez le problème',
                           child: ElevatedButton.icon(
                             onPressed: _showBugReportDialog,
                             icon: const Icon(Icons.bug_report, size: 18),
-                            label: const Text('Signaler'),
+                            label: Text(AppLocalizations.of(context)?.report ?? 'Signaler'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Theme.of(context).colorScheme.primary,
                               foregroundColor: Theme.of(context).colorScheme.onPrimary,
@@ -299,14 +367,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         const SizedBox(height: 24),
                         // Data Management Section
-                        _buildSectionTitle('Données'),
+                        _buildSectionTitle(AppLocalizations.of(context)?.data ?? 'Données'),
                         _buildSettingCard(
-                          title: 'Exporter les données',
-                          subtitle: 'Sauvegarder vos données localement',
+                          title: AppLocalizations.of(context)?.exportData ?? 'Exporter les données',
+                          subtitle: AppLocalizations.of(context)?.backupDataLocally ?? 'Sauvegarder vos données localement',
                           child: ElevatedButton.icon(
                             onPressed: _exportData,
                             icon: const Icon(Icons.download, size: 16),
-                            label: const Text('Exporter'),
+                            label: Text(AppLocalizations.of(context)?.export ?? 'Exporter'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Theme.of(context).colorScheme.secondary,
                               foregroundColor: Theme.of(context).colorScheme.onSecondary,
@@ -319,12 +387,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         const SizedBox(height: 8),
                         _buildSettingCard(
-                          title: 'Importer des données',
-                          subtitle: 'Restaurer depuis un fichier sauvegardé',
+                          title: AppLocalizations.of(context)?.importData ?? 'Importer des données',
+                          subtitle: AppLocalizations.of(context)?.restoreFromBackupFile ?? 'Restaurer depuis un fichier sauvegardé',
                           child: ElevatedButton.icon(
                             onPressed: _importData,
                             icon: const Icon(Icons.upload, size: 16),
-                            label: const Text('Importer'),
+                            label: Text(AppLocalizations.of(context)?.import ?? 'Importer'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Theme.of(context).colorScheme.secondary,
                               foregroundColor: Theme.of(context).colorScheme.onSecondary,
@@ -337,12 +405,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         const SizedBox(height: 8),
                         _buildSettingCard(
-                          title: 'Supprimer toutes les données',
-                          subtitle: 'Reset complet - Action irréversible',
+                          title: AppLocalizations.of(context)?.deleteAllData ?? 'Supprimer toutes les données',
+                          subtitle: AppLocalizations.of(context)?.completeResetIrreversible ?? 'Reset complet - Action irréversible',
                           child: ElevatedButton.icon(
                             onPressed: _showDeleteAllDataConfirmation,
                             icon: const Icon(Icons.delete_forever, size: 16, color: Colors.white),
-                            label: const Text('Supprimer'),
+                            label: Text(AppLocalizations.of(context)?.delete ?? 'Supprimer'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.red.shade600,
                               foregroundColor: Colors.white,
@@ -366,8 +434,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                             minimumSize: const Size(double.infinity, 50),
                           ),
-                          child: const Text(
-                            'Sauvegarder',
+                          child: Text(
+                            AppLocalizations.of(context)?.save ?? 'Sauvegarder',
                             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                           ),
                         ),
@@ -451,18 +519,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showCupertinoModalPopup<void>(
       context: context,
       builder: (BuildContext context) => CupertinoAlertDialog(
-        title: const Text('Synchronisation Cloud'),
+        title: Text(AppLocalizations.of(context)?.cloudSynchronization ?? 'Synchronisation Cloud'),
         content: Column(
           children: [
-            const Text(
-              'La synchronisation cloud permet de sauvegarder vos données en ligne. '
-              'Acceptez-vous cette fonctionnalité ?',
+            Text(
+              AppLocalizations.of(context)?.cloudSyncAllowsOnlineBackup ?? 'La synchronisation cloud permet de sauvegarder vos données en ligne. Acceptez-vous cette fonctionnalité ?',
             ),
             const SizedBox(height: 16),
             Material(
               color: Colors.transparent,
               child: CheckboxListTile(
-                title: const Text('J\'accepte la synchronisation cloud'),
+                title: Text(AppLocalizations.of(context)?.acceptCloudSync ?? 'J\'accepte la synchronisation cloud'),
                 value: _hasAcceptedCloudSync,
                 onChanged: (value) =>
                     setState(() => _hasAcceptedCloudSync = value ?? false),
@@ -473,11 +540,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         actions: [
           CupertinoDialogAction(
-            child: const Text('Annuler'),
+            child: Text(AppLocalizations.of(context)?.cancel ?? 'Annuler'),
             onPressed: () => Navigator.of(context).pop(),
           ),
           CupertinoDialogAction(
-            child: const Text('Accepter'),
+            child: Text(AppLocalizations.of(context)?.accept ?? 'Accepter'),
             onPressed: () {
               if (_hasAcceptedCloudSync) {
                 // TODO: Implement cloud synchronization
@@ -496,14 +563,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showCupertinoModalPopup<void>(
       context: context,
       builder: (BuildContext context) => CupertinoAlertDialog(
-        title: const Text('Synchronisation activée'),
-        content: const Text(
-          'La synchronisation cloud a été activée. '
-          'Vos données seront automatiquement sauvegardées.',
+        title: Text(AppLocalizations.of(context)?.syncEnabled ?? 'Synchronisation activée'),
+        content: Text(
+          AppLocalizations.of(context)?.cloudSyncActivated ?? 'La synchronisation cloud a été activée. Vos données seront automatiquement sauvegardées.',
         ),
         actions: [
           CupertinoDialogAction(
-            child: const Text('OK'),
+            child: Text(AppLocalizations.of(context)?.ok ?? 'OK'),
             onPressed: () => Navigator.of(context).pop(),
           ),
         ],
@@ -516,11 +582,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showCupertinoModalPopup<void>(
       context: context,
       builder: (BuildContext context) => CupertinoAlertDialog(
-        title: const Text('Envoyer un feedback'),
+        title: Text(AppLocalizations.of(context)?.sendFeedbackTitle ?? 'Envoyer un feedback'),
         content: Column(
           children: [
-            const Text(
-              'Nous aimerions connaître votre avis sur l\'application.',
+            Text(
+              AppLocalizations.of(context)?.feedbackMessage ?? 'Nous aimerions connaître votre avis sur l\'application.',
             ),
             const SizedBox(height: 12),
             Material(
@@ -535,8 +601,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: TextField(
                   maxLines: 4,
                   onChanged: (value) => feedbackMessage = value,
-                  decoration: const InputDecoration(
-                    hintText: 'Tapez votre message ici...',
+                  decoration: InputDecoration(
+                    hintText: AppLocalizations.of(context)?.typeMessageHere ?? 'Tapez votre message ici...',
                     border: InputBorder.none,
                   ),
                 ),
@@ -546,11 +612,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         actions: [
           CupertinoDialogAction(
-            child: const Text('Annuler'),
+            child: Text(AppLocalizations.of(context)?.cancel ?? 'Annuler'),
             onPressed: () => Navigator.of(context).pop(),
           ),
           CupertinoDialogAction(
-            child: const Text('Envoyer'),
+            child: Text(AppLocalizations.of(context)?.send ?? 'Envoyer'),
             onPressed: () {
               if (feedbackMessage.trim().isNotEmpty) {
                 // TODO: Implement server-side feedback submission
@@ -569,15 +635,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showCupertinoModalPopup<void>(
       context: context,
       builder: (BuildContext context) => CupertinoAlertDialog(
-        title: const Text('Signaler un bug'),
+        title: Text(AppLocalizations.of(context)?.reportBugTitle ?? 'Signaler un bug'),
         content: Column(
           children: [
-            const Text(
-              'Votre signalement sera envoyé à notre équipe de développement.',
+            Text(
+              AppLocalizations.of(context)?.bugReportWillBeSent ?? 'Votre signalement sera envoyé à notre équipe de développement.',
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Pour continuer à nous contacter, rejoignez notre bot Telegram :',
+            Text(
+              AppLocalizations.of(context)?.continueContactTelegram ?? 'Pour continuer à nous contacter, rejoignez notre bot Telegram :',
               style: TextStyle(fontSize: 12),
             ),
             const SizedBox(height: 4),
@@ -587,8 +653,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 await Clipboard.setData(const ClipboardData(text: url));
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Lien Telegram copié !'),
+                    SnackBar(
+                      content: Text(AppLocalizations.of(context)?.telegramLinkCopied ?? 'Lien Telegram copié !'),
                       duration: Duration(seconds: 2),
                     ),
                   );
@@ -627,8 +693,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: TextField(
                   maxLines: 4,
                   onChanged: (value) => bugDescription = value,
-                  decoration: const InputDecoration(
-                    hintText: 'Décrivez le bug en détail...',
+                  decoration: InputDecoration(
+                    hintText: AppLocalizations.of(context)?.typeMessageHere ?? 'Décrivez le bug en détail...',
                     border: InputBorder.none,
                   ),
                 ),
@@ -638,11 +704,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         actions: [
           CupertinoDialogAction(
-            child: const Text('Annuler'),
+            child: Text(AppLocalizations.of(context)?.cancel ?? 'Annuler'),
             onPressed: () => Navigator.of(context).pop(),
           ),
           CupertinoDialogAction(
-            child: const Text('Signaler'),
+            child: Text(AppLocalizations.of(context)?.report ?? 'Signaler'),
             onPressed: () {
               if (bugDescription.trim().isNotEmpty) {
                 // TODO: Implement bug report handling with Telegram integration
@@ -660,13 +726,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showCupertinoModalPopup<void>(
       context: context,
       builder: (BuildContext context) => CupertinoAlertDialog(
-        title: const Text('Feedback envoyé'),
-        content: const Text(
-          'Merci pour votre retour ! Nous l\'utiliserons pour améliorer l\'application.',
+        title: Text(AppLocalizations.of(context)?.feedbackSent ?? 'Feedback envoyé'),
+        content: Text(
+          AppLocalizations.of(context)?.feedbackSentSuccessfully ?? 'Merci pour votre retour ! Nous l\'utiliserons pour améliorer l\'application.',
         ),
         actions: [
           CupertinoDialogAction(
-            child: const Text('OK'),
+            child: Text(AppLocalizations.of(context)?.ok ?? 'OK'),
             onPressed: () => Navigator.of(context).pop(),
           ),
         ],
@@ -678,9 +744,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showCupertinoModalPopup<void>(
       context: context,
       builder: (BuildContext context) => CupertinoAlertDialog(
-        title: const Text('Bug signalé'),
-        content: const Text(
-          'Merci d\'avoir signalé ce problème. Nous allons l\'examiner rapidement.',
+        title: Text(AppLocalizations.of(context)?.bugReportSent ?? 'Bug signalé'),
+        content: Text(
+          AppLocalizations.of(context)?.bugReportSentSuccessfully ?? 'Merci d\'avoir signalé ce problème. Nous allons l\'examiner rapidement.',
         ),
         actions: [
           CupertinoDialogAction(
@@ -738,38 +804,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showCupertinoModalPopup<void>(
       context: context,
       builder: (BuildContext context) => CupertinoAlertDialog(
-        title: const Text(
-          '⚠️ ATTENTION ⚠️',
-          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+        title: Text(
+          AppLocalizations.of(context)?.deleteAllDataConfirmation ?? '⚠️ ATTENTION ⚠️',
+          style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
         ),
         content: Column(
-          children: const [
-            SizedBox(height: 8),
-            Text(
+          children: [
+            const SizedBox(height: 8),
+            const Text(
               'Cette action est IRRÉVERSIBLE !',
               style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
             ),
-            SizedBox(height: 12),
+            const SizedBox(height: 12),
             Text(
-              'Toutes vos données seront supprimées :\n'
-              '• Profil du foyer\n'
-              '• Inventaire complet\n'
-              '• Historique d\'achats\n'
-              '• Préférences et paramètres\n'
-              'L\'application retournera à son état initial.',
+              AppLocalizations.of(context)?.deleteAllDataWarning ?? 'Toutes vos données seront supprimées :\n• Profil du foyer\n• Inventaire complet\n• Historique d\'achats\n• Préférences et paramètres\nL\'application retournera à son état initial.',
               textAlign: TextAlign.center,
             ),
           ],
         ),
         actions: [
           CupertinoDialogAction(
-            child: const Text('Annuler', style: TextStyle(color: Colors.blue)),
+            child: Text(AppLocalizations.of(context)?.cancel ?? 'Annuler', style: const TextStyle(color: Colors.blue)),
             onPressed: () => Navigator.of(context).pop(),
           ),
           CupertinoDialogAction(
-            child: const Text(
-              'SUPPRIMER TOUT',
-              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+            child: Text(
+              AppLocalizations.of(context)?.deleteAllData ?? 'SUPPRIMER TOUT',
+              style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
             ),
             onPressed: () {
               Navigator.of(context).pop();
@@ -842,7 +903,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           actions: [
             CupertinoDialogAction(
-              child: const Text('Annuler'),
+              child: Text(AppLocalizations.of(context)?.cancel ?? 'Annuler'),
               onPressed: () => Navigator.of(context).pop(),
             ),
             CupertinoDialogAction(
@@ -903,22 +964,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _saveSettings() {
-    // TODO: Implement comprehensive settings persistence
-    showCupertinoModalPopup<void>(
-      context: context,
-      builder: (BuildContext context) => CupertinoAlertDialog(
-        title: const Text('Paramètres sauvegardés'),
-        content: const Text(
-          'Vos préférences ont été sauvegardées avec succès.',
-        ),
-        actions: [
-          CupertinoDialogAction(
-            child: const Text('OK'),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-        ],
-      ),
-    );
+  Future<void> _saveSettings() async {
+    setState(() => _isLoading = true);
+    
+    try {
+      // Settings are already saved individually when changed
+      // This method can be used for any final validation or batch operations
+      
+      _showSuccessMessage(AppLocalizations.of(context)?.settingsSaved ?? 'Paramètres sauvegardés avec succès');
+    } catch (e) {
+      _showErrorMessage('Erreur lors de la sauvegarde: $e');
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 }

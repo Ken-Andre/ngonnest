@@ -1,12 +1,14 @@
 import 'dart:isolate';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 // import 'package:flutter/services.dart';
 import 'package:ngonnest_app/services/console_logger.dart';
 import 'package:ngonnest_app/services/error_logger_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
 import 'package:provider/provider.dart';
 import 'package:workmanager/workmanager.dart';
+import 'l10n/app_localizations.dart';
 
 import 'screens/onboarding_screen.dart';
 import 'screens/dashboard_screen.dart';
@@ -24,6 +26,8 @@ import 'widgets/connectivity_banner.dart'; // Import ConnectivityBanner
 import 'theme/app_theme.dart';
 import 'theme/theme_mode_notifier.dart'; // Import the new file
 import 'screens/preferences_screen.dart';
+import 'providers/locale_provider.dart';
+import 'services/settings_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -88,13 +92,23 @@ void main() async {
   // Initialize notifications
   await NotificationService.initialize();
 
+  // Initialize settings service
+  await SettingsService.initialize();
+
   final initialThemeMode = await ThemeModeNotifier.loadThemeMode();
+  
+  // Initialize locale provider
+  final localeProvider = LocaleProvider();
+  await localeProvider.initialize();
 
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(
           create: (context) => ThemeModeNotifier(initialThemeMode),
+        ),
+        ChangeNotifierProvider<LocaleProvider>.value(
+          value: localeProvider,
         ),
         Provider<DatabaseService>(
           create: (context) => DatabaseService(),
@@ -114,12 +128,22 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeMode = context.watch<ThemeModeNotifier>().themeMode;
+    final locale = context.watch<LocaleProvider>().locale;
+    
     return MaterialApp(
       title: 'NgonNest',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
+      locale: locale,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: LocaleProvider.supportedLocales,
       home: const AppWithConnectivityOverlay(child: SplashScreen()),
       routes: {
         '/onboarding': (context) => const AppWithConnectivityOverlay(child: OnboardingScreen()),
