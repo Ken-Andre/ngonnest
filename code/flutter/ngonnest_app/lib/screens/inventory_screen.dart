@@ -42,7 +42,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
     try {
       final foyer = await _databaseService.getFoyer();
       if (foyer != null && foyer.id != null) {
-        final consommables = await _inventoryRepository.getConsommables(foyer.id!);
+        final consommables = await _inventoryRepository.getConsommables(
+          foyer.id!,
+        );
         final durables = await _inventoryRepository.getDurables(foyer.id!);
 
         setState(() {
@@ -96,8 +98,12 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
   /// Handle database connection errors - DatabaseService handles reconnection automatically
   Future<void> _handleDatabaseConnectionError() async {
-    print('[InventoryScreen] Database connection error detected - DatabaseService will auto-recover');
-    print('[InventoryScreen] No manual intervention needed - connection will be restored automatically');
+    print(
+      '[InventoryScreen] Database connection error detected - DatabaseService will auto-recover',
+    );
+    print(
+      '[InventoryScreen] No manual intervention needed - connection will be restored automatically',
+    );
     // DatabaseService handles all reconnection logic internally
     // No need to close or reset anything manually
   }
@@ -111,14 +117,14 @@ class _InventoryScreenState extends State<InventoryScreen> {
       final query = _searchQuery.toLowerCase();
       filteredConsommables = filteredConsommables.where((objet) {
         return objet.nom.toLowerCase().contains(query) ||
-               objet.categorie.toLowerCase().contains(query) ||
-               (objet.room?.toLowerCase().contains(query) ?? false);
+            objet.categorie.toLowerCase().contains(query) ||
+            (objet.room?.toLowerCase().contains(query) ?? false);
       }).toList();
-      
+
       filteredDurables = filteredDurables.where((objet) {
         return objet.nom.toLowerCase().contains(query) ||
-               objet.categorie.toLowerCase().contains(query) ||
-               (objet.room?.toLowerCase().contains(query) ?? false);
+            objet.categorie.toLowerCase().contains(query) ||
+            (objet.room?.toLowerCase().contains(query) ?? false);
       }).toList();
     }
 
@@ -127,7 +133,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
       filteredConsommables = filteredConsommables.where((objet) {
         return objet.room == _filterState.selectedRoom;
       }).toList();
-      
+
       filteredDurables = filteredDurables.where((objet) {
         return objet.room == _filterState.selectedRoom;
       }).toList();
@@ -138,9 +144,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
       final now = DateTime.now();
       filteredConsommables = filteredConsommables.where((objet) {
         if (objet.dateRupturePrev == null) return false;
-        
+
         final daysUntilExpiry = objet.dateRupturePrev!.difference(now).inDays;
-        
+
         switch (_filterState.expiryFilter) {
           case ExpiryFilter.expiringSoon:
             return daysUntilExpiry >= 0 && daysUntilExpiry <= 7;
@@ -186,7 +192,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
     try {
       final updatedObjet = objet.copyWith(quantiteRestante: newQuantity);
       await _inventoryRepository.updateObjet(updatedObjet);
-      
+
       // Update local lists
       final index = _consommables.indexWhere((o) => o.id == objet.id);
       if (index != -1) {
@@ -203,11 +209,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return MainNavigationWrapper(
@@ -220,17 +222,12 @@ class _InventoryScreenState extends State<InventoryScreen> {
             title: const Text('Inventaire'),
             backgroundColor: Theme.of(context).primaryColor,
             foregroundColor: Colors.white,
-            automaticallyImplyLeading: false, // Remove back button since we have bottom nav
+            automaticallyImplyLeading:
+                false, // Remove back button since we have bottom nav
             bottom: const TabBar(
               tabs: [
-                Tab(
-                  icon: Icon(Icons.shopping_cart),
-                  text: 'Consommables',
-                ),
-                Tab(
-                  icon: Icon(Icons.inventory),
-                  text: 'Durables',
-                ),
+                Tab(icon: Icon(Icons.shopping_cart), text: 'Consommables'),
+                Tab(icon: Icon(Icons.inventory), text: 'Durables'),
               ],
               indicatorColor: Colors.white,
               labelColor: Colors.white,
@@ -246,35 +243,47 @@ class _InventoryScreenState extends State<InventoryScreen> {
           body: SafeArea(
             child: LayoutBuilder(
               builder: (context, constraints) {
-                return Column(
-                  children: [
-                    InventorySearchBar(
-                      onSearchChanged: _onSearchChanged,
-                      hintText: 'Rechercher par nom, catégorie ou pièce...',
-                      initialValue: _searchQuery,
+                // Fix overflow: Rendre tout le contenu scrollable quand l'espace est insuffisant
+                return SingleChildScrollView(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
                     ),
-                    const SizedBox(height: 8),
-                    InventoryFilterPanel(
-                      filterState: _filterState,
-                      onFilterChanged: _onFilterChanged,
-                      availableRooms: _getAvailableRooms(),
-                      isExpanded: _isFilterExpanded,
-                      onToggleExpanded: () {
-                        setState(() {
-                          _isFilterExpanded = !_isFilterExpanded;
-                        });
-                      },
+                    child: Column(
+                      children: [
+                        InventorySearchBar(
+                          onSearchChanged: _onSearchChanged,
+                          hintText: 'Rechercher par nom, catégorie ou pièce...',
+                          initialValue: _searchQuery,
+                        ),
+                        const SizedBox(height: 8),
+                        InventoryFilterPanel(
+                          filterState: _filterState,
+                          onFilterChanged: _onFilterChanged,
+                          availableRooms: _getAvailableRooms(),
+                          isExpanded: _isFilterExpanded,
+                          onToggleExpanded: () {
+                            setState(() {
+                              _isFilterExpanded = !_isFilterExpanded;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 8),
+                        // Hauteur fixe pour les tabs sur petits écrans, flexible sur grands écrans
+                        SizedBox(
+                          height: _isFilterExpanded 
+                            ? constraints.maxHeight * 0.4  // Réduit quand filtres ouverts
+                            : constraints.maxHeight * 0.7, // Plus d'espace quand filtres fermés
+                          child: TabBarView(
+                            children: [
+                              _buildConsommablesTab(),
+                              _buildDurablesTab(),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 8),
-                    Expanded(
-                      child: TabBarView(
-                        children: [
-                          _buildConsommablesTab(),
-                          _buildDurablesTab(),
-                        ],
-                      ),
-                    ),
-                  ],
+                  ),
                 );
               },
             ),
@@ -296,26 +305,17 @@ class _InventoryScreenState extends State<InventoryScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.shopping_cart_outlined,
-              size: 64,
-              color: Colors.grey,
-            ),
+            Icon(Icons.shopping_cart_outlined, size: 64, color: Colors.grey),
             SizedBox(height: 16),
             Text(
               'Aucun consommable ajouté',
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.grey,
-              ),
+              style: TextStyle(fontSize: 18, color: Colors.grey),
             ),
             SizedBox(height: 8),
             Text(
               'Appuyez sur le bouton + pour ajouter votre premier consommable',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.grey,
-              ),
+              style: TextStyle(color: Colors.grey),
             ),
           ],
         ),
@@ -327,26 +327,17 @@ class _InventoryScreenState extends State<InventoryScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.search_off,
-              size: 64,
-              color: Colors.grey,
-            ),
+            const Icon(Icons.search_off, size: 64, color: Colors.grey),
             const SizedBox(height: 16),
             Text(
               'Aucun consommable trouvé pour "$_searchQuery"',
-              style: const TextStyle(
-                fontSize: 18,
-                color: Colors.grey,
-              ),
+              style: const TextStyle(fontSize: 18, color: Colors.grey),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             const Text(
               'Essayez avec un autre terme de recherche',
-              style: TextStyle(
-                color: Colors.grey,
-              ),
+              style: TextStyle(color: Colors.grey),
             ),
           ],
         ),
@@ -369,26 +360,17 @@ class _InventoryScreenState extends State<InventoryScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.inventory_2_outlined,
-              size: 64,
-              color: Colors.grey,
-            ),
+            Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey),
             SizedBox(height: 16),
             Text(
               'Aucun bien durable ajouté',
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.grey,
-              ),
+              style: TextStyle(fontSize: 18, color: Colors.grey),
             ),
             SizedBox(height: 8),
             Text(
               'Appuyez sur le bouton + pour ajouter votre premier bien durable',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.grey,
-              ),
+              style: TextStyle(color: Colors.grey),
             ),
           ],
         ),
@@ -400,26 +382,17 @@ class _InventoryScreenState extends State<InventoryScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.search_off,
-              size: 64,
-              color: Colors.grey,
-            ),
+            const Icon(Icons.search_off, size: 64, color: Colors.grey),
             const SizedBox(height: 16),
             Text(
               'Aucun bien durable trouvé pour "$_searchQuery"',
-              style: const TextStyle(
-                fontSize: 18,
-                color: Colors.grey,
-              ),
+              style: const TextStyle(fontSize: 18, color: Colors.grey),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             const Text(
               'Essayez avec un autre terme de recherche',
-              style: TextStyle(
-                color: Colors.grey,
-              ),
+              style: TextStyle(color: Colors.grey),
             ),
           ],
         ),
@@ -441,14 +414,16 @@ class _InventoryScreenState extends State<InventoryScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: objet.type == TypeObjet.consommable 
+          backgroundColor: objet.type == TypeObjet.consommable
               ? Colors.green.withOpacity(0.2)
               : Colors.blue.withOpacity(0.2),
           child: Icon(
-            objet.type == TypeObjet.consommable 
+            objet.type == TypeObjet.consommable
                 ? Icons.shopping_cart
                 : Icons.inventory,
-            color: objet.type == TypeObjet.consommable ? Colors.green : Colors.blue,
+            color: objet.type == TypeObjet.consommable
+                ? Colors.green
+                : Colors.blue,
           ),
         ),
         title: Text(
@@ -466,14 +441,18 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   Icon(
                     Icons.room,
                     size: 14,
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.6),
                   ),
                   const SizedBox(width: 4),
                   Flexible(
                     child: Text(
                       objet.room!,
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withOpacity(0.8),
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -493,7 +472,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
                     flex: 2,
                     child: QuickQuantityUpdate(
                       objet: objet,
-                      onQuantityChanged: (newQuantity) => _updateQuantity(objet, newQuantity),
+                      onQuantityChanged: (newQuantity) =>
+                          _updateQuantity(objet, newQuantity),
                     ),
                   ),
                 ],
@@ -573,7 +553,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
               onTap: () {
                 Navigator.pop(context);
                 Navigator.pushNamed(
-                  context, 
+                  context,
                   '/add-product',
                   arguments: const {'isConsumable': true},
                 );
@@ -586,7 +566,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
               onTap: () {
                 Navigator.pop(context);
                 Navigator.pushNamed(
-                  context, 
+                  context,
                   '/add-product',
                   arguments: const {'isConsumable': false},
                 );
@@ -614,7 +594,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
               objet.type == TypeObjet.consommable
                   ? Icons.shopping_cart
                   : Icons.inventory,
-              color: objet.type == TypeObjet.consommable ? Colors.green : Colors.blue,
+              color: objet.type == TypeObjet.consommable
+                  ? Colors.green
+                  : Colors.blue,
             ),
             const SizedBox(width: 8),
             Expanded(
@@ -633,7 +615,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
             children: [
               // Informations de base
               _buildDetailRow('Catégorie', objet.categorie),
-              _buildDetailRow('Type', objet.type == TypeObjet.consommable ? "Consommable" : "Durable"),
+              _buildDetailRow(
+                'Type',
+                objet.type == TypeObjet.consommable ? "Consommable" : "Durable",
+              ),
               if (objet.room != null && objet.room!.isNotEmpty)
                 _buildDetailRow('Pièce', objet.room!),
 
@@ -641,20 +626,36 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
               // Informations spécifiques selon le type
               if (objet.type == TypeObjet.consommable) ...[
-                _buildDetailRow('Quantité initiale', '${objet.quantiteInitiale} ${objet.unite}'),
-                _buildDetailRow('Quantité restante', '${objet.quantiteRestante} ${objet.unite}'),
+                _buildDetailRow(
+                  'Quantité initiale',
+                  '${objet.quantiteInitiale} ${objet.unite}',
+                ),
+                _buildDetailRow(
+                  'Quantité restante',
+                  '${objet.quantiteRestante} ${objet.unite}',
+                ),
                 if (objet.prixUnitaire != null)
                   _buildDetailRow('Prix unitaire', '${objet.prixUnitaire} €'),
                 if (objet.dateRupturePrev != null)
-                  _buildDetailRow('Rupture prévue', _formatDate(objet.dateRupturePrev)),
+                  _buildDetailRow(
+                    'Rupture prévue',
+                    _formatDate(objet.dateRupturePrev),
+                  ),
               ] else ...[
                 if (objet.dateAchat != null)
-                  _buildDetailRow('Date d\'achat', _formatDate(objet.dateAchat)),
+                  _buildDetailRow(
+                    'Date d\'achat',
+                    _formatDate(objet.dateAchat),
+                  ),
                 if (objet.dureeViePrevJours != null)
-                  _buildDetailRow('Durée de vie prévue', '${objet.dureeViePrevJours} jours'),
+                  _buildDetailRow(
+                    'Durée de vie prévue',
+                    '${objet.dureeViePrevJours} jours',
+                  ),
 
                 // Affichage des commentaires pour les durables
-                if (objet.commentaires != null && objet.commentaires!.isNotEmpty) ...[
+                if (objet.commentaires != null &&
+                    objet.commentaires!.isNotEmpty) ...[
                   const SizedBox(height: 16),
                   const Text(
                     'Commentaires / Notes :',
@@ -826,7 +827,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   Color _getExpiryColor(DateTime expiryDate) {
     final now = DateTime.now();
     final daysUntilExpiry = expiryDate.difference(now).inDays;
-    
+
     if (daysUntilExpiry < 0) {
       return Colors.red; // Expired
     } else if (daysUntilExpiry <= 7) {
