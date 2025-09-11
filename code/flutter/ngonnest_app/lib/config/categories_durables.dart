@@ -35,6 +35,7 @@ Map<String, String>? getDurableCategoryById(String id) {
   try {
     return CATEGORIES_DURABLES.firstWhere(
       (category) => category['id'] == id,
+      orElse: () => {}, // Retourne un map vide si aucun élément n'est trouvé
     );
   } catch (e) {
     return null;

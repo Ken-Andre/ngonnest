@@ -182,7 +182,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -196,23 +196,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Row(
         children: [
           Expanded(
-            flex: 3,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Bonjour ! 👋',
                   style: TextStyle(
-                    fontSize: 28,
+                    fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: Theme.of(context).colorScheme.onPrimary,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 4),
                 Text(
                   'Bienvenue dans votre espace personnel NgonNest',
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 14,
                     color: Theme.of(
                       context,
                     ).colorScheme.onPrimary.withOpacity(0.9),
@@ -234,7 +233,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ? CupertinoIcons.moon_fill
                       : CupertinoIcons.sun_max_fill,
                   color: Theme.of(context).colorScheme.onPrimary,
-                  size: 24,
+                  size: 20,
                 ),
               ),
               const SizedBox(width: 8),
@@ -249,18 +248,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Icon(
                       CupertinoIcons.bell,
                       color: Theme.of(context).colorScheme.onPrimary,
-                      size: 24,
+                      size: 20,
                     ),
                     if (_notifications.isNotEmpty)
                       Positioned(
                         right: 0,
                         top: 0,
                         child: Container(
-                          width: 12,
-                          height: 12,
+                          width: 10,
+                          height: 10,
                           decoration: BoxDecoration(
                             color: Theme.of(context).colorScheme.error,
-                            borderRadius: BorderRadius.circular(6),
+                            borderRadius: BorderRadius.circular(5),
                           ),
                         ),
                       ),
@@ -366,25 +365,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
       children: stats.map((stat) {
         return Expanded(
           child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 6),
+            margin: const EdgeInsets.symmetric(horizontal: 4),
             child: Material(
               color: Colors.transparent,
               child: InkWell(
                 onTap: stat['onTap'] as VoidCallback,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(12),
                 child: Container(
-                  padding: const EdgeInsets.all(16),
-                  constraints: const BoxConstraints(minHeight: 100),
+                  padding: const EdgeInsets.all(12),
+                  constraints: const BoxConstraints(minHeight: 80),
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.surface,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
                         color: Theme.of(
                           context,
                         ).colorScheme.onSurface.withOpacity(0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
                       ),
                     ],
                   ),
@@ -393,15 +392,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     children: [
                       Icon(
                         stat['icon'] as IconData,
-                        size: 28,
+                        size: 24,
                         color: stat['color'] as Color,
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6),
                       Flexible(
                         child: Text(
                           stat['value'] as String,
                           style: TextStyle(
-                            fontSize: 24,
+                            fontSize: 20,
                             fontWeight: FontWeight.bold,
                             color: Theme.of(context).colorScheme.onSurface,
                           ),
@@ -409,12 +408,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 2),
                       Flexible(
                         child: Text(
                           stat['label'] as String,
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 10,
                             color: Theme.of(
                               context,
                             ).colorScheme.onSurface.withOpacity(0.7),
@@ -613,33 +612,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
         Text(
           'Actions rapides',
           style: TextStyle(
-            fontSize: 20,
+            fontSize: 18,
             fontWeight: FontWeight.w600,
             color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         Row(
           children: actions.map((action) {
             return Expanded(
               child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 6),
+                margin: const EdgeInsets.symmetric(horizontal: 4),
                 child: CupertinoButton(
                   padding: EdgeInsets.zero,
                   onPressed: action['onTap'] as VoidCallback,
                   child: Container(
-                    padding: const EdgeInsets.all(20),
-                    constraints: const BoxConstraints(minHeight: 120),
+                    padding: const EdgeInsets.all(16),
+                    constraints: const BoxConstraints(minHeight: 100),
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
                           color: Theme.of(
                             context,
                           ).colorScheme.onSurface.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
                         ),
                       ],
                     ),
@@ -647,24 +646,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Container(
-                          width: 50,
-                          height: 50,
+                          width: 40,
+                          height: 40,
                           decoration: BoxDecoration(
                             color: (action['color'] as Color).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(10),
                           ),
                           child: Icon(
                             action['icon'] as IconData,
-                            size: 24,
+                            size: 20,
                             color: action['color'] as Color,
                           ),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 8),
                         Flexible(
                           child: Text(
                             action['title'] as String,
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: 14,
                               fontWeight: FontWeight.w600,
                               color: Theme.of(context).colorScheme.onSurface,
                             ),
@@ -672,12 +671,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 2),
                         Flexible(
                           child: Text(
                             action['subtitle'] as String,
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: 12,
                               color: Theme.of(
                                 context,
                               ).colorScheme.onSurface.withOpacity(0.7),

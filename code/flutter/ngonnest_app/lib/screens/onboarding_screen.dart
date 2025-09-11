@@ -58,7 +58,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final selectedSizeData = _householdSizes.firstWhere((size) => size['id'] == _selectedHouseholdSize);
+      // Utiliser firstWhere avec orElse pour éviter les exceptions
+      final selectedSizeData = _householdSizes.firstWhere(
+        (size) => size['id'] == _selectedHouseholdSize,
+        orElse: () => _householdSizes.first, // Valeur par défaut
+      );
+      
       final nbPersonnes = selectedSizeData['personCount'] as int;
       final nbPieces = nbPersonnes <= 2 ? 2 : nbPersonnes <= 4 ? 3 : 4;
 
@@ -186,25 +191,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget _buildLanguageStep() {
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(16),
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 20),
+              const SizedBox(height: 10),
 
               // Welcome section - Reduced padding
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(24), // Reduced from 32
+                padding: const EdgeInsets.all(20), // Reduced from 32
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
                     ),
                   ],
                 ),
@@ -212,9 +217,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   children: [
                     Text(
                       '🏠',
-                      style: Theme.of(context).textTheme.headlineLarge, // Reduced font size using theme
+                      style: Theme.of(context).textTheme.headlineLarge?.copyWith(fontSize: 32), // Reduced font size using theme
                     ),
-                    const SizedBox(height: 16), // Reduced from 24
+                    const SizedBox(height: 12), // Reduced from 24
                     Text(
                       'Bienvenue !',
                       style: Theme.of(context).textTheme.displaySmall?.copyWith(
@@ -223,11 +228,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 12), // Reduced from 16
+                    const SizedBox(height: 8), // Reduced from 16
                     Text(
                       'NgonNest vous aide à gérer vos produits ménagers facilement',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: AppTheme.neutralGrey,
+                        fontSize: 14,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -235,43 +241,44 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ),
               ),
 
-              const SizedBox(height: 24), // Reduced from 40
+              const SizedBox(height: 20), // Reduced from 40
 
               Text(
                 'Sélectionnez votre langue',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: AppTheme.neutralBlack,
+                  fontSize: 18,
                 ),
               ),
 
-              const SizedBox(height: 16), // Reduced from 24
+              const SizedBox(height: 12), // Reduced from 24
 
               // Language options
               ...Language.values.map((lang) => _buildLanguageOption(lang)),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
 
               // Time estimate - Moved above spacer, wrapped in container
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: AppTheme.primaryGreen.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
                   children: [
                     Icon(
                       CupertinoIcons.clock,
                       color: AppTheme.primaryGreen,
-                      size: 20,
+                      size: 18,
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     Expanded( // Added Expanded to prevent overflow
                       child: Text(
                         'Temps estimé: < 2 minutes',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 14,
                           color: AppTheme.primaryGreen,
                           fontWeight: FontWeight.w500,
                         ),
@@ -282,7 +289,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
 
               // Minimum spacing at bottom for navigation
-              const SizedBox(height: 80),
+              const SizedBox(height: 60),
             ],
           ),
         ),
@@ -339,36 +346,38 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Widget _buildHouseholdSizeStep() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
 
           Text(
             'Votre foyer',
             style: Theme.of(context).textTheme.displaySmall?.copyWith(
               fontWeight: FontWeight.bold,
               color: AppTheme.neutralBlack,
+              fontSize: 24,
             ),
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
 
           Text(
             'Sélectionnez la taille de votre foyer',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
               color: AppTheme.neutralGrey,
+              fontSize: 14,
             ),
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
 
           // Household size options
           ..._householdSizes.map((size) => _buildHouseholdSizeOption(size)),
 
           // Minimum spacing at bottom for navigation
-          const SizedBox(height: 80),
+          const SizedBox(height: 60),
         ],
       ),
     );
@@ -377,15 +386,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget _buildHouseholdSizeOption(Map<String, dynamic> size) {
     final isSelected = _selectedHouseholdSize == size['id'];
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 12),
       child: CupertinoButton(
         padding: EdgeInsets.zero,
         onPressed: () => setState(() => _selectedHouseholdSize = size['id']!),
         child: Container(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: isSelected ? AppTheme.primaryGreen : Colors.white,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isSelected ? AppTheme.primaryGreen : AppTheme.neutralGrey.withOpacity(0.3),
               width: 2,
@@ -393,30 +402,30 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
             ],
           ),
           child: Row(
             children: [
               Container(
-                width: 60,
-                height: 60,
+                width: 50,
+                height: 50,
                 decoration: BoxDecoration(
                   color: isSelected 
                       ? Colors.white.withOpacity(0.2) 
                       : AppTheme.primaryGreen.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Center(
                   child: Text(
                     size['icon']!,
-                    style: TextStyle(fontSize: 28),
+                    style: TextStyle(fontSize: 24),
                   ),
                 ),
               ),
-              const SizedBox(width: 20),
+              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -424,16 +433,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     Text(
                       size['label']!,
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: isSelected ? Colors.white : AppTheme.neutralBlack,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
                       'Recommandé pour ${size['personCount']} personnes',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 14,
                         color: isSelected 
                             ? Colors.white.withOpacity(0.8) 
                             : AppTheme.neutralGrey,
@@ -446,7 +455,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 Icon(
                   CupertinoIcons.checkmark_circle_fill,
                   color: Colors.white,
-                  size: 28,
+                  size: 24,
                 ),
             ],
           ),
@@ -457,36 +466,38 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Widget _buildHousingTypeStep() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
 
           Text(
             'Type de logement',
             style: Theme.of(context).textTheme.displaySmall?.copyWith(
               fontWeight: FontWeight.bold,
               color: AppTheme.neutralBlack,
+              fontSize: 24,
             ),
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
 
           Text(
             'Pour des recommandations personnalisées',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
               color: AppTheme.neutralGrey,
+              fontSize: 14,
             ),
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
 
           // Housing type options
           ...LogementType.values.map((type) => _buildHousingTypeOption(type)),
 
           // Minimum spacing at bottom for navigation
-          const SizedBox(height: 80),
+          const SizedBox(height: 60),
         ],
       ),
     );
@@ -499,15 +510,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         : CupertinoIcons.house_fill;
     
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 12),
       child: CupertinoButton(
         padding: EdgeInsets.zero,
         onPressed: () => setState(() => _selectedHousingType = type),
         child: Container(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: isSelected ? AppTheme.primaryGreen : Colors.white,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isSelected ? AppTheme.primaryGreen : AppTheme.neutralGrey.withOpacity(0.3),
               width: 2,
@@ -515,34 +526,34 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
             ],
           ),
           child: Row(
             children: [
               Container(
-                width: 60,
-                height: 60,
+                width: 50,
+                height: 50,
                 decoration: BoxDecoration(
                   color: isSelected 
                       ? Colors.white.withOpacity(0.2) 
                       : AppTheme.primaryGreen.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
                   icon,
-                  size: 28,
+                  size: 24,
                   color: isSelected ? Colors.white : AppTheme.primaryGreen,
                 ),
               ),
-              const SizedBox(width: 20),
+              const SizedBox(width: 16),
               Expanded(
                 child: Text(
                   LogementType.getDisplayName(type),
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: isSelected ? Colors.white : AppTheme.neutralBlack,
                   ),
@@ -552,7 +563,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 Icon(
                   CupertinoIcons.checkmark_circle_fill,
                   color: Colors.white,
-                  size: 28,
+                  size: 24,
                 ),
             ],
           ),
@@ -567,20 +578,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         _currentStep == 2 && _selectedHousingType.isNotEmpty;
 
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(16),
       child: SizedBox(
         width: double.infinity,
         child: CupertinoButton(
           padding: const EdgeInsets.symmetric(vertical: 16),
           color: canProceed ? AppTheme.primaryGreen : AppTheme.neutralGrey,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           onPressed: canProceed && !_isLoading ? _nextStep : null,
           child: _isLoading
               ? const CupertinoActivityIndicator(color: Colors.white)
               : Text(
                   _currentStep == 2 ? 'Terminer' : 'Continuer',
                   style: const TextStyle(
-                    fontSize: 18,
+                    fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
                   ),
