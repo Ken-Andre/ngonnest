@@ -420,6 +420,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
                       }
                     });
                   },
+                  onTextChanged: (text) {
+                    // Synchroniser le texte saisi manuellement avec le controller
+                    _productNameController.text = text;
+                  },
                   hintText: _isConsumable
                       ? 'Tapez pour voir les suggestions de consommables...'
                       : 'Tapez pour voir les suggestions de durables...',

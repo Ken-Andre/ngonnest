@@ -131,7 +131,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       child: Column(
         children: [
           // Back button row
@@ -147,14 +147,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       Icon(
                         CupertinoIcons.back,
                         color: AppTheme.primaryGreen,
-                        size: 20,
+                        size: 18,
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 6),
                       Text(
                         'Retour',
                         style: TextStyle(
                           color: AppTheme.primaryGreen,
-                          fontSize: 16,
+                          fontSize: 14,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -164,20 +164,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ],
             ),
           
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           
           // Progress indicator
           Row(
             children: List.generate(3, (index) {
               return Expanded(
                 child: Container(
-                  margin: EdgeInsets.only(right: index < 2 ? 8 : 0),
-                  height: 4,
+                  margin: EdgeInsets.only(right: index < 2 ? 6 : 0),
+                  height: 3,
                   decoration: BoxDecoration(
                     color: index <= _currentStep 
                         ? AppTheme.primaryGreen 
                         : AppTheme.neutralGrey.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(2),
+                    borderRadius: BorderRadius.circular(1.5),
                   ),
                 ),
               );

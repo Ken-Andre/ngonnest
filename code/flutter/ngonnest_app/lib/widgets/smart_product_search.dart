@@ -8,6 +8,7 @@ import '../services/product_intelligence_service.dart';
 class SmartProductSearch extends StatefulWidget {
   final String category;
   final Function(ProductTemplate)? onProductSelected;
+  final Function(String)? onTextChanged; // Nouveau callback pour le texte saisi
   final String? hintText;
   final int? familySize;
   final bool enabled;
@@ -17,6 +18,7 @@ class SmartProductSearch extends StatefulWidget {
     super.key,
     required this.category,
     this.onProductSelected,
+    this.onTextChanged,
     this.hintText,
     this.familySize,
     this.enabled = true,
@@ -80,6 +82,10 @@ class _SmartProductSearchState extends State<SmartProductSearch> {
           controller: controller,
           focusNode: focusNode,
           readOnly: !widget.enabled,
+          onChanged: (text) {
+            // Synchroniser le texte saisi avec le parent
+            widget.onTextChanged?.call(text);
+          },
           decoration: widget.decoration ??
               InputDecoration(
                 hintText: widget.hintText ?? 'Rechercher un produit...',

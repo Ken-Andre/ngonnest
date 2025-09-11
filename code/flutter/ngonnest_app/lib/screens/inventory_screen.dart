@@ -463,13 +463,11 @@ class _InventoryScreenState extends State<InventoryScreen> {
             if (objet.type == TypeObjet.consommable) ...[
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Flexible(
-                    child: Text('Quantité: ', style: TextStyle(fontSize: 12)),
-                  ),
+                  const Text('Quantité: ', style: TextStyle(fontSize: 12)),
                   const SizedBox(width: 8),
-                  Flexible(
-                    flex: 2,
+                  Expanded(
                     child: QuickQuantityUpdate(
                       objet: objet,
                       onQuantityChanged: (newQuantity) =>

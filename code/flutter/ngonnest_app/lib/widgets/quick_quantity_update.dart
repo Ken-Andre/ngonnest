@@ -201,12 +201,15 @@ class _QuickQuantityUpdateState extends State<QuickQuantityUpdate> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              '${widget.objet.quantiteRestante} ${widget.objet.unite}',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: Theme.of(context).colorScheme.primary,
+            Flexible(
+              child: Text(
+                '${widget.objet.quantiteRestante} ${widget.objet.unite}',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
             const SizedBox(width: 4),
