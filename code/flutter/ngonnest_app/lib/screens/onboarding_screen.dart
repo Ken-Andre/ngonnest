@@ -96,6 +96,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       );
 
       final id = await HouseholdService.saveFoyer(foyer);
+      if (!mounted) return;
       context.read<FoyerProvider>().setFoyerId(id);
 
       if (mounted) {
