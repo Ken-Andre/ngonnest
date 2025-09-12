@@ -12,7 +12,8 @@ class SmartProductSearch extends StatefulWidget {
   final int? familySize;
   final bool enabled;
   final InputDecoration? decoration;
-  final TextEditingController? controller; // Controller externe pour persistance
+  final TextEditingController?
+  controller; // Controller externe pour persistance
 
   const SmartProductSearch({
     super.key,
@@ -32,7 +33,8 @@ class SmartProductSearch extends StatefulWidget {
 
 class _SmartProductSearchState extends State<SmartProductSearch> {
   late TextEditingController _controller;
-  final ProductIntelligenceService _intelligenceService = ProductIntelligenceService();
+  final ProductIntelligenceService _intelligenceService =
+      ProductIntelligenceService();
   final FocusNode _focusNode = FocusNode();
   List<ProductTemplate> _suggestions = [];
   bool _showSuggestions = false;
@@ -49,7 +51,7 @@ class _SmartProductSearchState extends State<SmartProductSearch> {
       _controller = TextEditingController();
       _isInternalController = true;
     }
-    
+
     // Écouter les changements du controller pour maintenir la synchronisation
     _controller.addListener(_onControllerChanged);
   }
@@ -76,8 +78,12 @@ class _SmartProductSearchState extends State<SmartProductSearch> {
     if (query.isEmpty) {
       // Retourner les produits populaires quand pas de recherche
       try {
-        final popular = await _intelligenceService.getPopularProductsByCategory(widget.category);
-        print('DEBUG: Popular products for ${widget.category}: ${popular.length} items');
+        final popular = await _intelligenceService.getPopularProductsByCategory(
+          widget.category,
+        );
+        print(
+          'DEBUG: Popular products for ${widget.category}: ${popular.length} items',
+        );
         return popular;
       } catch (e) {
         print('Erreur récupération populaires ${widget.category}: $e');
@@ -87,33 +93,50 @@ class _SmartProductSearchState extends State<SmartProductSearch> {
 
     // Recherche dans tous les produits de la catégorie actuelle d'abord
     try {
-      final products = await _intelligenceService.getProductsByCategory(widget.category);
-      print('DEBUG: All products for ${widget.category}: ${products.length} items');
+      final products = await _intelligenceService.getProductsByCategory(
+        widget.category,
+      );
+      print(
+        'DEBUG: All products for ${widget.category}: ${products.length} items',
+      );
 
-      final filtered = products.where((product) =>
-        product.name.toLowerCase().contains(query.toLowerCase())
-      ).toList();
+      final filtered = products
+          .where(
+            (product) =>
+                product.name.toLowerCase().contains(query.toLowerCase()),
+          )
+          .toList();
 
-      print('DEBUG: Filtered products for query "$query" in ${widget.category}: ${filtered.length} items');
+      print(
+        'DEBUG: Filtered products for query "$query" in ${widget.category}: ${filtered.length} items',
+      );
 
       // Si aucun résultat dans la catégorie actuelle, chercher dans TOUTES les catégories
       if (filtered.isEmpty) {
-        print('DEBUG: No results in ${widget.category}, searching in ALL categories...');
-        
+        print(
+          'DEBUG: No results in ${widget.category}, searching in ALL categories...',
+        );
+
         // Récupérer toutes les catégories et chercher dans chacune
         final allCategories = _intelligenceService.getAllCategories();
         List<ProductTemplate> allResults = [];
-        
+
         for (final category in allCategories) {
           final categoryId = category['id'] as String;
-          if (categoryId != widget.category) { // Éviter de rechercher à nouveau dans la catégorie actuelle
-            final categoryResults = await _intelligenceService.searchProducts(query, categoryId);
+          if (categoryId != widget.category) {
+            // Éviter de rechercher à nouveau dans la catégorie actuelle
+            final categoryResults = await _intelligenceService.searchProducts(
+              query,
+              categoryId,
+            );
             allResults.addAll(categoryResults);
           }
         }
-        
-        print('DEBUG: Found ${allResults.length} results across all categories');
-        
+
+        print(
+          'DEBUG: Found ${allResults.length} results across all categories',
+        );
+
         // Tri par popularité et pertinence
         allResults.sort((a, b) => b.popularity.compareTo(a.popularity));
         return allResults.take(8).toList();
@@ -130,7 +153,7 @@ class _SmartProductSearchState extends State<SmartProductSearch> {
 
   void _onTextChanged(String text) async {
     widget.onTextChanged?.call(text);
-    
+
     if (text.isEmpty) {
       setState(() {
         _suggestions = [];
@@ -148,12 +171,14 @@ class _SmartProductSearchState extends State<SmartProductSearch> {
 
   void _onSuggestionSelected(ProductTemplate product) {
     _controller.text = product.name;
-    
+
     // Informer le parent que la catégorie pourrait changer
     if (product.category != widget.category) {
-      print('DEBUG: Product category (${product.category}) differs from current category (${widget.category})');
+      print(
+        'DEBUG: Product category (${product.category}) differs from current category (${widget.category})',
+      );
     }
-    
+
     widget.onProductSelected?.call(product);
     widget.onTextChanged?.call(product.name);
     setState(() {
@@ -179,7 +204,8 @@ class _SmartProductSearchState extends State<SmartProductSearch> {
               });
             }
           },
-          decoration: widget.decoration ??
+          decoration:
+              widget.decoration ??
               InputDecoration(
                 hintText: widget.hintText ?? 'Rechercher un produit...',
                 prefixIcon: const Icon(Icons.search),
@@ -188,19 +214,22 @@ class _SmartProductSearchState extends State<SmartProductSearch> {
                   borderSide: BorderSide.none,
                 ),
                 filled: true,
-                fillColor: widget.enabled 
-                  ? Theme.of(context).colorScheme.surface 
-                  : Theme.of(context).colorScheme.surface.withOpacity(0.5),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                fillColor: widget.enabled
+                    ? Theme.of(context).colorScheme.surface
+                    : Theme.of(context).colorScheme.surface.withOpacity(0.5),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
               ),
           style: TextStyle(
-            color: widget.enabled 
-              ? Theme.of(context).colorScheme.onSurface 
-              : Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+            color: widget.enabled
+                ? Theme.of(context).colorScheme.onSurface
+                : Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
             fontSize: 16,
           ),
         ),
-        
+
         // Suggestions dropdown
         if (_showSuggestions && _suggestions.isNotEmpty) ...[
           const SizedBox(height: 4),
@@ -250,10 +279,7 @@ class _SmartProductSearchState extends State<SmartProductSearch> {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Center(
-              child: Text(
-                product.icon,
-                style: const TextStyle(fontSize: 20),
-              ),
+              child: Text(product.icon, style: const TextStyle(fontSize: 20)),
             ),
           ),
 
@@ -286,7 +312,9 @@ class _SmartProductSearchState extends State<SmartProductSearch> {
                         product.subcategory!,
                         style: TextStyle(
                           fontSize: 12,
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withOpacity(0.6),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -294,7 +322,9 @@ class _SmartProductSearchState extends State<SmartProductSearch> {
                         width: 4,
                         height: 4,
                         decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withOpacity(0.4),
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -305,14 +335,18 @@ class _SmartProductSearchState extends State<SmartProductSearch> {
                     Icon(
                       Icons.star,
                       size: 12,
-                      color: Theme.of(context).colorScheme.primary.withOpacity(0.7),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primary.withOpacity(0.7),
                     ),
                     const SizedBox(width: 2),
                     Text(
                       '${product.popularity}',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withOpacity(0.6),
                       ),
                     ),
                   ],

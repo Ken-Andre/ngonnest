@@ -6,6 +6,8 @@ import '../services/budget_service.dart';
 import '../models/budget_category.dart';
 import '../widgets/budget_category_card.dart';
 import '../widgets/budget_category_dialog.dart';
+import 'package:provider/provider.dart';
+import '../providers/foyer_provider.dart';
 
 class BudgetScreen extends StatefulWidget {
   const BudgetScreen({super.key});
@@ -27,31 +29,40 @@ class _BudgetScreenState extends State<BudgetScreen> {
   }
 
   Future<void> _loadBudgetData() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
-    
+
     try {
       // Initialize default categories if none exist
       await BudgetService.initializeDefaultCategories(month: _currentMonth);
-      
+
+      // Ensure spending is up-to-date with purchases for this foyer
+      final foyerId = context.read<FoyerProvider>().foyerId;
+      if (foyerId != null) {
+        await BudgetService.syncBudgetWithPurchases(foyerId, month: _currentMonth);
+      }
+
       // Load categories and summary
-      final categories = await BudgetService.getBudgetCategories(month: _currentMonth);
-      final summary = await BudgetService.getBudgetSummary(1, month: _currentMonth); // TODO: Get actual foyer ID
-      
+      final categories =
+          await BudgetService.getBudgetCategories(month: _currentMonth);
+      final summary =
+          await BudgetService.getBudgetSummary(month: _currentMonth);
+
+      if (!mounted) return;
       setState(() {
         _categories = categories;
         _budgetSummary = summary;
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur lors du chargement: ${e.toString()}'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur lors du chargement: ${e.toString()}'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
     }
   }
 
@@ -63,7 +74,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
         month: _currentMonth,
       ),
     );
-    
+
     if (result == true) {
       _loadBudgetData(); // Reload data after changes
     }
@@ -74,7 +85,8 @@ class _BudgetScreenState extends State<BudgetScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Supprimer la catégorie'),
-        content: Text('Êtes-vous sûr de vouloir supprimer "${category.name}" ?'),
+        content:
+            Text('Êtes-vous sûr de vouloir supprimer "${category.name}" ?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -90,12 +102,12 @@ class _BudgetScreenState extends State<BudgetScreen> {
         ],
       ),
     );
-    
+
     if (confirmed == true && category.id != null) {
       try {
         await BudgetService.deleteBudgetCategory(category.id!);
         _loadBudgetData();
-        
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Catégorie supprimée')),
@@ -114,8 +126,12 @@ class _BudgetScreenState extends State<BudgetScreen> {
     }
   }
 
-  @override
+    @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     return MainNavigationWrapper(
       currentIndex: 3, // Budget is index 3
       onTabChanged: (index) => NavigationService.navigateToTab(context, index),
@@ -153,7 +169,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                               color: Theme.of(context).colorScheme.onPrimary,
                             ),
                           ),
-                          const SizedBox(height: 6),
+                          const SizedBox(height: 4),
                           Text(
                             'Suivez vos achats et dépenses produits ménagers',
                             style: TextStyle(
@@ -195,7 +211,8 @@ class _BudgetScreenState extends State<BudgetScreen> {
                     _buildStatCard(
                       context: context,
                       title: 'Ce mois',
-                      value: '${(_budgetSummary['totalSpent'] ?? 0.0).toStringAsFixed(1)} €',
+                      value:
+                          '${(_budgetSummary['totalSpent'] ?? 0.0).toStringAsFixed(1)} €',
                       subtitle: 'Dépenses totales',
                       icon: CupertinoIcons.chart_bar,
                       color: Theme.of(context).colorScheme.primary,
@@ -204,37 +221,49 @@ class _BudgetScreenState extends State<BudgetScreen> {
                     _buildStatCard(
                       context: context,
                       title: 'Budget',
-                      value: '${(_budgetSummary['totalLimit'] ?? 0.0).toStringAsFixed(1)} €',
+                      value: '${(_budgetSummary['totalBudget'] ?? 0.0).toStringAsFixed(1)} €',
                       subtitle: 'Limite mensuelle',
-                      icon: CupertinoIcons.money_dollar,
+                      icon: CupertinoIcons.creditcard,
                       color: Theme.of(context).colorScheme.secondary,
+                    ),
+                    const SizedBox(width: 12),
+                    _buildStatCard(
+                      context: context,
+                      title: 'Reste',
+                      value: '${(_budgetSummary['remaining'] ?? 0.0).toStringAsFixed(1)} €',
+                      subtitle: 'Disponible',
+                      icon: CupertinoIcons.money_dollar,
+                      color: (_budgetSummary['remaining'] ?? 0.0) >= 0 
+                          ? Theme.of(context).colorScheme.tertiary 
+                          : Theme.of(context).colorScheme.error,
                     ),
                   ],
                 ),
               const SizedBox(height: 24),
 
-              // Categories header with add button
+              // Categories section header
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     'Catégories',
                     style: TextStyle(
-                      fontSize: 20,
+                      fontSize: 18,
                       fontWeight: FontWeight.w600,
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   ElevatedButton.icon(
                     onPressed: () => _showCategoryDialog(),
-                    icon: const Icon(CupertinoIcons.add, size: 18),
-                    label: const Text('Ajouter'),
+                    icon: const Icon(CupertinoIcons.add, size: 16),
+                    label: const Text('Ajouter', style: TextStyle(fontSize: 14)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.primary,
                       foregroundColor: Theme.of(context).colorScheme.onPrimary,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     ),
                   ),
                 ],
@@ -255,9 +284,11 @@ class _BudgetScreenState extends State<BudgetScreen> {
                                 final category = _categories[index];
                                 return BudgetCategoryCard(
                                   category: category,
-                                  onEdit: () => _showCategoryDialog(category: category),
+                                  onEdit: () =>
+                                      _showCategoryDialog(category: category),
                                   onDelete: () => _deleteCategory(category),
-                                  idFoyer: 1, // TODO: Get actual foyer ID from user session
+                                  idFoyer:
+                                      context.watch<FoyerProvider>().foyerId,
                                 );
                               },
                             ),
@@ -313,7 +344,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
     );
   }
 
-  Widget _buildStatCard({
+    Widget _buildStatCard({
     required BuildContext context,
     required String title,
     required String value,
@@ -323,38 +354,55 @@ class _BudgetScreenState extends State<BudgetScreen> {
   }) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
           boxShadow: [
             BoxShadow(
               color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+              blurRadius: 6,
+              offset: const Offset(0, 1),
             ),
           ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, size: 24, color: color),
+            Row(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon, size: 16, color: color),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 8),
             Text(
               value,
               style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
                 color: Theme.of(context).colorScheme.onSurface,
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 12,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-              ),
+              overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 2),
             Text(
@@ -363,12 +411,11 @@ class _BudgetScreenState extends State<BudgetScreen> {
                 fontSize: 10,
                 color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
               ),
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
       ),
     );
   }
-
-
 }

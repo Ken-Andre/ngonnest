@@ -7,6 +7,9 @@ import '../services/console_logger.dart';
 class HouseholdService {
   static FoyerRepository? _foyerRepository;
   static DatabaseService? _databaseService;
+  static Foyer? _cachedFoyer;
+  static DateTime? _lastFetchTime;
+  static const Duration _cacheDuration = Duration(minutes: 5);
 
   static Future<FoyerRepository> get foyerRepository async {
     if (_foyerRepository != null) return _foyerRepository!;
@@ -23,6 +26,9 @@ class HouseholdService {
 
       final repo = await foyerRepository;
       final result = await repo.save(foyer);
+
+      // Clear cache after save
+      clearCache();
 
       ConsoleLogger.success("Foyer saved successfully with ID: $result");
 
@@ -76,10 +82,38 @@ class HouseholdService {
     return await saveFoyer(foyer);
   }
 
-  // Get foyer data
+  // Get foyer data with caching
   static Future<Foyer?> getFoyer() async {
-    final repo = await foyerRepository;
-    return await repo.get();
+    // Check if we have a valid cached version
+    if (_cachedFoyer != null && 
+        _lastFetchTime != null && 
+        DateTime.now().difference(_lastFetchTime!) < _cacheDuration) {
+      return _cachedFoyer;
+    }
+
+    try {
+      final repo = await foyerRepository;
+      final foyer = await repo.get();
+      
+      // Update cache
+      _cachedFoyer = foyer;
+      _lastFetchTime = DateTime.now();
+      
+      return foyer;
+    } catch (e) {
+      // If we have a cached version, return it even if it's stale
+      if (_cachedFoyer != null) {
+        ConsoleLogger.warning("Returning cached foyer due to error: $e");
+        return _cachedFoyer;
+      }
+      rethrow;
+    }
+  }
+
+  // Clear foyer cache
+  static void clearCache() {
+    _cachedFoyer = null;
+    _lastFetchTime = null;
   }
 
   // Check if foyer data exists

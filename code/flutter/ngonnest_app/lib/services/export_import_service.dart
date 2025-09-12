@@ -44,6 +44,7 @@ class ExportImportService {
     );
     final existingTables = tables.map((t) => t['name'] as String).toSet();
 
+
     final unknownTables =
         data.keys.where((t) => !existingTables.contains(t)).toList();
     if (unknownTables.isNotEmpty) {
@@ -51,6 +52,7 @@ class ExportImportService {
     }
 
     final fkStatus = await db.rawQuery('PRAGMA foreign_keys');
+
     final wasFkOn = fkStatus.first.values.first == 1;
     await db.execute('PRAGMA foreign_keys = OFF');
     try {
@@ -88,6 +90,21 @@ class ExportImportService {
       });
     } finally {
       await db.execute("PRAGMA foreign_keys = ${wasFkOn ? 'ON' : 'OFF'}");
+//           await txn.delete(table);
+//         }
+//         for (final entry in data.entries) {
+//           final table = entry.key;
+//           final rows =
+//               List<Map<String, dynamic>>.from(entry.value as List);
+//           for (final row in rows) {
+//             await txn.insert(table, row);
+//           }
+//         }
+//       });
+//     } finally {
+//       if (wasFkOn) {
+//         await db.execute('PRAGMA foreign_keys = ON');
+//       }
     }
   }
 }
