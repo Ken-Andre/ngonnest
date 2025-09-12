@@ -13,19 +13,23 @@ class CalendarSyncService {
 
   Future<bool> _requestPermissions() async {
     if (kIsWeb) {
-      return false;
-    }
+      Future<bool> _requestPermissions() async {
+        if (kIsWeb) {
+          return false;
+        }
 
-    final bool isIOS = defaultTargetPlatform == TargetPlatform.iOS;
-    final bool isAndroid = defaultTargetPlatform == TargetPlatform.android;
+        if (defaultTargetPlatform == TargetPlatform.iOS) {
+          final result = await _calendarEvents.requestPermission();
+          final permission = CalendarPermission.fromInt(result);
+          return permission == CalendarPermission.allowed;
+        }
 
-    if (isIOS) {
-      final result = await _calendarEvents.requestPermission();
-      final permission = CalendarPermission.fromInt(result);
-      return permission == CalendarPermission.allowed;
-    }
-
-    if (isAndroid) {
+        final status = await Permission.calendar.status;
+        if (status.isGranted) {
+          return true;
+        }
+        return (await Permission.calendar.request()).isGranted;
+      }
       final status = await Permission.calendar.status;
       if (status.isGranted) {
         return true;
