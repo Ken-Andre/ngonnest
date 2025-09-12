@@ -27,6 +27,7 @@ import 'theme/app_theme.dart';
 import 'theme/theme_mode_notifier.dart'; // Import the new file
 import 'screens/preferences_screen.dart';
 import 'providers/locale_provider.dart';
+import 'providers/foyer_provider.dart';
 import 'services/settings_service.dart';
 
 void main() async {
@@ -96,7 +97,7 @@ void main() async {
   await SettingsService.initialize();
 
   final initialThemeMode = await ThemeModeNotifier.loadThemeMode();
-  
+
   // Initialize locale provider
   final localeProvider = LocaleProvider();
   await localeProvider.initialize();
@@ -107,15 +108,16 @@ void main() async {
         ChangeNotifierProvider(
           create: (context) => ThemeModeNotifier(initialThemeMode),
         ),
-        ChangeNotifierProvider<LocaleProvider>.value(
-          value: localeProvider,
-        ),
+        ChangeNotifierProvider<LocaleProvider>.value(value: localeProvider),
         Provider<DatabaseService>(
           create: (context) => DatabaseService(),
         ), // Provide DatabaseService
         ChangeNotifierProvider<ConnectivityService>(
           create: (context) => ConnectivityService(),
         ), // Provide ConnectivityService
+        ChangeNotifierProvider<FoyerProvider>(
+          create: (context) => FoyerProvider()..loadFoyerId(),
+        ),
       ],
       child: const MyApp(),
     ),
@@ -129,7 +131,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final themeMode = context.watch<ThemeModeNotifier>().themeMode;
     final locale = context.watch<LocaleProvider>().locale;
-    
+
     return MaterialApp(
       title: 'NgonNest',
       debugShowCheckedModeBanner: false,
@@ -146,14 +148,22 @@ class MyApp extends StatelessWidget {
       supportedLocales: LocaleProvider.supportedLocales,
       home: const AppWithConnectivityOverlay(child: SplashScreen()),
       routes: {
-        '/onboarding': (context) => const AppWithConnectivityOverlay(child: OnboardingScreen()),
-        '/preferences': (context) => const AppWithConnectivityOverlay(child: PreferencesScreen()),
-        '/dashboard': (context) => const AppWithConnectivityOverlay(child: DashboardScreen()),
-        '/add-product': (context) => const AppWithConnectivityOverlay(child: AddProductScreen()),
-        '/inventory': (context) => const AppWithConnectivityOverlay(child: InventoryScreen()),
-        '/budget': (context) => const AppWithConnectivityOverlay(child: BudgetScreen()),
-        '/settings': (context) => const AppWithConnectivityOverlay(child: SettingsScreen()),
-        '/developer-console': (context) => const AppWithConnectivityOverlay(child: DeveloperConsoleScreen()),
+        '/onboarding': (context) =>
+            const AppWithConnectivityOverlay(child: OnboardingScreen()),
+        '/preferences': (context) =>
+            const AppWithConnectivityOverlay(child: PreferencesScreen()),
+        '/dashboard': (context) =>
+            const AppWithConnectivityOverlay(child: DashboardScreen()),
+        '/add-product': (context) =>
+            const AppWithConnectivityOverlay(child: AddProductScreen()),
+        '/inventory': (context) =>
+            const AppWithConnectivityOverlay(child: InventoryScreen()),
+        '/budget': (context) =>
+            const AppWithConnectivityOverlay(child: BudgetScreen()),
+        '/settings': (context) =>
+            const AppWithConnectivityOverlay(child: SettingsScreen()),
+        '/developer-console': (context) =>
+            const AppWithConnectivityOverlay(child: DeveloperConsoleScreen()),
       },
     );
   }
@@ -163,10 +173,7 @@ class MyApp extends StatelessWidget {
 class AppWithConnectivityOverlay extends StatelessWidget {
   final Widget child;
 
-  const AppWithConnectivityOverlay({
-    super.key,
-    required this.child,
-  });
+  const AppWithConnectivityOverlay({super.key, required this.child});
 
   @override
   Widget build(BuildContext context) {
