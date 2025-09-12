@@ -190,10 +190,17 @@ class InventoryRepository {
     final result = await _databaseService.updateObjet(
       objetWithUpdatedRuptureDate,
     );
-    await BudgetService.checkBudgetAlertsAfterPurchase(
-      objetWithUpdatedRuptureDate.idFoyer,
-      objetWithUpdatedRuptureDate.categorie,
-    );
+    try {
+      await BudgetService.checkBudgetAlertsAfterPurchase(
+        objetWithUpdatedRuptureDate.idFoyer,
+        objetWithUpdatedRuptureDate.categorie,
+      );
+    } catch (e, stackTrace) {
+      await ErrorLoggerService.logError(
+        'BudgetService.checkBudgetAlertsAfterPurchase failed: $e',
+        stackTrace,
+      );
+    }
     return result;
   }
 
