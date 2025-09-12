@@ -36,6 +36,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   bool _isConsumable = true;
   int? _foyerId;
+  int _householdSize = 4;
   bool _isLoading = true;
   bool _isSaving = false;
 
@@ -76,6 +77,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
     _isConsumable = widget.isConsumable;
     // Éliminer la latence : Initialisation synchrone
     _initializeServices();
+    _getHouseholdSize();
   }
 
   void _initializeServices() {
@@ -146,8 +148,6 @@ class _AddProductScreenState extends State<AddProductScreen> {
       }
     }
   }
-
-
 
   @override
   void dispose() {
@@ -269,7 +269,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
           Navigator.of(context).pop(true);
         } else {
           // Fallback: Navigate to inventory route if pop is not available
-          Navigator.of(context, rootNavigator: true).pushReplacementNamed('/inventory');
+          Navigator.of(
+            context,
+            rootNavigator: true,
+          ).pushReplacementNamed('/inventory');
         }
       }
     } catch (e, stackTrace) {
@@ -382,7 +385,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 // Product name with smart suggestions
                 _buildSectionTitle('Nom du produit'),
                 SmartProductSearch(
-                  controller: _productNameController, // Utiliser le controller externe
+                  controller:
+                      _productNameController, // Utiliser le controller externe
                   category: _isConsumable ? _selectedCategory : 'durables',
                   onProductSelected: (product) {
                     setState(() {
@@ -395,12 +399,14 @@ class _AddProductScreenState extends State<AddProductScreen> {
                             .toString();
                       }
                     });
-                    
+
                     // Afficher un message si la catégorie a changé
                     if (product.category != _selectedCategory) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Catégorie mise à jour vers "${product.category}"'),
+                          content: Text(
+                            'Catégorie mise à jour vers "${product.category}"',
+                          ),
                           backgroundColor: Colors.blue,
                           duration: const Duration(seconds: 2),
                         ),
@@ -533,7 +539,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
                       color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.outline.withOpacity(0.5),
                       ),
                     ),
                     child: DropdownButtonFormField<String>(
@@ -543,20 +551,46 @@ class _AddProductScreenState extends State<AddProductScreen> {
                         contentPadding: EdgeInsets.zero,
                       ),
                       items: const [
-                        DropdownMenuItem(value: 'hygiene', child: Text('🧴 Hygiène')),
-                        DropdownMenuItem(value: 'menage', child: Text('🧹 Ménage & Entretien')),
-                        DropdownMenuItem(value: 'nourriture', child: Text('🍳 Nourriture & Boissons')),
-                        DropdownMenuItem(value: 'bureau', child: Text('📋 Fournitures Bureau')),
-                        DropdownMenuItem(value: 'maintenance', child: Text('🔧 Maintenance & Réparation')),
-                        DropdownMenuItem(value: 'securite', child: Text('🛡️ Sécurité & Protection')),
-                        DropdownMenuItem(value: 'evenementiel', child: Text('🎉 Événementiel')),
-                        DropdownMenuItem(value: 'autre', child: Text('📦 Autre')),
+                        DropdownMenuItem(
+                          value: 'hygiene',
+                          child: Text('🧴 Hygiène'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'menage',
+                          child: Text('🧹 Ménage & Entretien'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'nourriture',
+                          child: Text('🍳 Nourriture & Boissons'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'bureau',
+                          child: Text('📋 Fournitures Bureau'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'maintenance',
+                          child: Text('🔧 Maintenance & Réparation'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'securite',
+                          child: Text('🛡️ Sécurité & Protection'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'evenementiel',
+                          child: Text('🎉 Événementiel'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'autre',
+                          child: Text('📦 Autre'),
+                        ),
                       ],
-                      onChanged: _isLoading ? null : (value) {
-                        if (value != null) {
-                          setState(() => _selectedCategory = value);
-                        }
-                      },
+                      onChanged: _isLoading
+                          ? null
+                          : (value) {
+                              if (value != null) {
+                                setState(() => _selectedCategory = value);
+                              }
+                            },
                       hint: const Text('Choisir une catégorie'),
                     ),
                   ),
@@ -567,7 +601,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   SmartQuantitySelector(
                     category: _selectedCategory,
                     selectedProduct: _selectedProductTemplate,
-                    familySize: _getHouseholdSize(),
+                    familySize: _householdSize,
                     onQuantityChanged: (quantity, unit) {
                       setState(() {
                         _initialQuantityController.text = quantity.toString();
@@ -1070,14 +1104,31 @@ class _AddProductScreenState extends State<AddProductScreen> {
   }
 
   /// Obtient la taille du foyer depuis le service Household
-  int _getHouseholdSize() {
-    // Intégration avec HouseholdService pour obtenir la taille réelle
+  Future<void> _getHouseholdSize() async {
     try {
-      // Note: This needs to be awaited properly in a real implementation
-      return 4; // Valeur par défaut temporaire
+      final foyer = await HouseholdService.getFoyer();
+      if (foyer != null) {
+        setState(() {
+          _householdSize = foyer.nbPersonnes;
+        });
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Foyer introuvable'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } catch (e) {
       print('Erreur récupération taille foyer: $e');
-      return 4; // Valeur par défaut
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur lors de la récupération du foyer: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 }
