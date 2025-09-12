@@ -110,6 +110,19 @@ class DatabaseService {
     throw Exception('Failed to establish database connection after $_maxRetryAttempts attempts');
   }
 
+  /// Remove all user data from the database
+  Future<void> clearAllData() async {
+    final db = await database;
+    final tables = await db.rawQuery(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
+    for (final table in tables) {
+      final tableName = table['name'] as String;
+      if (tableName != 'android_metadata') {
+        await db.delete(tableName);
+      }
+    }
+  }
+
   /// Validate that a newly created connection is working
   Future<void> _validateNewConnection() async {
     try {
