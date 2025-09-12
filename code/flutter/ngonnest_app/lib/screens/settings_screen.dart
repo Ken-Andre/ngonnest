@@ -819,7 +819,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _submitFeedback(String message) async {
     try {
       await Future.delayed(const Duration(seconds: 1));
-      debugPrint('Feedback submitted: ' + message);
+      debugPrint('Feedback submitted (length=${message.length})');
     } catch (e) {
       _showErrorMessage('Erreur feedback: $e');
     }
@@ -828,7 +828,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _submitBugReport(String description) async {
     try {
       await Future.delayed(const Duration(seconds: 1));
-      debugPrint('Bug report submitted: ' + description);
+      debugPrint('Bug report submitted (length=${description.length})');
     } catch (e) {
       _showErrorMessage('Erreur bug report: $e');
     }
