@@ -917,8 +917,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
       if (confirm != true || !mounted) return;
 
-      String? directory = await FilePicker.platform.getDirectoryPath();
-      directory ??= (await getApplicationDocumentsDirectory()).path;
+      String? directory;
+      try {
+        directory = await FilePicker.platform.getDirectoryPath();
+        directory ??= (await getApplicationDocumentsDirectory()).path;
+      } catch (e) {
+        throw Exception('Unable to access storage directory: $e');
+      }
 
       final service = ExportImportService();
       final jsonString = await service.exportToJson();
