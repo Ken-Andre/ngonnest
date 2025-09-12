@@ -30,6 +30,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _hasAcceptedCloudSync = false;
   String _notificationFrequency = 'quotidienne';
   bool _isLoading = false;
+  bool _isExporting = false;
+  bool _isImporting = false;
+  double _exportProgress = 0.0;
+  double _importProgress = 0.0;
 
   @override
   void initState() {
@@ -456,13 +460,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               AppLocalizations.of(context)?.backupDataLocally ??
                                   'Sauvegarder vos données localement',
                           child: ElevatedButton.icon(
-                            onPressed: _exportData,
-                            icon: const Icon(Icons.download, size: 16),
-                            label: Text(AppLocalizations.of(context)?.export ??
-                                'Exporter'),
+                            onPressed: _isExporting ? null : _exportData,
+                            icon: _isExporting
+                                ? SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Theme.of(context).colorScheme.onSecondary,
+                                      ),
+                                    ),
+                                  )
+                                : const Icon(Icons.download, size: 16),
+                            label: Text(_isExporting
+                                ? 'Exportation...'
+                                : (AppLocalizations.of(context)?.export ?? 'Exporter')),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor:
-                                  Theme.of(context).colorScheme.secondary,
+                              backgroundColor: _isExporting
+                                  ? Theme.of(context).colorScheme.secondary.withOpacity(0.6)
+                                  : Theme.of(context).colorScheme.secondary,
                               foregroundColor:
                                   Theme.of(context).colorScheme.onSecondary,
                               padding: const EdgeInsets.symmetric(
@@ -481,13 +498,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   ?.restoreFromBackupFile ??
                               'Restaurer depuis un fichier sauvegardé',
                           child: ElevatedButton.icon(
-                            onPressed: _importData,
-                            icon: const Icon(Icons.upload, size: 16),
-                            label: Text(AppLocalizations.of(context)?.import ??
-                                'Importer'),
+                            onPressed: _isImporting ? null : _importData,
+                            icon: _isImporting
+                                ? SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Theme.of(context).colorScheme.onSecondary,
+                                      ),
+                                    ),
+                                  )
+                                : const Icon(Icons.upload, size: 16),
+                            label: Text(_isImporting
+                                ? 'Importation...'
+                                : (AppLocalizations.of(context)?.import ?? 'Importer')),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor:
-                                  Theme.of(context).colorScheme.secondary,
+                              backgroundColor: _isImporting
+                                  ? Theme.of(context).colorScheme.secondary.withOpacity(0.6)
+                                  : Theme.of(context).colorScheme.secondary,
                               foregroundColor:
                                   Theme.of(context).colorScheme.onSecondary,
                               padding: const EdgeInsets.symmetric(
@@ -909,7 +939,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           if (isPermanent)
             CupertinoDialogAction(
-              child: Text(AppLocalizations.of(context)?.grantStoragePermission ?? 'Accorder l\'autorisation'),
+              child: const Text('Accorder l\'autorisation'),
               onPressed: () async {
                 Navigator.of(context).pop();
                 await ph.openAppSettings();
@@ -921,6 +951,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _exportData() async {
+    if (!mounted) return;
+
     try {
       final confirm = await showCupertinoDialog<bool>(
         context: context,
@@ -943,6 +975,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
       if (confirm != true || !mounted) return;
 
+      // Start loading
+      setState(() => _isExporting = true);
 
       // Request storage permission before proceeding
       ph.PermissionStatus permissionStatus;
@@ -1002,7 +1036,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final file = File(p.join(directory, fileName));
       await file.writeAsString(jsonString, flush: true);
 
-
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1021,10 +1054,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
           backgroundColor: Colors.red,
         ),
       );
+    } finally {
+      if (mounted) {
+        setState(() => _isExporting = false);
+      }
     }
   }
 
   Future<void> _importData() async {
+    if (!mounted) return;
+
     try {
       final confirm = await showCupertinoDialog<bool>(
         context: context,
@@ -1047,11 +1086,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
       if (confirm != true || !mounted) return;
 
+      // Start loading
+      setState(() => _isImporting = true);
+
       final result = await FilePicker.platform.pickFiles(
         type: FileType.any,
         allowMultiple: false,
       );
-      if (result == null || result.files.single.path == null) return;
+      if (result == null || result.files.single.path == null) {
+        if (mounted) setState(() => _isImporting = false);
+        return;
+      }
 
       final file = File(result.files.single.path!);
       final jsonString = await file.readAsString();
@@ -1077,6 +1122,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           backgroundColor: Colors.red,
         ),
       );
+    } finally {
+      if (mounted) {
+        setState(() => _isImporting = false);
+      }
     }
   }
 
