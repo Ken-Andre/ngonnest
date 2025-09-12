@@ -27,6 +27,7 @@ import 'theme/app_theme.dart';
 import 'theme/theme_mode_notifier.dart'; // Import the new file
 import 'screens/preferences_screen.dart';
 import 'providers/locale_provider.dart';
+import 'providers/foyer_provider.dart';
 import 'services/settings_service.dart';
 
 void main() async {
@@ -96,10 +97,14 @@ void main() async {
   await SettingsService.initialize();
 
   final initialThemeMode = await ThemeModeNotifier.loadThemeMode();
-  
+
   // Initialize locale provider
   final localeProvider = LocaleProvider();
   await localeProvider.initialize();
+
+  // Initialize foyer provider to retrieve stored household ID
+  final foyerProvider = FoyerProvider();
+  await foyerProvider.initialize();
 
   runApp(
     MultiProvider(
@@ -109,6 +114,9 @@ void main() async {
         ),
         ChangeNotifierProvider<LocaleProvider>.value(
           value: localeProvider,
+        ),
+        ChangeNotifierProvider<FoyerProvider>.value(
+          value: foyerProvider,
         ),
         Provider<DatabaseService>(
           create: (context) => DatabaseService(),
@@ -129,7 +137,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final themeMode = context.watch<ThemeModeNotifier>().themeMode;
     final locale = context.watch<LocaleProvider>().locale;
-    
+
     return MaterialApp(
       title: 'NgonNest',
       debugShowCheckedModeBanner: false,
@@ -146,14 +154,22 @@ class MyApp extends StatelessWidget {
       supportedLocales: LocaleProvider.supportedLocales,
       home: const AppWithConnectivityOverlay(child: SplashScreen()),
       routes: {
-        '/onboarding': (context) => const AppWithConnectivityOverlay(child: OnboardingScreen()),
-        '/preferences': (context) => const AppWithConnectivityOverlay(child: PreferencesScreen()),
-        '/dashboard': (context) => const AppWithConnectivityOverlay(child: DashboardScreen()),
-        '/add-product': (context) => const AppWithConnectivityOverlay(child: AddProductScreen()),
-        '/inventory': (context) => const AppWithConnectivityOverlay(child: InventoryScreen()),
-        '/budget': (context) => const AppWithConnectivityOverlay(child: BudgetScreen()),
-        '/settings': (context) => const AppWithConnectivityOverlay(child: SettingsScreen()),
-        '/developer-console': (context) => const AppWithConnectivityOverlay(child: DeveloperConsoleScreen()),
+        '/onboarding': (context) =>
+            const AppWithConnectivityOverlay(child: OnboardingScreen()),
+        '/preferences': (context) =>
+            const AppWithConnectivityOverlay(child: PreferencesScreen()),
+        '/dashboard': (context) =>
+            const AppWithConnectivityOverlay(child: DashboardScreen()),
+        '/add-product': (context) =>
+            const AppWithConnectivityOverlay(child: AddProductScreen()),
+        '/inventory': (context) =>
+            const AppWithConnectivityOverlay(child: InventoryScreen()),
+        '/budget': (context) =>
+            const AppWithConnectivityOverlay(child: BudgetScreen()),
+        '/settings': (context) =>
+            const AppWithConnectivityOverlay(child: SettingsScreen()),
+        '/developer-console': (context) =>
+            const AppWithConnectivityOverlay(child: DeveloperConsoleScreen()),
       },
     );
   }
@@ -285,10 +301,10 @@ class _SplashScreenState extends State<SplashScreen>
                 child: Text(
                   'NgonNest',
                   style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 48,
-                  ),
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 48,
+                      ),
                 ),
               ),
 
@@ -300,9 +316,9 @@ class _SplashScreenState extends State<SplashScreen>
                 child: Text(
                   'Gestion intelligente de votre foyer',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Colors.white.withOpacity(0.9),
-                    fontSize: 18,
-                  ),
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: 18,
+                      ),
                   textAlign: TextAlign.center,
                 ),
               ),
