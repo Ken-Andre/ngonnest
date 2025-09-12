@@ -347,10 +347,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       .toList(),
                                   onChanged: (value) async {
                                     if (value != null) {
-                                      await SettingsService
-                                          .setNotificationFrequency(value);
-                                      setState(() =>
-                                          _notificationFrequency = value);
+                                      await SettingsService.setNotificationFrequency(value);
+                                      if (!mounted) return;
+                                      setState(() => _notificationFrequency = value);
                                     }
                                   },
                                   isExpanded: true,
