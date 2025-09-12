@@ -145,10 +145,25 @@ class InventoryRepository {
       final result = await _databaseService.updateObjet(
         objetWithUpdatedRuptureDate,
       );
-      await BudgetService.checkBudgetAlertsAfterPurchase(
-        objetWithUpdatedRuptureDate.idFoyer,
-        objetWithUpdatedRuptureDate.categorie,
-      );
+
+      // Trigger budget alerts only when spending-related fields changed
+      final spendingChanged = updates.containsKey('categorie') ||
+          updates.containsKey('prixUnitaire') ||
+          updates.containsKey('quantiteInitiale') ||
+          updates.containsKey('dateAchat');
+      if (spendingChanged) {
+        try {
+          await BudgetService.checkBudgetAlertsAfterPurchase(
+            objetWithUpdatedRuptureDate.idFoyer,
+            objetWithUpdatedRuptureDate.categorie,
+          );
+        } catch (e, stackTrace) {
+          await ErrorLoggerService.logError(
+            'BudgetService.checkBudgetAlertsAfterPurchase failed: $e',
+            stackTrace,
+          );
+        }
+      }
       return result;
     } catch (e, stackTrace) {
       print('Database error in InventoryRepository.update: $e');
