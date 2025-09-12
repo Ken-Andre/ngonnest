@@ -36,6 +36,12 @@ class _BudgetScreenState extends State<BudgetScreen> {
       // Initialize default categories if none exist
       await BudgetService.initializeDefaultCategories(month: _currentMonth);
 
+      // Ensure spending is up-to-date with purchases for this foyer
+      final foyerId = context.read<FoyerProvider>().foyerId;
+      if (foyerId != null) {
+        await BudgetService.syncBudgetWithPurchases(foyerId, month: _currentMonth);
+      }
+
       // Load categories and summary
       final categories =
           await BudgetService.getBudgetCategories(month: _currentMonth);
