@@ -73,5 +73,13 @@
   "deleteAllDataConfirmation": "Supprimer toutes les données ?",
   "deleteAllDataWarning": "Cette action supprimera définitivement toutes vos données d'inventaire, de budget et de paramètres. Cette action ne peut pas être annulée.",
   "dataDeleted": "Données supprimées",
-  "allDataDeletedRestart": "Toutes vos données ont été supprimées.\\nL'application va redémarrer."
+  "allDataDeletedRestart": "Toutes vos données ont été supprimées.\\nL'application va redémarrer.",
+  "exportDataConfirm": "Exporter toutes vos données vers un fichier JSON ?",
+  "exportSuccess": "Export effectué avec succès",
+  "importDataConfirm": "Cette opération remplacera vos données actuelles. Continuer ?",
+  "importSuccess": "Import réussi",
+  "storagePermissionRequired": "L'autorisation de stockage est requise pour exporter les données",
+  "storagePermissionDenied": "Autorisation de stockage refusée. Veuillez accorder l'accès dans les paramètres système",
+  "storagePermissionPermanentlyDenied": "Autorisation de stockage définitivement refusée. Veuillez l'activer dans les paramètres de l'application",
+  "grantStoragePermission": "Accorder l'autorisation de stockage"
 }

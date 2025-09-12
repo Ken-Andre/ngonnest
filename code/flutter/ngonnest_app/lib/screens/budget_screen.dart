@@ -29,6 +29,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
   }
 
   Future<void> _loadBudgetData() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
 
     try {
@@ -43,21 +44,33 @@ class _BudgetScreenState extends State<BudgetScreen> {
           ? await BudgetService.getBudgetSummary(idFoyer, month: _currentMonth)
           : {};
 
+//       // Ensure spending is up-to-date with purchases for this foyer
+//       final foyerId = context.read<FoyerProvider>().foyerId;
+//       if (foyerId != null) {
+//         await BudgetService.syncBudgetWithPurchases(foyerId, month: _currentMonth);
+//       }
+
+//       // Load categories and summary
+//       final categories =
+//           await BudgetService.getBudgetCategories(month: _currentMonth);
+//       final summary =
+//           await BudgetService.getBudgetSummary(month: _currentMonth);
+
+//       if (!mounted) return;
       setState(() {
         _categories = categories;
         _budgetSummary = summary;
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur lors du chargement: ${e.toString()}'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur lors du chargement: ${e.toString()}'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
     }
   }
 
@@ -121,8 +134,12 @@ class _BudgetScreenState extends State<BudgetScreen> {
     }
   }
 
-  @override
+    @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     return MainNavigationWrapper(
       currentIndex: 3, // Budget is index 3
       onTabChanged: (index) => NavigationService.navigateToTab(context, index),
@@ -223,7 +240,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                       title: 'Reste',
                       value: '${(_budgetSummary['remaining'] ?? 0.0).toStringAsFixed(1)} €',
                       subtitle: 'Disponible',
-                      icon: CupertinoIcons.money_dollar_circle,
+                      icon: CupertinoIcons.money_dollar,
                       color: (_budgetSummary['remaining'] ?? 0.0) >= 0 
                           ? Theme.of(context).colorScheme.tertiary 
                           : Theme.of(context).colorScheme.error,

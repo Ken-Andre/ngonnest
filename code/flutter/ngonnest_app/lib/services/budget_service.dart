@@ -101,11 +101,17 @@ class BudgetService {
     }
   }
 
+  /// Sync budget categories with actual purchases
+  static Future<void> syncBudgetWithPurchases(int idFoyer,
+      {String? month}) async {
+    await _updateSpendingFromPurchases(idFoyer, month: month);
+  }
+
   /// Calculate and update spending for all categories based on actual purchases
   static Future<void> updateSpendingFromPurchases(int idFoyer,
+
       {String? month}) async {
     try {
-      final db = await _databaseService.database;
       final targetMonth = month ?? getCurrentMonth();
 
       // Get all budget categories for the month
