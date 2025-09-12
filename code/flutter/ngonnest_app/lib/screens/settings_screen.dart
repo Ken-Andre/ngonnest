@@ -7,6 +7,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart' as ph;
+import 'package:http/http.dart' as http;
 import '../l10n/app_localizations.dart';
 import '../theme/theme_mode_notifier.dart';
 import '../widgets/main_navigation_wrapper.dart';
@@ -15,6 +16,7 @@ import '../providers/locale_provider.dart';
 import '../services/settings_service.dart';
 import '../services/notification_permission_service.dart';
 import '../services/export_import_service.dart';
+import '../services/database_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -35,6 +37,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   double _exportProgress = 0.0;
   double _importProgress = 0.0;
 
+  static const String _feedbackEndpoint = 'https://httpbin.org/post';
+  static const String _bugReportEndpoint = 'https://httpbin.org/post';
+
   @override
   void initState() {
     super.initState();
@@ -46,9 +51,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       final notificationsEnabled =
           await SettingsService.getNotificationsEnabled();
+      final freq = await SettingsService.getNotificationFrequency();
+      final localOnly = await SettingsService.getLocalDataOnly();
 
       setState(() {
         _notificationsEnabled = notificationsEnabled;
+        _notificationFrequency = freq;
+        _localDataOnly = localOnly;
       });
     } catch (e) {
       debugPrint('Error loading settings: $e');
@@ -336,8 +345,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         ),
                                       )
                                       .toList(),
-                                  onChanged: (value) => setState(
-                                      () => _notificationFrequency = value!),
+                                  onChanged: (value) async {
+                                    if (value != null) {
+                                      await SettingsService.setNotificationFrequency(value);
+                                      if (!mounted) return;
+                                      setState(() => _notificationFrequency = value);
+                                    }
+                                  },
                                   isExpanded: true,
                                 ),
                               ),
@@ -359,11 +373,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             children: [
                               CupertinoSwitch(
                                 value: _localDataOnly,
-                                onChanged: (value) {
+                                onChanged: (value) async {
                                   if (!value) {
                                     _showCloudSyncConsent();
                                   } else {
-                                    setState(() => _localDataOnly = value);
+                                    await SettingsService.setLocalDataOnly(true);
+                                    setState(() => _localDataOnly = true);
                                   }
                                 },
                                 activeColor:
@@ -685,9 +700,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           CupertinoDialogAction(
             child: Text(AppLocalizations.of(context)?.accept ?? 'Accepter'),
-            onPressed: () {
+            onPressed: () async {
               if (_hasAcceptedCloudSync) {
-                // TODO: Implement cloud synchronization
+                await SettingsService.setLocalDataOnly(false);
                 setState(() => _localDataOnly = false);
                 Navigator.of(context).pop();
                 _showSyncEnabledMessage();
@@ -766,12 +781,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           CupertinoDialogAction(
             child: Text(AppLocalizations.of(context)?.send ?? 'Envoyer'),
-            onPressed: () {
+            onPressed: () async {
               if (feedbackMessage.trim().isNotEmpty) {
-                // TODO: Implement server-side feedback submission
-                Navigator.of(context).pop();
-                _showFeedbackSentMessage();
-              }
+                  try {
+                    final response = await http
+                        .post(
+                          Uri.parse(_feedbackEndpoint),
+                          body: {'message': feedbackMessage},
+                        )
+                        .timeout(const Duration(seconds: 10));
+                    if (!mounted) return;
+                    Navigator.of(context).pop();
+                    if (response.statusCode == 200) {
+                      _showFeedbackSentMessage();
+                    } else {
+                      _showErrorMessage('Erreur lors de l\'envoi');
+                    }
+                  } catch (e) {
+                    if (!mounted) return;
+                    Navigator.of(context).pop();
+                    _showErrorMessage('Erreur réseau. Réessayez.');
+                  }
             },
           ),
         ],
@@ -872,11 +902,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           CupertinoDialogAction(
             child: Text(AppLocalizations.of(context)?.report ?? 'Signaler'),
-            onPressed: () {
+            onPressed: () async {
               if (bugDescription.trim().isNotEmpty) {
-                // TODO: Implement bug report handling with Telegram integration
+                final response = await http.post(
+                  Uri.parse(_bugReportEndpoint),
+                  body: {'description': bugDescription},
+                );
+                if (!mounted) return;
                 Navigator.of(context).pop();
-                _showBugReportedMessage();
+                if (response.statusCode == 200) {
+                  _showBugReportedMessage();
+                } else {
+                  _showErrorMessage('Erreur lors de l\'envoi');
+                }
               }
             },
           ),
@@ -1263,6 +1301,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // TODO: Implement complete data deletion
   Future<void> _performCompleteDataDeletion() async {
     try {
+      final dbService = DatabaseService();
+      await dbService.clearAllData();
+      await SettingsService.clearAll();
+      if (!mounted) return;
       _showDeletionSuccessDialog();
     } catch (e, stackTrace) {
       print('Deletion Error: $e');

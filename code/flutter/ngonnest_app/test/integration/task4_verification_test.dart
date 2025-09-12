@@ -26,6 +26,16 @@ void main() {
             await SettingsService.getNotificationsEnabled();
         expect(notificationsEnabled, false);
 
+        // Test notification frequency
+        await SettingsService.setNotificationFrequency('hebdomadaire');
+        final freq = await SettingsService.getNotificationFrequency();
+        expect(freq, 'hebdomadaire');
+
+        // Test local data mode
+        await SettingsService.setLocalDataOnly(false);
+        final local = await SettingsService.getLocalDataOnly();
+        expect(local, false);
+
         // Test theme preference
         await SettingsService.setThemeMode(ThemeMode.dark);
         final themeMode = await SettingsService.getThemeMode();
@@ -134,6 +144,8 @@ void main() {
           await SettingsService.setLanguage('en');
           await SettingsService.setNotificationsEnabled(false);
           await SettingsService.setThemeMode(ThemeMode.dark);
+          await SettingsService.setNotificationFrequency('hebdomadaire');
+          await SettingsService.setLocalDataOnly(false);
 
           // Simulate app restart by creating new provider instance
           final localeProvider = LocaleProvider();
@@ -143,6 +155,8 @@ void main() {
           expect(localeProvider.locale.languageCode, 'en');
           expect(await SettingsService.getNotificationsEnabled(), false);
           expect(await SettingsService.getThemeMode(), ThemeMode.dark);
+          expect(await SettingsService.getNotificationFrequency(), 'hebdomadaire');
+          expect(await SettingsService.getLocalDataOnly(), false);
         },
       );
 
@@ -157,6 +171,8 @@ void main() {
         ); // Default to French for Cameroon
         expect(await SettingsService.getNotificationsEnabled(), true);
         expect(await SettingsService.getThemeMode(), ThemeMode.system);
+        expect(await SettingsService.getNotificationFrequency(), 'quotidienne');
+        expect(await SettingsService.getLocalDataOnly(), true);
       });
     },
   );
