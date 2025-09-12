@@ -108,7 +108,8 @@ class BudgetService {
   }
 
   /// Calculate and update spending for all categories based on actual purchases
-  static Future<void> _updateSpendingFromPurchases(int idFoyer,
+  static Future<void> updateSpendingFromPurchases(int idFoyer,
+
       {String? month}) async {
     try {
       final targetMonth = month ?? getCurrentMonth();
@@ -341,9 +342,12 @@ class BudgetService {
     }
   }
 
-  /// Get budget summary for dashboard (read-only)
-  static Future<Map<String, dynamic>> getBudgetSummary({String? month}) async {
+  /// Get budget summary for dashboard
+  static Future<Map<String, dynamic>> getBudgetSummary(int idFoyer,
+      {String? month}) async {
     try {
+      // Ensure spending values are up to date based on purchases
+      await updateSpendingFromPurchases(idFoyer, month: month);
       final categories = await getBudgetCategories(month: month);
 
       double totalLimit = 0.0;
