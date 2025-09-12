@@ -43,10 +43,17 @@ class InventoryRepository {
               objet,
             );
             final id = await _databaseService.insertObjet(objetWithRuptureDate);
-            await BudgetService.checkBudgetAlertsAfterPurchase(
-              objetWithRuptureDate.idFoyer,
-              objetWithRuptureDate.categorie,
-            );
+            try {
+              await BudgetService.checkBudgetAlertsAfterPurchase(
+                objetWithRuptureDate.idFoyer,
+                objetWithRuptureDate.categorie,
+              );
+            } catch (e, stackTrace) {
+              await ErrorLoggerService.logError(
+                'BudgetService.checkBudgetAlertsAfterPurchase failed during recovery: $e',
+                stackTrace,
+              );
+            }
             return id;
           }
         } catch (recoveryError, recoveryStackTrace) {
