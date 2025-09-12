@@ -783,18 +783,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Text(AppLocalizations.of(context)?.send ?? 'Envoyer'),
             onPressed: () async {
               if (feedbackMessage.trim().isNotEmpty) {
-                final response = await http.post(
-                  Uri.parse(_feedbackEndpoint),
-                  body: {'message': feedbackMessage},
-                );
-                if (!mounted) return;
-                Navigator.of(context).pop();
-                if (response.statusCode == 200) {
-                  _showFeedbackSentMessage();
-                } else {
-                  _showErrorMessage('Erreur lors de l\'envoi');
-                }
-              }
+                  try {
+                    final response = await http
+                        .post(
+                          Uri.parse(_feedbackEndpoint),
+                          body: {'message': feedbackMessage},
+                        )
+                        .timeout(const Duration(seconds: 10));
+                    if (!mounted) return;
+                    Navigator.of(context).pop();
+                    if (response.statusCode == 200) {
+                      _showFeedbackSentMessage();
+                    } else {
+                      _showErrorMessage('Erreur lors de l\'envoi');
+                    }
+                  } catch (e) {
+                    if (!mounted) return;
+                    Navigator.of(context).pop();
+                    _showErrorMessage('Erreur réseau. Réessayez.');
+                  }
             },
           ),
         ],
