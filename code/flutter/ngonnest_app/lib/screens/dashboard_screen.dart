@@ -736,6 +736,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const SizedBox(height: 16),
           _buildInfoRow('Personnes', '${_foyerProfile!.nbPersonnes}'),
           _buildInfoRow('Pièces', '${_foyerProfile!.nbPieces}'),
+          if (_foyerProfile!.budgetMensuelEstime != null)
+            _buildInfoRow(
+              'Budget mensuel',
+              '${_foyerProfile!.budgetMensuelEstime!.toStringAsFixed(1)} €',
+            ),
           _buildInfoRow(
             'Type de logement',
             LogementType.getDisplayName(_foyerProfile!.typeLogement),

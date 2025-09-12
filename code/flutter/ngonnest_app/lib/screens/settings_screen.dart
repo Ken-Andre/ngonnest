@@ -8,6 +8,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart' as ph;
 import 'package:sqflite/sqflite.dart';
+import 'package:http/http.dart' as http;
 import '../l10n/app_localizations.dart';
 import '../theme/theme_mode_notifier.dart';
 import '../widgets/main_navigation_wrapper.dart';
@@ -16,6 +17,7 @@ import '../providers/locale_provider.dart';
 import '../services/settings_service.dart';
 import '../services/notification_permission_service.dart';
 import '../services/export_import_service.dart';
+import '../services/database_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -31,6 +33,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _hasAcceptedCloudSync = false;
   String _notificationFrequency = 'quotidienne';
   bool _isLoading = false;
+  bool _isExporting = false;
+  bool _isImporting = false;
+  double _exportProgress = 0.0;
+  double _importProgress = 0.0;
+
+  static const String _feedbackEndpoint = 'https://httpbin.org/post';
+  static const String _bugReportEndpoint = 'https://httpbin.org/post';
 
   @override
   void initState() {
@@ -57,6 +66,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _notificationFrequency = allowedFrequencies.contains(notificationFrequency)
             ? notificationFrequency
             : 'quotidienne';
+
       });
     } catch (e) {
       debugPrint('Error loading settings: $e');
@@ -378,6 +388,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       await SettingsService.setNotificationFrequency(
                                         value,
                                       );
+
                                     }
                                   },
                                   isExpanded: true,
@@ -419,6 +430,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     await SettingsService.setCloudSyncAccepted(
                                       false,
                                     );
+
                                   }
                                 },
                                 activeColor: Theme.of(
@@ -537,19 +549,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               AppLocalizations.of(context)?.backupDataLocally ??
                               'Sauvegarder vos données localement',
                           child: ElevatedButton.icon(
-                            onPressed: _exportData,
-                            icon: const Icon(Icons.download, size: 16),
-                            label: Text(
-                              AppLocalizations.of(context)?.export ??
-                                  'Exporter',
-                            ),
+                            onPressed: _isExporting ? null : _exportData,
+                            icon: _isExporting
+                                ? SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Theme.of(context).colorScheme.onSecondary,
+                                      ),
+                                    ),
+                                  )
+                                : const Icon(Icons.download, size: 16),
+                            label: Text(_isExporting
+                                ? 'Exportation...'
+                                : (AppLocalizations.of(context)?.export ?? 'Exporter')),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Theme.of(
-                                context,
-                              ).colorScheme.secondary,
-                              foregroundColor: Theme.of(
-                                context,
-                              ).colorScheme.onSecondary,
+                              backgroundColor: _isExporting
+                                  ? Theme.of(context).colorScheme.secondary.withOpacity(0.6)
+                                  : Theme.of(context).colorScheme.secondary,
+                              foregroundColor:
+                                  Theme.of(context).colorScheme.onSecondary,
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 16,
                                 vertical: 10,
@@ -571,19 +592,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               )?.restoreFromBackupFile ??
                               'Restaurer depuis un fichier sauvegardé',
                           child: ElevatedButton.icon(
-                            onPressed: _importData,
-                            icon: const Icon(Icons.upload, size: 16),
-                            label: Text(
-                              AppLocalizations.of(context)?.import ??
-                                  'Importer',
-                            ),
+                            onPressed: _isImporting ? null : _importData,
+                            icon: _isImporting
+                                ? SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Theme.of(context).colorScheme.onSecondary,
+                                      ),
+                                    ),
+                                  )
+                                : const Icon(Icons.upload, size: 16),
+                            label: Text(_isImporting
+                                ? 'Importation...'
+                                : (AppLocalizations.of(context)?.import ?? 'Importer')),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Theme.of(
-                                context,
-                              ).colorScheme.secondary,
-                              foregroundColor: Theme.of(
-                                context,
-                              ).colorScheme.onSecondary,
+                              backgroundColor: _isImporting
+                                  ? Theme.of(context).colorScheme.secondary.withOpacity(0.6)
+                                  : Theme.of(context).colorScheme.secondary,
+                              foregroundColor:
+                                  Theme.of(context).colorScheme.onSecondary,
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 16,
                                 vertical: 10,
@@ -770,6 +800,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Text(AppLocalizations.of(context)?.accept ?? 'Accepter'),
             onPressed: () async {
               if (_hasAcceptedCloudSync) {
+                await SettingsService.setLocalDataOnly(false);
                 setState(() => _localDataOnly = false);
                 await SettingsService.setLocalDataOnly(false);
                 await SettingsService.setCloudSyncAccepted(true);
@@ -890,12 +921,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Text(AppLocalizations.of(context)?.send ?? 'Envoyer'),
             onPressed: () async {
               if (feedbackMessage.trim().isNotEmpty) {
-                await _submitFeedback(feedbackMessage);
-                if (context.mounted) {
-                  Navigator.of(context).pop();
-                  _showFeedbackSentMessage();
-                }
-              }
+
+                  try {
+                    final response = await http
+                        .post(
+                          Uri.parse(_feedbackEndpoint),
+                          body: {'message': feedbackMessage},
+                        )
+                        .timeout(const Duration(seconds: 10));
+                    if (!mounted) return;
+                    Navigator.of(context).pop();
+                    if (response.statusCode == 200) {
+                      _showFeedbackSentMessage();
+                    } else {
+                      _showErrorMessage('Erreur lors de l\'envoi');
+                    }
+                  } catch (e) {
+                    if (!mounted) return;
+                    Navigator.of(context).pop();
+                    _showErrorMessage('Erreur réseau. Réessayez.');
+                  }
             },
           ),
         ],
@@ -1001,10 +1046,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Text(AppLocalizations.of(context)?.report ?? 'Signaler'),
             onPressed: () async {
               if (bugDescription.trim().isNotEmpty) {
-                await _submitBugReport(bugDescription);
-                if (context.mounted) {
-                  Navigator.of(context).pop();
+
+                final response = await http.post(
+                  Uri.parse(_bugReportEndpoint),
+                  body: {'description': bugDescription},
+                );
+                if (!mounted) return;
+                Navigator.of(context).pop();
+                if (response.statusCode == 200) {
                   _showBugReportedMessage();
+                } else {
+                  _showErrorMessage('Erreur lors de l\'envoi');
                 }
               }
             },
@@ -1056,11 +1108,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showPermissionDialog(
-    String title,
-    String message, {
-    bool isPermanent = false,
-  }) {
+
+
+  void _showPermissionDialog(String title, String message, {bool isPermanent = false}) {
     showCupertinoModalPopup<void>(
       context: context,
       builder: (BuildContext context) => CupertinoAlertDialog(
@@ -1077,6 +1127,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 AppLocalizations.of(context)?.grantStoragePermission ??
                     'Accorder l\'autorisation',
               ),
+
               onPressed: () async {
                 Navigator.of(context).pop();
                 await ph.openAppSettings();
@@ -1088,6 +1139,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _exportData() async {
+    if (!mounted) return;
+
     try {
       final confirm = await showCupertinoDialog<bool>(
         context: context,
@@ -1112,6 +1165,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       );
       if (confirm != true || !mounted) return;
+
+      // Start loading
+      setState(() => _isExporting = true);
 
       // Request storage permission before proceeding
       ph.PermissionStatus permissionStatus;
@@ -1174,7 +1230,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final fileName =
           'ngonnest_export_${DateTime.now().millisecondsSinceEpoch}.json';
       final file = File(p.join(directory, fileName));
-      await file.writeAsString(jsonString);
+      await file.writeAsString(jsonString, flush: true);
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1196,10 +1252,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
           backgroundColor: Colors.red,
         ),
       );
+    } finally {
+      if (mounted) {
+        setState(() => _isExporting = false);
+      }
     }
   }
 
   Future<void> _importData() async {
+    if (!mounted) return;
+
     try {
       final confirm = await showCupertinoDialog<bool>(
         context: context,
@@ -1225,11 +1287,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
       if (confirm != true || !mounted) return;
 
+      // Start loading
+      setState(() => _isImporting = true);
+
       final result = await FilePicker.platform.pickFiles(
         type: FileType.any,
         allowMultiple: false,
       );
-      if (result == null || result.files.single.path == null) return;
+      if (result == null || result.files.single.path == null) {
+        if (mounted) setState(() => _isImporting = false);
+        return;
+      }
 
       final file = File(result.files.single.path!);
       final jsonString = await file.readAsString();
@@ -1256,6 +1324,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           backgroundColor: Colors.red,
         ),
       );
+    } finally {
+      if (mounted) {
+        setState(() => _isImporting = false);
+      }
     }
   }
 
@@ -1401,7 +1473,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (await File(dbPath).exists()) {
         await deleteDatabase(dbPath);
       }
+      final dbService = DatabaseService();
+      await dbService.clearAllData();
       await SettingsService.clearAll();
+      if (!mounted) return;
       _showDeletionSuccessDialog();
     } catch (e, stackTrace) {
       print('Deletion Error: $e');

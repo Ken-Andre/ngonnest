@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import '../services/sync_service.dart';
-import '../services/feedback_service.dart';
 
 class SyncBanner extends StatefulWidget {
   final DateTime? lastSyncTime;
@@ -27,10 +26,10 @@ class _SyncBannerState extends State<SyncBanner> {
   void initState() {
     super.initState();
     _currentTime = DateTime.now();
-    
+
     // Listen to sync service changes
     _syncService.addListener(_onSyncServiceChanged);
-    
+
     // Update the current time every second to show real-time sync status
     Future.doWhile(() async {
       await Future.delayed(const Duration(seconds: 1));
@@ -59,7 +58,8 @@ class _SyncBannerState extends State<SyncBanner> {
   @override
   Widget build(BuildContext context) {
     final syncStatus = _syncService.getSyncStatus();
-    final lastSyncTime = widget.lastSyncTime ?? syncStatus['lastSyncTime'] as DateTime?;
+    final lastSyncTime =
+        widget.lastSyncTime ?? syncStatus['lastSyncTime'] as DateTime?;
     final isSyncing = syncStatus['isSyncing'] as bool;
     final hasError = syncStatus['hasError'] as bool;
     final lastError = syncStatus['lastError'] as String?;
@@ -88,7 +88,7 @@ class _SyncBannerState extends State<SyncBanner> {
       final timeSinceSync = _currentTime.difference(lastSyncTime);
       final isStale = timeSinceSync.inSeconds > 30;
       final timeText = _formatTimeSinceSync(timeSinceSync);
-      
+
       if (isStale) {
         bannerColor = Theme.of(context).colorScheme.error.withOpacity(0.1);
         textColor = Theme.of(context).colorScheme.error;
@@ -120,10 +120,7 @@ class _SyncBannerState extends State<SyncBanner> {
         decoration: BoxDecoration(
           color: bannerColor,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: textColor,
-            width: 1,
-          ),
+          border: Border.all(color: textColor, width: 1),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -138,11 +135,7 @@ class _SyncBannerState extends State<SyncBanner> {
                 ),
               )
             else
-              Icon(
-                icon,
-                size: 16,
-                color: textColor,
-              ),
+              Icon(icon, size: 16, color: textColor),
             const SizedBox(width: 8),
             Flexible(
               child: Text(
