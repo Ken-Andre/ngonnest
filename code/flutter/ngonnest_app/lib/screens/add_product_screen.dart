@@ -1108,6 +1108,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
     try {
       final foyer = await HouseholdService.getFoyer();
       if (foyer != null) {
+        if (!mounted) return;
         setState(() {
           _householdSize = foyer.nbPersonnes;
         });
