@@ -48,11 +48,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final notificationFrequency =
           await SettingsService.getNotificationFrequency();
 
+      const allowedFrequencies = {'quotidienne', 'hebdomadaire'};
+
       setState(() {
         _notificationsEnabled = notificationsEnabled;
         _localDataOnly = localDataOnly;
         _hasAcceptedCloudSync = hasAcceptedCloudSync;
-        _notificationFrequency = notificationFrequency;
+        _notificationFrequency = allowedFrequencies.contains(notificationFrequency)
+            ? notificationFrequency
+            : 'quotidienne';
       });
     } catch (e) {
       debugPrint('Error loading settings: $e');
