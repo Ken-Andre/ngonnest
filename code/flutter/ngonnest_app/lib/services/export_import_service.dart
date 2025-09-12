@@ -69,6 +69,10 @@ class ExportImportService {
           final rows = List<Map<String, dynamic>>.from(entry.value as List);
           for (final row in rows) {
             await txn.insert(table, row);
+          for (final row in rows) {
+            await txn.insert(table, row);
+          }
+    
           try {
             final hasSeqTable = await txn.rawQuery(
               // Ensure sqlite_sequence exists before querying
