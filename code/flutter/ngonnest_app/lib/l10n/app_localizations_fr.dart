@@ -246,4 +246,33 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get allDataDeletedRestart =>
       'Toutes vos données ont été supprimées.\\nL\'application va redémarrer.';
+
+  @override
+  String get exportDataConfirm =>
+      'Exporter toutes vos données vers un fichier JSON ?';
+
+  @override
+  String get exportSuccess => 'Export effectué avec succès';
+
+  @override
+  String get importDataConfirm =>
+      'Cette opération remplacera vos données actuelles. Continuer ?';
+
+  @override
+  String get importSuccess => 'Import réussi';
+
+  @override
+  String get storagePermissionRequired =>
+      'L\'autorisation de stockage est requise pour exporter les données';
+
+  @override
+  String get storagePermissionDenied =>
+      'Autorisation de stockage refusée. Veuillez accorder l\'accès dans les paramètres système';
+
+  @override
+  String get storagePermissionPermanentlyDenied =>
+      'Autorisation de stockage définitivement refusée. Veuillez l\'activer dans les paramètres de l\'application';
+
+  @override
+  String get grantStoragePermission => 'Accorder l\'autorisation de stockage';
 }

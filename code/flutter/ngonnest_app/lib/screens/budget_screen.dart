@@ -114,8 +114,12 @@ class _BudgetScreenState extends State<BudgetScreen> {
     }
   }
 
-  @override
+    @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     return MainNavigationWrapper(
       currentIndex: 3, // Budget is index 3
       onTabChanged: (index) => NavigationService.navigateToTab(context, index),
@@ -215,7 +219,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                       title: 'Reste',
                       value: '${(_budgetSummary['remaining'] ?? 0.0).toStringAsFixed(1)} €',
                       subtitle: 'Disponible',
-                      icon: CupertinoIcons.money_dollar_circle,
+                      icon: CupertinoIcons.money_dollar,
                       color: (_budgetSummary['remaining'] ?? 0.0) >= 0 
                           ? Theme.of(context).colorScheme.tertiary 
                           : Theme.of(context).colorScheme.error,

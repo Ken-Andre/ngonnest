@@ -44,7 +44,8 @@ dependencies:
   flutter_typeahead: ^5.0.0
   synchronized: ^3.1.0
   connectivity_plus: ^6.0.3
-  file_picker: ^5.2.11
+  file_picker: ^8.1.2
+  permission_handler: ^11.3.1
   path: ^1.9.0
 
   # The following adds the Cupertino Icons font to your application.

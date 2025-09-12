@@ -139,5 +139,13 @@
   "deleteAllDataConfirmation": "Delete all data?",
   "deleteAllDataWarning": "This action will permanently delete all your inventory, budget and settings data. This action cannot be undone.",
   "dataDeleted": "Data deleted",
-  "allDataDeletedRestart": "All your data has been deleted.\\nThe application will restart."
+  "allDataDeletedRestart": "All your data has been deleted.\\nThe application will restart.",
+  "exportDataConfirm": "Export all your data to a JSON file?",
+  "exportSuccess": "Data exported successfully",
+  "importDataConfirm": "This operation will replace your current data. Continue?",
+  "importSuccess": "Import successful",
+  "storagePermissionRequired": "Storage permission is required to export data",
+  "storagePermissionDenied": "Storage permission denied. Please grant access in system settings",
+  "storagePermissionPermanentlyDenied": "Storage permission permanently denied. Please enable it in app settings",
+  "grantStoragePermission": "Grant Storage Permission"
 }

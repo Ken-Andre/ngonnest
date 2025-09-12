@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart' as ph;
 import '../l10n/app_localizations.dart';
 import '../theme/theme_mode_notifier.dart';
 import '../widgets/main_navigation_wrapper.dart';
@@ -894,6 +895,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  void _showPermissionDialog(String title, String message, {bool isPermanent = false}) {
+    showCupertinoModalPopup<void>(
+      context: context,
+      builder: (BuildContext context) => CupertinoAlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          CupertinoDialogAction(
+            child: Text(AppLocalizations.of(context)?.cancel ?? 'Annuler'),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          if (isPermanent)
+            CupertinoDialogAction(
+              child: Text(AppLocalizations.of(context)?.grantStoragePermission ?? 'Accorder l\'autorisation'),
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await ph.openAppSettings();
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _exportData() async {
     try {
       final confirm = await showCupertinoDialog<bool>(
@@ -916,6 +941,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       );
       if (confirm != true || !mounted) return;
+
+      // Request storage permission before proceeding
+      ph.PermissionStatus permissionStatus;
+
+      // Try MANAGE_EXTERNAL_STORAGE first (Android 11+)
+      try {
+        permissionStatus = await ph.Permission.manageExternalStorage.request();
+      } catch (e) {
+        // Fall back to media permissions for Android 13+
+        try {
+          // Request permissions one by one for Android 13+
+          final photoStatus = await ph.Permission.photos.request();
+          final videoStatus = await ph.Permission.videos.request();
+          final audioStatus = await ph.Permission.audio.request();
+
+          // Check if at least one permission is granted
+          permissionStatus = (photoStatus.isGranted || videoStatus.isGranted || audioStatus.isGranted)
+              ? ph.PermissionStatus.granted
+              : (photoStatus.isPermanentlyDenied || videoStatus.isPermanentlyDenied || audioStatus.isPermanentlyDenied)
+                  ? ph.PermissionStatus.permanentlyDenied
+                  : ph.PermissionStatus.denied;
+        } catch (e2) {
+          // Last resort: try legacy storage permission
+          permissionStatus = await ph.Permission.storage.request();
+        }
+      }
+
+      if (permissionStatus.isDenied) {
+        if (!mounted) return;
+        _showPermissionDialog(
+          'Storage permission required',
+          'Storage permission denied. Please grant access in system settings',
+        );
+        return;
+      } else if (permissionStatus.isPermanentlyDenied) {
+        if (!mounted) return;
+        _showPermissionDialog(
+          'Storage permission required',
+          'Storage permission permanently denied. Please enable it in app settings',
+          isPermanent: true,
+        );
+        return;
+      }
 
       String? directory;
       try {
@@ -977,8 +1045,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (confirm != true || !mounted) return;
 
       final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['json'],
+        type: FileType.any,
+        allowMultiple: false,
       );
       if (result == null || result.files.single.path == null) return;
 
