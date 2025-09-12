@@ -146,12 +146,13 @@ class InventoryRepository {
             updates['frequenceAchatJours'] ?? existingObjet.frequenceAchatJours,
         consommationJour:
             updates['consommationJour'] ?? existingObjet.consommationJour,
-        seuilAlerteJours:
-            updates['seuilAlerteJours'] ?? existingObjet.seuilAlerteJours,
-        seuilAlerteQuantite:
-            updates['seuilAlerteQuantite'] ?? existingObjet.seuilAlerteQuantite,
-      );
-
+        // Trigger budget alerts only when spending-related fields actually changed value
+        final spendingChanged =
+            (updates.containsKey('categorie') && updates['categorie'] != existingObjet.categorie) ||
+            (updates.containsKey('prixUnitaire') && updates['prixUnitaire'] != existingObjet.prixUnitaire) ||
+            (updates.containsKey('quantiteInitiale') && updates['quantiteInitiale'] != existingObjet.quantiteInitiale) ||
+            (updates.containsKey('dateAchat') && updates['dateAchat'] != existingObjet.dateAchat);
+        if (spendingChanged) {
       // Recalculate rupture date for consumables when updating
       final objetWithUpdatedRuptureDate = PredictionService.updateRuptureDate(
         updatedObjet,
