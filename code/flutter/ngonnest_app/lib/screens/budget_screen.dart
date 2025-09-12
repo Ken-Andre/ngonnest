@@ -159,7 +159,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                               color: Theme.of(context).colorScheme.onPrimary,
                             ),
                           ),
-                          const SizedBox(height: 6),
+                          const SizedBox(height: 4),
                           Text(
                             'Suivez vos achats et dépenses produits ménagers',
                             style: TextStyle(
@@ -211,38 +211,49 @@ class _BudgetScreenState extends State<BudgetScreen> {
                     _buildStatCard(
                       context: context,
                       title: 'Budget',
-                      value:
-                          '${(_budgetSummary['totalLimit'] ?? 0.0).toStringAsFixed(1)} €',
+                      value: '${(_budgetSummary['totalBudget'] ?? 0.0).toStringAsFixed(1)} €',
                       subtitle: 'Limite mensuelle',
-                      icon: CupertinoIcons.money_dollar,
+                      icon: CupertinoIcons.creditcard,
                       color: Theme.of(context).colorScheme.secondary,
+                    ),
+                    const SizedBox(width: 12),
+                    _buildStatCard(
+                      context: context,
+                      title: 'Reste',
+                      value: '${(_budgetSummary['remaining'] ?? 0.0).toStringAsFixed(1)} €',
+                      subtitle: 'Disponible',
+                      icon: CupertinoIcons.money_dollar_circle,
+                      color: (_budgetSummary['remaining'] ?? 0.0) >= 0 
+                          ? Theme.of(context).colorScheme.tertiary 
+                          : Theme.of(context).colorScheme.error,
                     ),
                   ],
                 ),
               const SizedBox(height: 24),
 
-              // Categories header with add button
+              // Categories section header
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     'Catégories',
                     style: TextStyle(
-                      fontSize: 20,
+                      fontSize: 18,
                       fontWeight: FontWeight.w600,
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   ElevatedButton.icon(
                     onPressed: () => _showCategoryDialog(),
-                    icon: const Icon(CupertinoIcons.add, size: 18),
-                    label: const Text('Ajouter'),
+                    icon: const Icon(CupertinoIcons.add, size: 16),
+                    label: const Text('Ajouter', style: TextStyle(fontSize: 14)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.primary,
                       foregroundColor: Theme.of(context).colorScheme.onPrimary,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     ),
                   ),
                 ],
@@ -323,7 +334,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
     );
   }
 
-  Widget _buildStatCard({
+    Widget _buildStatCard({
     required BuildContext context,
     required String title,
     required String value,
@@ -333,38 +344,55 @@ class _BudgetScreenState extends State<BudgetScreen> {
   }) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
           boxShadow: [
             BoxShadow(
               color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+              blurRadius: 6,
+              offset: const Offset(0, 1),
             ),
           ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, size: 24, color: color),
+            Row(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon, size: 16, color: color),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 8),
             Text(
               value,
               style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
                 color: Theme.of(context).colorScheme.onSurface,
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 12,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-              ),
+              overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 2),
             Text(
@@ -373,6 +401,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                 fontSize: 10,
                 color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
               ),
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
