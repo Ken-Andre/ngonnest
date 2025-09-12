@@ -174,11 +174,15 @@ class NotificationService {
     );
 
     if (addToCalendar) {
+      try{
       await CalendarSyncService().addEvent(
         title: title,
         description: body,
         start: scheduledDate,
       );
+      } catch(e, st) {
+        debugPrint('Failed to add calendar event: $e');
+      }
     }
   }
 
@@ -309,11 +313,15 @@ class NotificationService {
     );
 
     if (addToCalendar) {
+      try{
       await CalendarSyncService().addEvent(
         title: title,
         description: body,
         start: startDate,
       );
+        } catch(e, st) {
+        debugPrint('Failed to add calendar event: $e');
+      }
     }
 
     // You can extend this to handle multiple recurring notifications
