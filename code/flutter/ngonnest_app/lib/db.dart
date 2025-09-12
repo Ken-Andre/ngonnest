@@ -94,7 +94,9 @@ Future<Database> initDatabase() async {
       // Handle database migrations
       if (oldVersion < 2) {
         // Migration from version 1 to 2: Ensure alertes table exists
-        final tables = await db.rawQuery("SELECT name FROM sqlite_master WHERE type='table' AND name='alertes'");
+        final tables = await db.rawQuery(
+          "SELECT name FROM sqlite_master WHERE type='table' AND name='alertes'",
+        );
         if (tables.isEmpty) {
           await db.execute('''
             CREATE TABLE alertes (
@@ -117,18 +119,28 @@ Future<Database> initDatabase() async {
       // Migration to version 3: Add missing columns to objet table
       if (oldVersion < 3) {
         // Vérifier et ajouter colonne seuil_alerte_jours
-        final seuilAlerteJoursColumns = await db.rawQuery("PRAGMA table_info(objet)");
-        final hasSeuilAlerteJours = seuilAlerteJoursColumns.any((col) => col['name'] == 'seuil_alerte_jours');
+        final seuilAlerteJoursColumns = await db.rawQuery(
+          "PRAGMA table_info(objet)",
+        );
+        final hasSeuilAlerteJours = seuilAlerteJoursColumns.any(
+          (col) => col['name'] == 'seuil_alerte_jours',
+        );
 
         if (!hasSeuilAlerteJours) {
-          await db.execute('ALTER TABLE objet ADD COLUMN seuil_alerte_jours INTEGER NOT NULL DEFAULT 3');
+          await db.execute(
+            'ALTER TABLE objet ADD COLUMN seuil_alerte_jours INTEGER NOT NULL DEFAULT 3',
+          );
         }
 
         // Vérifier et ajouter colonne seuil_alerte_quantite
-        final hasSeuilAlerteQuantite = seuilAlerteJoursColumns.any((col) => col['name'] == 'seuil_alerte_quantite');
+        final hasSeuilAlerteQuantite = seuilAlerteJoursColumns.any(
+          (col) => col['name'] == 'seuil_alerte_quantite',
+        );
 
         if (!hasSeuilAlerteQuantite) {
-          await db.execute('ALTER TABLE objet ADD COLUMN seuil_alerte_quantite REAL NOT NULL DEFAULT 1');
+          await db.execute(
+            'ALTER TABLE objet ADD COLUMN seuil_alerte_quantite REAL NOT NULL DEFAULT 1',
+          );
         }
       }
 
@@ -136,7 +148,9 @@ Future<Database> initDatabase() async {
       if (oldVersion < 4) {
         // Vérifier et ajouter colonne commentaires
         final objetColumns = await db.rawQuery("PRAGMA table_info(objet)");
-        final hasCommentaires = objetColumns.any((col) => col['name'] == 'commentaires');
+        final hasCommentaires = objetColumns.any(
+          (col) => col['name'] == 'commentaires',
+        );
 
         if (!hasCommentaires) {
           await db.execute('ALTER TABLE objet ADD COLUMN commentaires TEXT');
@@ -148,11 +162,15 @@ Future<Database> initDatabase() async {
       if (oldVersion < 5) {
         // Toujours vérifier et ajouter colonne commentaires (même si déjà fait en v4)
         final objetColumns = await db.rawQuery("PRAGMA table_info(objet)");
-        final hasCommentaires = objetColumns.any((col) => col['name'] == 'commentaires');
+        final hasCommentaires = objetColumns.any(
+          (col) => col['name'] == 'commentaires',
+        );
 
         if (!hasCommentaires) {
           await db.execute('ALTER TABLE objet ADD COLUMN commentaires TEXT');
-          print('✅ Migration v5: Force added commentaires column to objet table');
+          print(
+            '✅ Migration v5: Force added commentaires column to objet table',
+          );
         } else {
           print('✅ Migration v5: Commentaires column already exists');
         }
@@ -160,7 +178,9 @@ Future<Database> initDatabase() async {
 
       // Migration to version 6: Add budget_categories table
       if (oldVersion < 6) {
-        final tables = await db.rawQuery("SELECT name FROM sqlite_master WHERE type='table' AND name='budget_categories'");
+        final tables = await db.rawQuery(
+          "SELECT name FROM sqlite_master WHERE type='table' AND name='budget_categories'",
+        );
         if (tables.isEmpty) {
           await db.execute('''
             CREATE TABLE budget_categories (
@@ -187,7 +207,9 @@ Future<Database> initDatabase() async {
     final objetColumns = await database.rawQuery("PRAGMA table_info(objet)");
     print('[INIT DEBUG] Objet table structure after migration:');
     for (final col in objetColumns) {
-      print('  - ${col['name']}: ${col['type']} ${col['notnull'] == 1 ? 'NOT NULL' : 'NULL'}');
+      print(
+        '  - ${col['name']}: ${col['type']} ${col['notnull'] == 1 ? 'NOT NULL' : 'NULL'}',
+      );
     }
   } catch (e) {
     print('[INIT DEBUG ERROR] Failed to check table structure: $e');

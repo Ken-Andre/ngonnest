@@ -1,24 +1,25 @@
 import 'package:flutter/material.dart';
 import '../services/household_service.dart';
+import '../models/foyer.dart';
 
 class FoyerProvider extends ChangeNotifier {
-  int? _foyerId;
+  Foyer? _foyer;
 
-  int? get foyerId => _foyerId;
+  Foyer? get foyer => _foyer;
+  int? get foyerId => _foyer?.id;
 
   Future<void> initialize() async {
-    final foyer = await HouseholdService.getFoyer();
-    _foyerId = foyer?.id;
+    _foyer = await HouseholdService.getFoyer();
     notifyListeners();
   }
 
-  void setFoyerId(int id) {
-    _foyerId = id;
+  void setFoyer(Foyer foyer) {
+    _foyer = foyer;
     notifyListeners();
   }
 
   void clear() {
-    _foyerId = null;
+    _foyer = null;
     notifyListeners();
   }
 }
