@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:calendar_events/calendar_events.dart';
 import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -14,17 +12,29 @@ class CalendarSyncService {
   final CalendarEvents _calendarEvents = CalendarEvents();
 
   Future<bool> _requestPermissions() async {
-    if (Platform.isIOS) {
+    if (kIsWeb) {
+      return false;
+    }
+
+    final bool isIOS = defaultTargetPlatform == TargetPlatform.iOS;
+    final bool isAndroid = defaultTargetPlatform == TargetPlatform.android;
+
+    if (isIOS) {
       final result = await _calendarEvents.requestPermission();
       final permission = CalendarPermission.fromInt(result);
       return permission == CalendarPermission.allowed;
     }
 
-    final status = await Permission.calendar.status;
-    if (status.isGranted) {
-      return true;
+    if (isAndroid) {
+      final status = await Permission.calendar.status;
+      if (status.isGranted) {
+        return true;
+      }
+      return await Permission.calendar.request().isGranted;
     }
-    return await Permission.calendar.request().isGranted;
+
+    // Unsupported platforms (desktop, etc.)
+    return false;
   }
 
   Future<void> addEvent({
