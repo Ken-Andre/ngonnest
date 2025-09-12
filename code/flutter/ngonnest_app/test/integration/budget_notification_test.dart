@@ -33,7 +33,11 @@ void main() {
 
     // Ensure the database has required columns for the test
     final db = await databaseService.database;
-    await db.execute('ALTER TABLE objet ADD COLUMN room TEXT');
+    final columns = await db.rawQuery('PRAGMA table_info(objet)');
+    final hasRoom = columns.any((c) => c['name'] == 'room');
+    if (!hasRoom) {
+      await db.execute('ALTER TABLE objet ADD COLUMN room TEXT');
+    }
 
     await databaseService.insertFoyer(
       Foyer(
