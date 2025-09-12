@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import '../models/budget_category.dart';
 import 'budget_expense_history.dart';
+import 'package:provider/provider.dart';
+import '../providers/foyer_provider.dart';
 
 class BudgetCategoryCard extends StatelessWidget {
   final BudgetCategory category;
@@ -20,12 +22,13 @@ class BudgetCategoryCard extends StatelessWidget {
   });
 
   void _showExpenseHistory(BuildContext context) {
-    if (idFoyer != null) {
+    final foyerId = idFoyer ?? context.read<FoyerProvider>().foyerId;
+    if (foyerId != null) {
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (context) => BudgetExpenseHistory(
             category: category,
-            idFoyer: idFoyer!,
+            idFoyer: foyerId,
           ),
         ),
       );
@@ -41,7 +44,7 @@ class BudgetCategoryCard extends StatelessWidget {
     // Determine color based on spending status
     Color progressColor;
     Color borderColor;
-    
+
     if (isOverBudget) {
       progressColor = Theme.of(context).colorScheme.error;
       borderColor = Theme.of(context).colorScheme.error.withOpacity(0.3);
@@ -138,7 +141,10 @@ class BudgetCategoryCard extends StatelessWidget {
                         fontSize: 14,
                         color: isOverBudget
                             ? Theme.of(context).colorScheme.error
-                            : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                            : Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.7),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -149,7 +155,10 @@ class BudgetCategoryCard extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                         color: isOverBudget
                             ? Theme.of(context).colorScheme.error
-                            : Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+                            : Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.8),
                       ),
                     ),
                   ],
@@ -160,7 +169,8 @@ class BudgetCategoryCard extends StatelessWidget {
                 Container(
                   height: 6,
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                    color:
+                        Theme.of(context).colorScheme.outline.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(3),
                   ),
                   child: FractionallySizedBox(
@@ -180,10 +190,14 @@ class BudgetCategoryCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.error.withOpacity(0.1),
+                      color:
+                          Theme.of(context).colorScheme.error.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: Theme.of(context).colorScheme.error.withOpacity(0.3),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .error
+                            .withOpacity(0.3),
                       ),
                     ),
                     child: Row(
@@ -216,7 +230,10 @@ class BudgetCategoryCard extends StatelessWidget {
                     'Reste: ${category.remainingBudget.toStringAsFixed(1)} €',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.6),
                     ),
                   ),
                 ],

@@ -6,6 +6,8 @@ import '../services/budget_service.dart';
 import '../models/budget_category.dart';
 import '../widgets/budget_category_card.dart';
 import '../widgets/budget_category_dialog.dart';
+import 'package:provider/provider.dart';
+import '../providers/foyer_provider.dart';
 
 class BudgetScreen extends StatefulWidget {
   const BudgetScreen({super.key});
@@ -28,15 +30,19 @@ class _BudgetScreenState extends State<BudgetScreen> {
 
   Future<void> _loadBudgetData() async {
     setState(() => _isLoading = true);
-    
+
     try {
       // Initialize default categories if none exist
       await BudgetService.initializeDefaultCategories(month: _currentMonth);
-      
+
       // Load categories and summary
-      final categories = await BudgetService.getBudgetCategories(month: _currentMonth);
-      final summary = await BudgetService.getBudgetSummary(1, month: _currentMonth); // TODO: Get actual foyer ID
-      
+      final categories =
+          await BudgetService.getBudgetCategories(month: _currentMonth);
+      final idFoyer = context.read<FoyerProvider>().foyerId;
+      final summary = idFoyer != null
+          ? await BudgetService.getBudgetSummary(idFoyer, month: _currentMonth)
+          : {};
+
       setState(() {
         _categories = categories;
         _budgetSummary = summary;
@@ -63,7 +69,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
         month: _currentMonth,
       ),
     );
-    
+
     if (result == true) {
       _loadBudgetData(); // Reload data after changes
     }
@@ -74,7 +80,8 @@ class _BudgetScreenState extends State<BudgetScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Supprimer la catégorie'),
-        content: Text('Êtes-vous sûr de vouloir supprimer "${category.name}" ?'),
+        content:
+            Text('Êtes-vous sûr de vouloir supprimer "${category.name}" ?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -90,12 +97,12 @@ class _BudgetScreenState extends State<BudgetScreen> {
         ],
       ),
     );
-    
+
     if (confirmed == true && category.id != null) {
       try {
         await BudgetService.deleteBudgetCategory(category.id!);
         _loadBudgetData();
-        
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Catégorie supprimée')),
@@ -195,7 +202,8 @@ class _BudgetScreenState extends State<BudgetScreen> {
                     _buildStatCard(
                       context: context,
                       title: 'Ce mois',
-                      value: '${(_budgetSummary['totalSpent'] ?? 0.0).toStringAsFixed(1)} €',
+                      value:
+                          '${(_budgetSummary['totalSpent'] ?? 0.0).toStringAsFixed(1)} €',
                       subtitle: 'Dépenses totales',
                       icon: CupertinoIcons.chart_bar,
                       color: Theme.of(context).colorScheme.primary,
@@ -204,7 +212,8 @@ class _BudgetScreenState extends State<BudgetScreen> {
                     _buildStatCard(
                       context: context,
                       title: 'Budget',
-                      value: '${(_budgetSummary['totalLimit'] ?? 0.0).toStringAsFixed(1)} €',
+                      value:
+                          '${(_budgetSummary['totalLimit'] ?? 0.0).toStringAsFixed(1)} €',
                       subtitle: 'Limite mensuelle',
                       icon: CupertinoIcons.money_dollar,
                       color: Theme.of(context).colorScheme.secondary,
@@ -255,9 +264,11 @@ class _BudgetScreenState extends State<BudgetScreen> {
                                 final category = _categories[index];
                                 return BudgetCategoryCard(
                                   category: category,
-                                  onEdit: () => _showCategoryDialog(category: category),
+                                  onEdit: () =>
+                                      _showCategoryDialog(category: category),
                                   onDelete: () => _deleteCategory(category),
-                                  idFoyer: 1, // TODO: Get actual foyer ID from user session
+                                  idFoyer:
+                                      context.watch<FoyerProvider>().foyerId,
                                 );
                               },
                             ),
@@ -369,6 +380,4 @@ class _BudgetScreenState extends State<BudgetScreen> {
       ),
     );
   }
-
-
 }

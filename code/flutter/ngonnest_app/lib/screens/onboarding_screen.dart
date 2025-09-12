@@ -4,6 +4,8 @@ import '../models/foyer.dart';
 import '../models/household_profile.dart';
 import '../services/household_service.dart';
 import '../theme/app_theme.dart';
+import 'package:provider/provider.dart';
+import '../providers/foyer_provider.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -21,9 +23,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   bool _isLoading = false;
 
   final List<Map<String, dynamic>> _householdSizes = [
-    {'id': 'small', 'label': 'Petit (1-2 personnes)', 'icon': '👤', 'personCount': 2},
-    {'id': 'medium', 'label': 'Moyen (3-4 personnes)', 'icon': '👥', 'personCount': 4},
-    {'id': 'large', 'label': 'Grand (5+ personnes)', 'icon': '👨‍👩‍👧‍👦', 'personCount': 6},
+    {
+      'id': 'small',
+      'label': 'Petit (1-2 personnes)',
+      'icon': '👤',
+      'personCount': 2
+    },
+    {
+      'id': 'medium',
+      'label': 'Moyen (3-4 personnes)',
+      'icon': '👥',
+      'personCount': 4
+    },
+    {
+      'id': 'large',
+      'label': 'Grand (5+ personnes)',
+      'icon': '👨‍👩‍👧‍👦',
+      'personCount': 6
+    },
   ];
 
   @override
@@ -63,9 +80,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         (size) => size['id'] == _selectedHouseholdSize,
         orElse: () => _householdSizes.first, // Valeur par défaut
       );
-      
+
       final nbPersonnes = selectedSizeData['personCount'] as int;
-      final nbPieces = nbPersonnes <= 2 ? 2 : nbPersonnes <= 4 ? 3 : 4;
+      final nbPieces = nbPersonnes <= 2
+          ? 2
+          : nbPersonnes <= 4
+              ? 3
+              : 4;
 
       final foyer = Foyer(
         nbPersonnes: nbPersonnes,
@@ -74,7 +95,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         langue: _selectedLanguage,
       );
 
-      await HouseholdService.saveFoyer(foyer);
+      final id = await HouseholdService.saveFoyer(foyer);
+      context.read<FoyerProvider>().setFoyerId(id);
 
       if (mounted) {
         Navigator.of(context).pushReplacementNamed('/dashboard');
@@ -107,7 +129,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           children: [
             // Header with progress and back button
             _buildHeader(),
-            
+
             // Content area
             Expanded(
               child: PageView(
@@ -120,7 +142,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ],
               ),
             ),
-            
+
             // Bottom section with navigation
             _buildBottomNavigation(),
           ],
@@ -163,9 +185,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ),
               ],
             ),
-          
+
           const SizedBox(height: 12),
-          
+
           // Progress indicator
           Row(
             children: List.generate(3, (index) {
@@ -174,8 +196,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   margin: EdgeInsets.only(right: index < 2 ? 6 : 0),
                   height: 3,
                   decoration: BoxDecoration(
-                    color: index <= _currentStep 
-                        ? AppTheme.primaryGreen 
+                    color: index <= _currentStep
+                        ? AppTheme.primaryGreen
                         : AppTheme.neutralGrey.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(1.5),
                   ),
@@ -217,24 +239,28 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   children: [
                     Text(
                       '🏠',
-                      style: Theme.of(context).textTheme.headlineLarge?.copyWith(fontSize: 32), // Reduced font size using theme
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineLarge
+                          ?.copyWith(
+                              fontSize: 32), // Reduced font size using theme
                     ),
                     const SizedBox(height: 12), // Reduced from 24
                     Text(
                       'Bienvenue !',
                       style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.neutralBlack,
-                      ),
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.neutralBlack,
+                          ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 8), // Reduced from 16
                     Text(
                       'NgonNest vous aide à gérer vos produits ménagers facilement',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: AppTheme.neutralGrey,
-                        fontSize: 14,
-                      ),
+                            color: AppTheme.neutralGrey,
+                            fontSize: 14,
+                          ),
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -246,10 +272,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               Text(
                 'Sélectionnez votre langue',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.neutralBlack,
-                  fontSize: 18,
-                ),
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.neutralBlack,
+                      fontSize: 18,
+                    ),
               ),
 
               const SizedBox(height: 12), // Reduced from 24
@@ -274,7 +300,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       size: 18,
                     ),
                     const SizedBox(width: 10),
-                    Expanded( // Added Expanded to prevent overflow
+                    Expanded(
+                      // Added Expanded to prevent overflow
                       child: Text(
                         'Temps estimé: < 2 minutes',
                         style: TextStyle(
@@ -310,7 +337,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             color: isSelected ? AppTheme.primaryGreen : Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isSelected ? AppTheme.primaryGreen : AppTheme.neutralGrey.withOpacity(0.3),
+              color: isSelected
+                  ? AppTheme.primaryGreen
+                  : AppTheme.neutralGrey.withOpacity(0.3),
               width: 2,
             ),
           ),
@@ -355,10 +384,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Text(
             'Votre foyer',
             style: Theme.of(context).textTheme.displaySmall?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: AppTheme.neutralBlack,
-              fontSize: 24,
-            ),
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.neutralBlack,
+                  fontSize: 24,
+                ),
           ),
 
           const SizedBox(height: 8),
@@ -366,9 +395,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Text(
             'Sélectionnez la taille de votre foyer',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: AppTheme.neutralGrey,
-              fontSize: 14,
-            ),
+                  color: AppTheme.neutralGrey,
+                  fontSize: 14,
+                ),
           ),
 
           const SizedBox(height: 20),
@@ -396,7 +425,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             color: isSelected ? AppTheme.primaryGreen : Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isSelected ? AppTheme.primaryGreen : AppTheme.neutralGrey.withOpacity(0.3),
+              color: isSelected
+                  ? AppTheme.primaryGreen
+                  : AppTheme.neutralGrey.withOpacity(0.3),
               width: 2,
             ),
             boxShadow: [
@@ -413,8 +444,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 width: 50,
                 height: 50,
                 decoration: BoxDecoration(
-                  color: isSelected 
-                      ? Colors.white.withOpacity(0.2) 
+                  color: isSelected
+                      ? Colors.white.withOpacity(0.2)
                       : AppTheme.primaryGreen.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -435,7 +466,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: isSelected ? Colors.white : AppTheme.neutralBlack,
+                        color:
+                            isSelected ? Colors.white : AppTheme.neutralBlack,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -443,8 +475,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       'Recommandé pour ${size['personCount']} personnes',
                       style: TextStyle(
                         fontSize: 14,
-                        color: isSelected 
-                            ? Colors.white.withOpacity(0.8) 
+                        color: isSelected
+                            ? Colors.white.withOpacity(0.8)
                             : AppTheme.neutralGrey,
                       ),
                     ),
@@ -475,10 +507,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Text(
             'Type de logement',
             style: Theme.of(context).textTheme.displaySmall?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: AppTheme.neutralBlack,
-              fontSize: 24,
-            ),
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.neutralBlack,
+                  fontSize: 24,
+                ),
           ),
 
           const SizedBox(height: 8),
@@ -486,9 +518,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Text(
             'Pour des recommandations personnalisées',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: AppTheme.neutralGrey,
-              fontSize: 14,
-            ),
+                  color: AppTheme.neutralGrey,
+                  fontSize: 14,
+                ),
           ),
 
           const SizedBox(height: 20),
@@ -505,10 +537,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Widget _buildHousingTypeOption(String type) {
     final isSelected = _selectedHousingType == type;
-    final icon = type == LogementType.appartement 
-        ? CupertinoIcons.building_2_fill 
+    final icon = type == LogementType.appartement
+        ? CupertinoIcons.building_2_fill
         : CupertinoIcons.house_fill;
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: CupertinoButton(
@@ -520,7 +552,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             color: isSelected ? AppTheme.primaryGreen : Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isSelected ? AppTheme.primaryGreen : AppTheme.neutralGrey.withOpacity(0.3),
+              color: isSelected
+                  ? AppTheme.primaryGreen
+                  : AppTheme.neutralGrey.withOpacity(0.3),
               width: 2,
             ),
             boxShadow: [
@@ -537,8 +571,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 width: 50,
                 height: 50,
                 decoration: BoxDecoration(
-                  color: isSelected 
-                      ? Colors.white.withOpacity(0.2) 
+                  color: isSelected
+                      ? Colors.white.withOpacity(0.2)
                       : AppTheme.primaryGreen.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
