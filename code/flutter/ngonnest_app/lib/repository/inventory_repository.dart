@@ -20,10 +20,17 @@ class InventoryRepository {
       // Calculate rupture date for consumables
       final objetWithRuptureDate = PredictionService.updateRuptureDate(objet);
       final id = await _databaseService.insertObjet(objetWithRuptureDate);
-      await BudgetService.checkBudgetAlertsAfterPurchase(
-        objetWithRuptureDate.idFoyer,
-        objetWithRuptureDate.categorie,
-      );
+      try {
+        await BudgetService.checkBudgetAlertsAfterPurchase(
+          objetWithRuptureDate.idFoyer,
+          objetWithRuptureDate.categorie,
+        );
+      } catch (e, stackTrace) {
+        await ErrorLoggerService.logError(
+          'BudgetService.checkBudgetAlertsAfterPurchase failed: $e',
+          stackTrace,
+        );
+      }
       return id;
     } catch (e, stackTrace) {
       print('Database error in InventoryRepository.create: $e');
