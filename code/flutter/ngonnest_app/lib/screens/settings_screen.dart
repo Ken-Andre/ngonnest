@@ -895,6 +895,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+
   void _showPermissionDialog(String title, String message, {bool isPermanent = false}) {
     showCupertinoModalPopup<void>(
       context: context,
@@ -941,6 +942,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       );
       if (confirm != true || !mounted) return;
+
 
       // Request storage permission before proceeding
       ph.PermissionStatus permissionStatus;
@@ -998,7 +1000,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final fileName =
           'ngonnest_export_${DateTime.now().millisecondsSinceEpoch}.json';
       final file = File(p.join(directory, fileName));
-      await file.writeAsString(jsonString);
+      await file.writeAsString(jsonString, flush: true);
+
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

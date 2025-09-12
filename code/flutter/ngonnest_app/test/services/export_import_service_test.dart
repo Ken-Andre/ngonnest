@@ -47,4 +47,26 @@ void main() {
 
     await db.close();
   });
+
+  test('autoincrement sequence restored', () async {
+    final db = await openDatabase(inMemoryDatabasePath, version: 1,
+        onCreate: (db, version) async {
+      await db.execute(
+          'CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)');
+    });
+
+    await db.insert('test', {'name': 'foo'}); // id should be 1
+
+    final service = ExportImportService(databaseProvider: () async => db);
+    final json = await service.exportToJson();
+
+    await db.delete('test');
+    await service.importFromJson(json);
+
+    final newId = await db.insert('test', {'name': 'bar'});
+    expect(newId, 2);
+
+    await db.close();
+  });
+
 }
