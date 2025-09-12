@@ -69,21 +69,35 @@ class ExportImportService {
           final rows = List<Map<String, dynamic>>.from(entry.value as List);
           for (final row in rows) {
             await txn.insert(table, row);
-          }
-
-          final seqRows = await txn.rawQuery(
-            'SELECT seq FROM sqlite_sequence WHERE name = ?',
-            [table],
-          );
-          if (seqRows.isNotEmpty) {
-            final maxIdResult =
-                await txn.rawQuery('SELECT MAX(rowid) AS max_id FROM "$table"');
-            final maxId = maxIdResult.first['max_id'] as int?;
-            if (maxId != null) {
-              await txn.rawUpdate(
-                'UPDATE sqlite_sequence SET seq = ? WHERE name = ?',
-                [maxId, table],
+          try {
+            final hasSeqTable = await txn.rawQuery(
+              "SELECT name FROM sqlite_master WHERE type='table' AND name='sqlite_sequence'"
+            );
+            if (hasSeqTable.isNotEmpty) {
+              final existingSeq = await txn.rawQuery(
+                'SELECT seq FROM sqlite_sequence WHERE name = ?',
+                [table],
               );
+              final maxIdResult =
+                  await txn.rawQuery('SELECT MAX(rowid) AS max_id FROM "$table"');
+              final maxId = maxIdResult.first['max_id'] as int?;
+              if (maxId != null) {
+                if (existingSeq.isNotEmpty) {
+                  await txn.rawUpdate(
+                    'UPDATE sqlite_sequence SET seq = ? WHERE name = ?',
+                    [maxId, table],
+                  );
+                } else {
+                  await txn.rawInsert(
+                    'INSERT INTO sqlite_sequence(name, seq) VALUES(?, ?)',
+                    [table, maxId],
+                  );
+                }
+              }
+            }
+          } catch (_) {
+            // Ignore if sqlite_sequence is unavailable on this schema/engine.
+          }
             }
           }
         }
