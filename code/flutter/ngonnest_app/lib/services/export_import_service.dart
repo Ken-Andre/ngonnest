@@ -71,19 +71,24 @@ class ExportImportService {
             await txn.insert(table, row);
           try {
             final hasSeqTable = await txn.rawQuery(
-              "SELECT name FROM sqlite_master WHERE type='table' AND name='sqlite_sequence'"
-            );
-            if (hasSeqTable.isNotEmpty) {
-              final existingSeq = await txn.rawQuery(
-                'SELECT seq FROM sqlite_sequence WHERE name = ?',
-                [table],
+              // Ensure sqlite_sequence exists before querying
+              final seqTableExists = await txn.rawQuery(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='sqlite_sequence'",
               );
-              final maxIdResult =
-                  await txn.rawQuery('SELECT MAX(rowid) AS max_id FROM "$table"');
-              final maxId = maxIdResult.first['max_id'] as int?;
-              if (maxId != null) {
-                if (existingSeq.isNotEmpty) {
+              if (seqTableExists.isNotEmpty) {
+                final seqRows = await txn.rawQuery(
+                  'SELECT seq FROM sqlite_sequence WHERE name = ?',
+                  [table],
+                );
+                if (seqRows.isNotEmpty) {
+                  final safeTable = table.replaceAll('"', '""');
+                  final maxIdResult =
+                      await txn.rawQuery('SELECT MAX(rowid) AS max_id FROM "$safeTable"');
+                  final maxId = maxIdResult.first['max_id'] as int?;
                   await txn.rawUpdate(
+                    'UPDATE sqlite_sequence SET seq = ? WHERE name = ?',
+                    [maxId ?? 0, table],
+                  );
                     'UPDATE sqlite_sequence SET seq = ? WHERE name = ?',
                     [maxId, table],
                   );
