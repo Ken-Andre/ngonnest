@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import '../models/alert.dart';
+import 'calendar_sync_service.dart';
 
 class NotificationService {
-  static final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin =
-      FlutterLocalNotificationsPlugin();
+  static final FlutterLocalNotificationsPlugin
+  _flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
   static Future<void> initialize() async {
     const AndroidInitializationSettings initializationSettingsAndroid =
@@ -18,10 +19,11 @@ class NotificationService {
           requestSoundPermission: true,
         );
 
-    const InitializationSettings initializationSettings = InitializationSettings(
-      android: initializationSettingsAndroid,
-      iOS: initializationSettingsIOS,
-    );
+    const InitializationSettings initializationSettings =
+        InitializationSettings(
+          android: initializationSettingsAndroid,
+          iOS: initializationSettingsIOS,
+        );
 
     await _flutterLocalNotificationsPlugin.initialize(
       initializationSettings,
@@ -30,15 +32,15 @@ class NotificationService {
 
     // Request permissions for iOS
     await _flutterLocalNotificationsPlugin
-        .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()
-        ?.requestPermissions(
-          alert: true,
-          badge: true,
-          sound: true,
-        );
+        .resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin
+        >()
+        ?.requestPermissions(alert: true, badge: true, sound: true);
   }
 
-  static Future<void> _onDidReceiveNotificationResponse(NotificationResponse notificationResponse) async {
+  static Future<void> _onDidReceiveNotificationResponse(
+    NotificationResponse notificationResponse,
+  ) async {
     final String? payload = notificationResponse.payload;
     if (payload != null) {
       print('Notification payload: $payload');
@@ -55,7 +57,8 @@ class NotificationService {
         AndroidNotificationDetails(
           'low_stock_channel',
           'Stock faible',
-          channelDescription: 'Notifications pour les produits en rupture de stock',
+          channelDescription:
+              'Notifications pour les produits en rupture de stock',
           importance: Importance.high,
           priority: Priority.high,
           showWhen: true,
@@ -94,7 +97,8 @@ class NotificationService {
         AndroidNotificationDetails(
           'expiry_channel',
           'Expiration proche',
-          channelDescription: 'Notifications pour les produits proche de la date d\'expiration',
+          channelDescription:
+              'Notifications pour les produits proche de la date d\'expiration',
           importance: Importance.high,
           priority: Priority.high,
           showWhen: true,
@@ -128,6 +132,7 @@ class NotificationService {
     required String title,
     required String body,
     required DateTime scheduledDate,
+    bool addToCalendar = false,
   }) async {
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
@@ -153,7 +158,10 @@ class NotificationService {
     );
 
     // Convert to TZDateTime for proper timezone handling
-    final tz.TZDateTime tzScheduledDate = tz.TZDateTime.from(scheduledDate, tz.local);
+    final tz.TZDateTime tzScheduledDate = tz.TZDateTime.from(
+      scheduledDate,
+      tz.local,
+    );
 
     await _flutterLocalNotificationsPlugin.zonedSchedule(
       id,
@@ -164,6 +172,18 @@ class NotificationService {
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       matchDateTimeComponents: DateTimeComponents.dateAndTime,
     );
+
+    if (addToCalendar) {
+      try{
+      await CalendarSyncService().addEvent(
+        title: title,
+        description: body,
+        start: scheduledDate,
+      );
+      } catch(e, st) {
+        debugPrint('Failed to add calendar event: $e');
+      }
+    }
   }
 
   static Future<void> showReminderNotification({
@@ -250,6 +270,7 @@ class NotificationService {
     required String body,
     required int intervalDays,
     required DateTime startDate,
+    bool addToCalendar = false,
   }) async {
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
@@ -275,7 +296,10 @@ class NotificationService {
     );
 
     // Convert to TZDateTime for proper timezone handling
-    final tz.TZDateTime tzScheduledDate = tz.TZDateTime.from(startDate, tz.local);
+    final tz.TZDateTime tzScheduledDate = tz.TZDateTime.from(
+      startDate,
+      tz.local,
+    );
 
     // Schedule the first reminder
     await _flutterLocalNotificationsPlugin.zonedSchedule(
@@ -287,6 +311,18 @@ class NotificationService {
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       matchDateTimeComponents: DateTimeComponents.time,
     );
+
+    if (addToCalendar) {
+      try{
+      await CalendarSyncService().addEvent(
+        title: title,
+        description: body,
+        start: startDate,
+      );
+        } catch(e, st) {
+        debugPrint('Failed to add calendar event: $e');
+      }
+    }
 
     // You can extend this to handle multiple recurring notifications
     // by scheduling multiple notifications at different intervals
@@ -300,7 +336,8 @@ class NotificationService {
     await _flutterLocalNotificationsPlugin.cancelAll();
   }
 
-  static Future<List<PendingNotificationRequest>> getPendingNotifications() async {
+  static Future<List<PendingNotificationRequest>>
+  getPendingNotifications() async {
     return await _flutterLocalNotificationsPlugin.pendingNotificationRequests();
   }
 
@@ -360,17 +397,15 @@ class NotificationService {
         productName = nameMatch.group(1) ?? '';
       }
 
-      final quantityMatch = RegExp(r'quantité restante: (\d+)').firstMatch(message);
+      final quantityMatch = RegExp(
+        r'quantité restante: (\d+)',
+      ).firstMatch(message);
       if (quantityMatch != null) {
         quantity = int.tryParse(quantityMatch.group(1) ?? '0') ?? 0;
       }
     }
 
-    return {
-      'name': productName,
-      'quantity': quantity,
-      'category': category,
-    };
+    return {'name': productName, 'quantity': quantity, 'category': category};
   }
 
   static Map<String, dynamic> _extractExpiryInfoFromMessage(String message) {
@@ -379,7 +414,7 @@ class NotificationService {
     String expiryDate = '';
 
     if (message.contains('expire bientôt')) {
-      final nameMatch = RegExp(r'^([^]+?) expire' ).firstMatch(message);
+      final nameMatch = RegExp(r'^([^]+?) expire').firstMatch(message);
       if (nameMatch != null) {
         productName = nameMatch.group(1)?.trim() ?? '';
       }
@@ -390,10 +425,6 @@ class NotificationService {
       }
     }
 
-    return {
-      'name': productName,
-      'date': expiryDate,
-      'category': 'Inconnu',
-    };
+    return {'name': productName, 'date': expiryDate, 'category': 'Inconnu'};
   }
 }
