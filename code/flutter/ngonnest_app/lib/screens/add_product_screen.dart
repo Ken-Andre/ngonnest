@@ -1108,9 +1108,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
     try {
       final foyer = await HouseholdService.getFoyer();
       if (foyer != null) {
-        if (!mounted) return;
         setState(() {
-          _householdSize = foyer.nbPersonnes;
+          final size = foyer.nbPersonnes;
+          _householdSize = (size == null || size < 1) ? 4 : size;
+        });
         });
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
