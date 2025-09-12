@@ -2,6 +2,7 @@ import '../models/objet.dart';
 import '../services/database_service.dart';
 import '../services/prediction_service.dart';
 import '../services/error_logger_service.dart';
+import '../services/budget_service.dart';
 
 /// Repository for Inventory (Objet) data operations
 /// Implements the Repository pattern as a wrapper around DatabaseService
@@ -18,21 +19,49 @@ class InventoryRepository {
     try {
       // Calculate rupture date for consumables
       final objetWithRuptureDate = PredictionService.updateRuptureDate(objet);
-      return await _databaseService.insertObjet(objetWithRuptureDate);
+      final id = await _databaseService.insertObjet(objetWithRuptureDate);
+      try {
+        await BudgetService.checkBudgetAlertsAfterPurchase(
+          objetWithRuptureDate.idFoyer,
+          objetWithRuptureDate.categorie,
+        );
+      } catch (e, stackTrace) {
+        await ErrorLoggerService.logError(
+          'BudgetService.checkBudgetAlertsAfterPurchase failed: $e',
+          stackTrace,
+        );
+      }
+      return id;
     } catch (e, stackTrace) {
       print('Database error in InventoryRepository.create: $e');
       print('StackTrace: $stackTrace');
 
       // Attempt automatic recovery on database errors
       if (_isDatabaseConnectionError(e)) {
-        print('[InventoryRepository] Database connection error detected, attempting recovery...');
+        print(
+          '[InventoryRepository] Database connection error detected, attempting recovery...',
+        );
         try {
           final isValid = await _databaseService.isConnectionValid();
           if (!isValid) {
             // Try again after potential recovery
             await Future.delayed(const Duration(milliseconds: 200));
-            final objetWithRuptureDate = PredictionService.updateRuptureDate(objet);
-            return await _databaseService.insertObjet(objetWithRuptureDate);
+            final objetWithRuptureDate = PredictionService.updateRuptureDate(
+              objet,
+            );
+            final id = await _databaseService.insertObjet(objetWithRuptureDate);
+            try {
+              await BudgetService.checkBudgetAlertsAfterPurchase(
+                objetWithRuptureDate.idFoyer,
+                objetWithRuptureDate.categorie,
+              );
+            } catch (e, stackTrace) {
+              await ErrorLoggerService.logError(
+                'BudgetService.checkBudgetAlertsAfterPurchase failed during recovery: $e',
+                stackTrace,
+              );
+            }
+            return id;
           }
         } catch (recoveryError, recoveryStackTrace) {
           await ErrorLoggerService.logError(
@@ -98,23 +127,59 @@ class InventoryRepository {
         categorie: updates['categorie'] ?? existingObjet.categorie,
         type: updates['type'] ?? existingObjet.type,
         dateAchat: updates['dateAchat'] ?? existingObjet.dateAchat,
-        dureeViePrevJours: updates['dureeViePrevJours'] ?? existingObjet.dureeViePrevJours,
-        dateRupturePrev: updates['dateRupturePrev'] ?? existingObjet.dateRupturePrev,
-        quantiteInitiale: updates['quantiteInitiale'] ?? existingObjet.quantiteInitiale,
-        quantiteRestante: updates['quantiteRestante'] ?? existingObjet.quantiteRestante,
+        dureeViePrevJours:
+            updates['dureeViePrevJours'] ?? existingObjet.dureeViePrevJours,
+        dateRupturePrev:
+            updates['dateRupturePrev'] ?? existingObjet.dateRupturePrev,
+        quantiteInitiale:
+            updates['quantiteInitiale'] ?? existingObjet.quantiteInitiale,
+        quantiteRestante:
+            updates['quantiteRestante'] ?? existingObjet.quantiteRestante,
         unite: updates['unite'] ?? existingObjet.unite,
-        tailleConditionnement: updates['tailleConditionnement'] ?? existingObjet.tailleConditionnement,
+        tailleConditionnement:
+            updates['tailleConditionnement'] ??
+            existingObjet.tailleConditionnement,
         prixUnitaire: updates['prixUnitaire'] ?? existingObjet.prixUnitaire,
-        methodePrevision: updates['methodePrevision'] ?? existingObjet.methodePrevision,
-        frequenceAchatJours: updates['frequenceAchatJours'] ?? existingObjet.frequenceAchatJours,
-        consommationJour: updates['consommationJour'] ?? existingObjet.consommationJour,
-        seuilAlerteJours: updates['seuilAlerteJours'] ?? existingObjet.seuilAlerteJours,
-        seuilAlerteQuantite: updates['seuilAlerteQuantite'] ?? existingObjet.seuilAlerteQuantite,
+        methodePrevision:
+            updates['methodePrevision'] ?? existingObjet.methodePrevision,
+        frequenceAchatJours:
+            updates['frequenceAchatJours'] ?? existingObjet.frequenceAchatJours,
+        consommationJour:
+            updates['consommationJour'] ?? existingObjet.consommationJour,
+        // Trigger budget alerts only when spending-related fields actually changed value
+        final spendingChanged =
+            (updates.containsKey('categorie') && updates['categorie'] != existingObjet.categorie) ||
+            (updates.containsKey('prixUnitaire') && updates['prixUnitaire'] != existingObjet.prixUnitaire) ||
+            (updates.containsKey('quantiteInitiale') && updates['quantiteInitiale'] != existingObjet.quantiteInitiale) ||
+            (updates.containsKey('dateAchat') && updates['dateAchat'] != existingObjet.dateAchat);
+        if (spendingChanged) {
+      // Recalculate rupture date for consumables when updating
+      final objetWithUpdatedRuptureDate = PredictionService.updateRuptureDate(
+        updatedObjet,
+      );
+      final result = await _databaseService.updateObjet(
+        objetWithUpdatedRuptureDate,
       );
 
-      // Recalculate rupture date for consumables when updating
-      final objetWithUpdatedRuptureDate = PredictionService.updateRuptureDate(updatedObjet);
-      return await _databaseService.updateObjet(objetWithUpdatedRuptureDate);
+      // Trigger budget alerts only when spending-related fields changed
+      final spendingChanged = updates.containsKey('categorie') ||
+          updates.containsKey('prixUnitaire') ||
+          updates.containsKey('quantiteInitiale') ||
+          updates.containsKey('dateAchat');
+      if (spendingChanged) {
+        try {
+          await BudgetService.checkBudgetAlertsAfterPurchase(
+            objetWithUpdatedRuptureDate.idFoyer,
+            objetWithUpdatedRuptureDate.categorie,
+          );
+        } catch (e, stackTrace) {
+          await ErrorLoggerService.logError(
+            'BudgetService.checkBudgetAlertsAfterPurchase failed: $e',
+            stackTrace,
+          );
+        }
+      }
+      return result;
     } catch (e, stackTrace) {
       print('Database error in InventoryRepository.update: $e');
       print('StackTrace: $stackTrace');
@@ -134,8 +199,24 @@ class InventoryRepository {
   /// Automatically recalculates rupture date for consumables
   Future<int> updateObjet(Objet objet) async {
     // Recalculate rupture date for consumables when updating
-    final objetWithUpdatedRuptureDate = PredictionService.updateRuptureDate(objet);
-    return await _databaseService.updateObjet(objetWithUpdatedRuptureDate);
+    final objetWithUpdatedRuptureDate = PredictionService.updateRuptureDate(
+      objet,
+    );
+    final result = await _databaseService.updateObjet(
+      objetWithUpdatedRuptureDate,
+    );
+    try {
+      await BudgetService.checkBudgetAlertsAfterPurchase(
+        objetWithUpdatedRuptureDate.idFoyer,
+        objetWithUpdatedRuptureDate.categorie,
+      );
+    } catch (e, stackTrace) {
+      await ErrorLoggerService.logError(
+        'BudgetService.checkBudgetAlertsAfterPurchase failed: $e',
+        stackTrace,
+      );
+    }
+    return result;
   }
 
   /// Delete an inventory item
@@ -147,7 +228,9 @@ class InventoryRepository {
   /// Get all inventory items for a foyer
   Future<List<Objet>> getAll(int idFoyer, {String? category}) async {
     if (category != null) {
-      final type = category == 'consommable' ? TypeObjet.consommable : TypeObjet.durable;
+      final type = category == 'consommable'
+          ? TypeObjet.consommable
+          : TypeObjet.durable;
       return await _databaseService.getObjets(idFoyer: idFoyer, type: type);
     }
     return await _databaseService.getObjets(idFoyer: idFoyer);
@@ -155,30 +238,44 @@ class InventoryRepository {
 
   /// Get consumable inventory items for a foyer
   Future<List<Objet>> getConsommables(int idFoyer) async {
-    return await _databaseService.getObjets(idFoyer: idFoyer, type: TypeObjet.consommable);
+    return await _databaseService.getObjets(
+      idFoyer: idFoyer,
+      type: TypeObjet.consommable,
+    );
   }
 
   /// Get durable inventory items for a foyer
   Future<List<Objet>> getDurables(int idFoyer) async {
-    return await _databaseService.getObjets(idFoyer: idFoyer, type: TypeObjet.durable);
+    return await _databaseService.getObjets(
+      idFoyer: idFoyer,
+      type: TypeObjet.durable,
+    );
   }
 
   /// Get items with low stock for alerts
   Future<List<Objet>> getLowStockItems(int idFoyer) async {
     final allItems = await _databaseService.getObjets(idFoyer: idFoyer);
-    return allItems.where((objet) =>
-        objet.quantiteRestante <= objet.seuilAlerteQuantite).toList();
+    return allItems
+        .where((objet) => objet.quantiteRestante <= objet.seuilAlerteQuantite)
+        .toList();
   }
 
   /// Get items expiring soon
-  Future<List<Objet>> getExpiringSoonItems(int idFoyer, {Duration warningPeriod = const Duration(days: 3)}) async {
+  Future<List<Objet>> getExpiringSoonItems(
+    int idFoyer, {
+    Duration warningPeriod = const Duration(days: 3),
+  }) async {
     final allItems = await _databaseService.getObjets(idFoyer: idFoyer);
     final now = DateTime.now();
     final warningDate = now.add(warningPeriod);
 
-    return allItems.where((objet) =>
-        objet.dateRupturePrev != null &&
-        objet.dateRupturePrev!.isBefore(warningDate)).toList();
+    return allItems
+        .where(
+          (objet) =>
+              objet.dateRupturePrev != null &&
+              objet.dateRupturePrev!.isBefore(warningDate),
+        )
+        .toList();
   }
 
   /// Get total count of inventory items
@@ -196,9 +293,9 @@ class InventoryRepository {
   static bool _isDatabaseConnectionError(dynamic error) {
     final errorString = error.toString().toLowerCase();
     return errorString.contains('database is closed') ||
-           errorString.contains('database_closed') ||
-           errorString.contains('no such table') ||
-           errorString.contains('sqlite_exception') ||
-           errorString.contains('connection') && errorString.contains('lost');
+        errorString.contains('database_closed') ||
+        errorString.contains('no such table') ||
+        errorString.contains('sqlite_exception') ||
+        errorString.contains('connection') && errorString.contains('lost');
   }
 }
