@@ -11,6 +11,7 @@ import '../services/error_logger_service.dart';
 import '../services/navigation_service.dart';
 import '../widgets/error_feedback_widget.dart';
 import '../widgets/smart_product_search.dart';
+import '../services/budget_service.dart';
 
 import '../widgets/smart_quantity_selector.dart';
 import '../widgets/dropdown_categories_durables.dart';
@@ -147,8 +148,6 @@ class _AddProductScreenState extends State<AddProductScreen> {
     }
   }
 
-
-
   @override
   void dispose() {
     _productNameController.dispose();
@@ -253,6 +252,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
       print('🔄 SAVE PRODUCT: Calling repository.create()...');
       final productId = await _inventoryRepository.create(objet);
       print('✅ SAVE PRODUCT: Product created with ID: $productId');
+      await BudgetService.checkBudgetAlertsAfterPurchase(
+        _foyerId!,
+        objet.categorie,
+      );
 
       if (mounted) {
         print('🔄 SAVE PRODUCT: Showing success snackbar and popping screen');
@@ -269,7 +272,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
           Navigator.of(context).pop(true);
         } else {
           // Fallback: Navigate to inventory route if pop is not available
-          Navigator.of(context, rootNavigator: true).pushReplacementNamed('/inventory');
+          Navigator.of(
+            context,
+            rootNavigator: true,
+          ).pushReplacementNamed('/inventory');
         }
       }
     } catch (e, stackTrace) {
@@ -382,7 +388,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 // Product name with smart suggestions
                 _buildSectionTitle('Nom du produit'),
                 SmartProductSearch(
-                  controller: _productNameController, // Utiliser le controller externe
+                  controller:
+                      _productNameController, // Utiliser le controller externe
                   category: _isConsumable ? _selectedCategory : 'durables',
                   onProductSelected: (product) {
                     setState(() {
@@ -395,12 +402,14 @@ class _AddProductScreenState extends State<AddProductScreen> {
                             .toString();
                       }
                     });
-                    
+
                     // Afficher un message si la catégorie a changé
                     if (product.category != _selectedCategory) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Catégorie mise à jour vers "${product.category}"'),
+                          content: Text(
+                            'Catégorie mise à jour vers "${product.category}"',
+                          ),
                           backgroundColor: Colors.blue,
                           duration: const Duration(seconds: 2),
                         ),
@@ -533,7 +542,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
                       color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.outline.withOpacity(0.5),
                       ),
                     ),
                     child: DropdownButtonFormField<String>(
@@ -543,20 +554,46 @@ class _AddProductScreenState extends State<AddProductScreen> {
                         contentPadding: EdgeInsets.zero,
                       ),
                       items: const [
-                        DropdownMenuItem(value: 'hygiene', child: Text('🧴 Hygiène')),
-                        DropdownMenuItem(value: 'menage', child: Text('🧹 Ménage & Entretien')),
-                        DropdownMenuItem(value: 'nourriture', child: Text('🍳 Nourriture & Boissons')),
-                        DropdownMenuItem(value: 'bureau', child: Text('📋 Fournitures Bureau')),
-                        DropdownMenuItem(value: 'maintenance', child: Text('🔧 Maintenance & Réparation')),
-                        DropdownMenuItem(value: 'securite', child: Text('🛡️ Sécurité & Protection')),
-                        DropdownMenuItem(value: 'evenementiel', child: Text('🎉 Événementiel')),
-                        DropdownMenuItem(value: 'autre', child: Text('📦 Autre')),
+                        DropdownMenuItem(
+                          value: 'hygiene',
+                          child: Text('🧴 Hygiène'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'menage',
+                          child: Text('🧹 Ménage & Entretien'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'nourriture',
+                          child: Text('🍳 Nourriture & Boissons'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'bureau',
+                          child: Text('📋 Fournitures Bureau'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'maintenance',
+                          child: Text('🔧 Maintenance & Réparation'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'securite',
+                          child: Text('🛡️ Sécurité & Protection'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'evenementiel',
+                          child: Text('🎉 Événementiel'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'autre',
+                          child: Text('📦 Autre'),
+                        ),
                       ],
-                      onChanged: _isLoading ? null : (value) {
-                        if (value != null) {
-                          setState(() => _selectedCategory = value);
-                        }
-                      },
+                      onChanged: _isLoading
+                          ? null
+                          : (value) {
+                              if (value != null) {
+                                setState(() => _selectedCategory = value);
+                              }
+                            },
                       hint: const Text('Choisir une catégorie'),
                     ),
                   ),
