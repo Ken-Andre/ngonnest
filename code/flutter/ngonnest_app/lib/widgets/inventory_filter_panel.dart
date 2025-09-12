@@ -45,6 +45,7 @@ class InventoryFilterPanel extends StatefulWidget {
   final List<String> availableRooms;
   final bool isExpanded;
   final VoidCallback onToggleExpanded;
+  final bool isConsumableTab; // Nouveau paramètre pour différencier les onglets
 
   const InventoryFilterPanel({
     super.key,
@@ -53,6 +54,7 @@ class InventoryFilterPanel extends StatefulWidget {
     required this.availableRooms,
     required this.isExpanded,
     required this.onToggleExpanded,
+    this.isConsumableTab = true, // Par défaut consommables
   });
 
   @override
@@ -160,15 +162,15 @@ class _InventoryFilterPanelState extends State<InventoryFilterPanel> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          // Room filter
+                          // Category filter
                           Text(
-                            'Pièce',
+                            'Catégorie',
                             style: Theme.of(context).textTheme.titleSmall?.copyWith(
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                           const SizedBox(height: 8),
-                          Container(
+                          SizedBox(
                             width: double.infinity,
                             child: Wrap(
                               spacing: 8,
@@ -182,14 +184,52 @@ class _InventoryFilterPanelState extends State<InventoryFilterPanel> {
                                   selected: widget.filterState.selectedRoom == null,
                                   onSelected: (_) => _updateRoomFilter(null),
                                 ),
-                                ...widget.availableRooms.map((room) => FilterChip(
-                                  label: Text(
-                                    room,
-                                    overflow: TextOverflow.ellipsis,
+                                // Filtres spécifiques aux consommables
+                                if (widget.isConsumableTab) ...[
+                                  FilterChip(
+                                    label: const Text('🧴 Hygiène'),
+                                    selected: widget.filterState.selectedRoom == 'hygiene',
+                                    onSelected: (_) => _updateRoomFilter('hygiene'),
                                   ),
-                                  selected: widget.filterState.selectedRoom == room,
-                                  onSelected: (_) => _updateRoomFilter(room),
-                                )),
+                                  FilterChip(
+                                    label: const Text('🧹 Ménage'),
+                                    selected: widget.filterState.selectedRoom == 'menage',
+                                    onSelected: (_) => _updateRoomFilter('menage'),
+                                  ),
+                                  FilterChip(
+                                    label: const Text('🍳 Nourriture'),
+                                    selected: widget.filterState.selectedRoom == 'nourriture',
+                                    onSelected: (_) => _updateRoomFilter('nourriture'),
+                                  ),
+                                  FilterChip(
+                                    label: const Text('📋 Bureau'),
+                                    selected: widget.filterState.selectedRoom == 'bureau',
+                                    onSelected: (_) => _updateRoomFilter('bureau'),
+                                  ),
+                                  FilterChip(
+                                    label: const Text('🔧 Maintenance'),
+                                    selected: widget.filterState.selectedRoom == 'maintenance',
+                                    onSelected: (_) => _updateRoomFilter('maintenance'),
+                                  ),
+                                ],
+                                // Filtres spécifiques aux durables
+                                if (!widget.isConsumableTab) ...[
+                                  FilterChip(
+                                    label: const Text('📺 Électroménager'),
+                                    selected: widget.filterState.selectedRoom == 'electromenager',
+                                    onSelected: (_) => _updateRoomFilter('electromenager'),
+                                  ),
+                                  FilterChip(
+                                    label: const Text('🪑 Mobilier'),
+                                    selected: widget.filterState.selectedRoom == 'mobilier',
+                                    onSelected: (_) => _updateRoomFilter('mobilier'),
+                                  ),
+                                  FilterChip(
+                                    label: const Text('💡 Électronique'),
+                                    selected: widget.filterState.selectedRoom == 'electronique',
+                                    onSelected: (_) => _updateRoomFilter('electronique'),
+                                  ),
+                                ],
                               ],
                             ),
                           ),
@@ -197,40 +237,42 @@ class _InventoryFilterPanelState extends State<InventoryFilterPanel> {
                           const SizedBox(height: 16),
 
                           // Expiry filter (only for consumables)
-                          Text(
-                            'Date d\'expiration',
-                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w600,
+                          if (widget.isConsumableTab) ...[
+                            Text(
+                              'Date d\'expiration',
+                              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 8),
-                          Container(
-                            width: double.infinity,
-                            child: Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              alignment: WrapAlignment.start,
-                              runAlignment: WrapAlignment.start,
-                              crossAxisAlignment: WrapCrossAlignment.start,
-                              children: [
-                                FilterChip(
-                                  label: const Text('Tous'),
-                                  selected: widget.filterState.expiryFilter == ExpiryFilter.all,
-                                  onSelected: (_) => _updateExpiryFilter(ExpiryFilter.all),
-                                ),
-                                FilterChip(
-                                  label: const Text('Expire bientôt'),
-                                  selected: widget.filterState.expiryFilter == ExpiryFilter.expiringSoon,
-                                  onSelected: (_) => _updateExpiryFilter(ExpiryFilter.expiringSoon),
-                                ),
-                                FilterChip(
-                                  label: const Text('Expirés'),
-                                  selected: widget.filterState.expiryFilter == ExpiryFilter.expired,
-                                  onSelected: (_) => _updateExpiryFilter(ExpiryFilter.expired),
-                                ),
-                              ],
+                            const SizedBox(height: 8),
+                            SizedBox(
+                              width: double.infinity,
+                              child: Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                alignment: WrapAlignment.start,
+                                runAlignment: WrapAlignment.start,
+                                crossAxisAlignment: WrapCrossAlignment.start,
+                                children: [
+                                  FilterChip(
+                                    label: const Text('Tous'),
+                                    selected: widget.filterState.expiryFilter == ExpiryFilter.all,
+                                    onSelected: (_) => _updateExpiryFilter(ExpiryFilter.all),
+                                  ),
+                                  FilterChip(
+                                    label: const Text('Expire bientôt'),
+                                    selected: widget.filterState.expiryFilter == ExpiryFilter.expiringSoon,
+                                    onSelected: (_) => _updateExpiryFilter(ExpiryFilter.expiringSoon),
+                                  ),
+                                  FilterChip(
+                                    label: const Text('Expirés'),
+                                    selected: widget.filterState.expiryFilter == ExpiryFilter.expired,
+                                    onSelected: (_) => _updateExpiryFilter(ExpiryFilter.expired),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
+                          ],
                         ],
                       ),
                     );

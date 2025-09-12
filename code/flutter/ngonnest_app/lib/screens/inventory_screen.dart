@@ -16,9 +16,10 @@ class InventoryScreen extends StatefulWidget {
   State<InventoryScreen> createState() => _InventoryScreenState();
 }
 
-class _InventoryScreenState extends State<InventoryScreen> {
+class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProviderStateMixin {
   late DatabaseService _databaseService;
   late InventoryRepository _inventoryRepository;
+  late TabController _tabController;
   List<Objet> _consommables = [];
   List<Objet> _durables = [];
   List<Objet> _filteredConsommables = [];
@@ -31,11 +32,27 @@ class _InventoryScreenState extends State<InventoryScreen> {
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      // Réinitialiser les filtres quand on change d'onglet
+      if (_tabController.indexIsChanging) {
+        setState(() {
+          _filterState = const InventoryFilterState();
+        });
+        _applySearchAndFilters();
+      }
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _databaseService = context.read<DatabaseService>();
       _inventoryRepository = InventoryRepository(_databaseService);
       _loadInventory();
     });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadInventory() async {
@@ -128,14 +145,14 @@ class _InventoryScreenState extends State<InventoryScreen> {
       }).toList();
     }
 
-    // Apply room filter
+    // Apply category filter
     if (_filterState.selectedRoom != null) {
       filteredConsommables = filteredConsommables.where((objet) {
-        return objet.room == _filterState.selectedRoom;
+        return objet.categorie == _filterState.selectedRoom;
       }).toList();
 
       filteredDurables = filteredDurables.where((objet) {
-        return objet.room == _filterState.selectedRoom;
+        return objet.categorie == _filterState.selectedRoom;
       }).toList();
     }
 
@@ -178,14 +195,14 @@ class _InventoryScreenState extends State<InventoryScreen> {
     _applySearchAndFilters();
   }
 
-  List<String> _getAvailableRooms() {
-    final rooms = <String>{};
+  List<String> _getAvailableCategories() {
+    final categories = <String>{};
     for (final objet in [..._consommables, ..._durables]) {
-      if (objet.room != null && objet.room!.isNotEmpty) {
-        rooms.add(objet.room!);
+      if (objet.categorie.isNotEmpty) {
+        categories.add(objet.categorie);
       }
     }
-    return rooms.toList()..sort();
+    return categories.toList()..sort();
   }
 
   Future<void> _updateQuantity(Objet objet, double newQuantity) async {
@@ -224,8 +241,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
             foregroundColor: Colors.white,
             automaticallyImplyLeading:
                 false, // Remove back button since we have bottom nav
-            bottom: const TabBar(
-              tabs: [
+            bottom: TabBar(
+              controller: _tabController,
+              tabs: const [
                 Tab(icon: Icon(Icons.shopping_cart), text: 'Consommables'),
                 Tab(icon: Icon(Icons.inventory), text: 'Durables'),
               ],
@@ -260,8 +278,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
                         InventoryFilterPanel(
                           filterState: _filterState,
                           onFilterChanged: _onFilterChanged,
-                          availableRooms: _getAvailableRooms(),
+                          availableRooms: _getAvailableCategories(),
                           isExpanded: _isFilterExpanded,
+                          isConsumableTab: _tabController.index == 0, // 0 = Consommables, 1 = Durables
                           onToggleExpanded: () {
                             setState(() {
                               _isFilterExpanded = !_isFilterExpanded;
@@ -272,9 +291,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
                         // Hauteur fixe pour les tabs sur petits écrans, flexible sur grands écrans
                         SizedBox(
                           height: _isFilterExpanded 
-                            ? constraints.maxHeight * 0.4  // Réduit quand filtres ouverts
-                            : constraints.maxHeight * 0.7, // Plus d'espace quand filtres fermés
+                            ? constraints.maxHeight * 0.35  // Réduit quand filtres ouverts
+                            : constraints.maxHeight * 0.6, // Plus d'espace quand filtres fermés
                           child: TabBarView(
+                            controller: _tabController,
                             children: [
                               _buildConsommablesTab(),
                               _buildDurablesTab(),

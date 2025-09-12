@@ -47,10 +47,10 @@ class _InventorySearchBarState extends State<InventorySearchBar> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
         ),
@@ -59,11 +59,11 @@ class _InventorySearchBarState extends State<InventorySearchBar> {
         controller: _controller,
         onChanged: _onSearchChanged,
         decoration: InputDecoration(   
-       hintText: widget.hintText,
-          prefixIcon: const Icon(Icons.search),
+          hintText: widget.hintText,
+          prefixIcon: const Icon(Icons.search, size: 20),
           suffixIcon: _controller.text.isNotEmpty
               ? IconButton(
-                  icon: const Icon(Icons.clear),
+                  icon: const Icon(Icons.clear, size: 20),
                   onPressed: () {
                     _controller.clear();
                     _onSearchChanged('');
@@ -72,9 +72,18 @@ class _InventorySearchBarState extends State<InventorySearchBar> {
               : null,
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 12,
+            horizontal: 12,
+            vertical: 10,
           ),
+          hintTextDirection: TextDirection.ltr,
+          hintStyle: TextStyle(
+            fontSize: 14,
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+          ),
+        ),
+        style: TextStyle(
+          fontSize: 14,
+          color: Theme.of(context).colorScheme.onSurface,
         ),
       ),
     );
