@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 class SettingsService {
   static const String _languageKey = 'language';
   static const String _notificationsEnabledKey = 'notifications_enabled';
+  static const String _calendarSyncEnabledKey = 'calendar_sync_enabled';
   static const String _themeModeKey = 'theme_mode';
   static const String _lastSyncKey = 'last_sync';
 
@@ -17,7 +18,8 @@ class SettingsService {
   /// Get the current language setting
   static Future<String> getLanguage() async {
     await initialize();
-    return _prefs!.getString(_languageKey) ?? 'fr'; // Default to French for Cameroon market
+    return _prefs!.getString(_languageKey) ??
+        'fr'; // Default to French for Cameroon market
   }
 
   /// Set the language setting
@@ -36,6 +38,18 @@ class SettingsService {
   static Future<bool> setNotificationsEnabled(bool enabled) async {
     await initialize();
     return _prefs!.setBool(_notificationsEnabledKey, enabled);
+  }
+
+  /// Get calendar sync enabled setting
+  static Future<bool> getCalendarSyncEnabled() async {
+    await initialize();
+    return _prefs!.getBool(_calendarSyncEnabledKey) ?? true;
+  }
+
+  /// Set calendar sync enabled setting
+  static Future<bool> setCalendarSyncEnabled(bool enabled) async {
+    await initialize();
+    return _prefs!.setBool(_calendarSyncEnabledKey, enabled);
   }
 
   /// Get theme mode setting
@@ -74,7 +88,9 @@ class SettingsService {
   static Future<DateTime?> getLastSyncTime() async {
     await initialize();
     final timestamp = _prefs!.getInt(_lastSyncKey);
-    return timestamp != null ? DateTime.fromMillisecondsSinceEpoch(timestamp) : null;
+    return timestamp != null
+        ? DateTime.fromMillisecondsSinceEpoch(timestamp)
+        : null;
   }
 
   /// Set last sync time

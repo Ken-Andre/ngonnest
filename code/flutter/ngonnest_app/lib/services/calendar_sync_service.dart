@@ -30,6 +30,7 @@ class CalendarSyncService {
         }
         return (await Permission.calendar.request()).isGranted;
       }
+
       final status = await Permission.calendar.status;
       if (status.isGranted) {
         return true;
@@ -73,6 +74,7 @@ class CalendarSyncService {
       await _calendarEvents.addEvent(event);
     } catch (e) {
       debugPrint('Failed to add calendar event: $e');
+      rethrow;
     }
   }
 }

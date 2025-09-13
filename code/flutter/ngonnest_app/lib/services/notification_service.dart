@@ -3,6 +3,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import '../models/alert.dart';
 import 'calendar_sync_service.dart';
+import 'settings_service.dart';
 
 class NotificationService {
   static final FlutterLocalNotificationsPlugin
@@ -133,6 +134,7 @@ class NotificationService {
     required String body,
     required DateTime scheduledDate,
     bool addToCalendar = false,
+    BuildContext? context,
   }) async {
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
@@ -173,15 +175,24 @@ class NotificationService {
       matchDateTimeComponents: DateTimeComponents.dateAndTime,
     );
 
-    if (addToCalendar) {
-      try{
-      await CalendarSyncService().addEvent(
-        title: title,
-        description: body,
-        start: scheduledDate,
-      );
-      } catch(e, st) {
+    if (addToCalendar && await SettingsService.getCalendarSyncEnabled()) {
+      try {
+        await CalendarSyncService().addEvent(
+          title: title,
+          description: body,
+          start: scheduledDate,
+        );
+      } catch (e) {
         debugPrint('Failed to add calendar event: $e');
+        if (context != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Impossible d'ajouter l'événement au calendrier"),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
       }
     }
   }
@@ -271,6 +282,7 @@ class NotificationService {
     required int intervalDays,
     required DateTime startDate,
     bool addToCalendar = false,
+    BuildContext? context,
   }) async {
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
@@ -312,15 +324,24 @@ class NotificationService {
       matchDateTimeComponents: DateTimeComponents.time,
     );
 
-    if (addToCalendar) {
-      try{
-      await CalendarSyncService().addEvent(
-        title: title,
-        description: body,
-        start: startDate,
-      );
-        } catch(e, st) {
+    if (addToCalendar && await SettingsService.getCalendarSyncEnabled()) {
+      try {
+        await CalendarSyncService().addEvent(
+          title: title,
+          description: body,
+          start: startDate,
+        );
+      } catch (e) {
         debugPrint('Failed to add calendar event: $e');
+        if (context != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Impossible d'ajouter l'événement au calendrier"),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
       }
     }
 
