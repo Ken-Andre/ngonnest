@@ -43,6 +43,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
   final _productNameController = TextEditingController();
   final _initialQuantityController = TextEditingController(text: '1');
   final _frequencyController = TextEditingController(text: '30');
+  final _unitPriceController = TextEditingController();
+  final _packagingSizeController = TextEditingController();
   final _commentairesController =
       TextEditingController(); // Commentaires pour durables
   String _selectedCategory = 'hygiene'; // Match database naming (no accents)
@@ -55,6 +57,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
   ValidationResult? _productNameValidation;
   ValidationResult? _quantityValidation;
   ValidationResult? _frequencyValidation;
+  ValidationResult? _priceValidation;
+  ValidationResult? _packagingValidation;
   bool _enableDebugMode =
       true; // Active les portes de debuggage en développement
 
@@ -147,13 +151,13 @@ class _AddProductScreenState extends State<AddProductScreen> {
     }
   }
 
-
-
   @override
   void dispose() {
     _productNameController.dispose();
     _initialQuantityController.dispose();
     _frequencyController.dispose();
+    _unitPriceController.dispose();
+    _packagingSizeController.dispose();
     _commentairesController.dispose();
     super.dispose();
   }
@@ -189,6 +193,22 @@ class _AddProductScreenState extends State<AddProductScreen> {
     );
     setState(() {
       _frequencyValidation = result;
+    });
+  }
+
+  /// Validation intelligente du prix unitaire
+  void _validateUnitPrice(String value) {
+    final result = SmartValidator.validateUnitPrice(value);
+    setState(() {
+      _priceValidation = result;
+    });
+  }
+
+  /// Validation intelligente de la taille du conditionnement
+  void _validatePackagingSize(String value) {
+    final result = SmartValidator.validatePackagingSize(value);
+    setState(() {
+      _packagingValidation = result;
     });
   }
 
@@ -231,8 +251,12 @@ class _AddProductScreenState extends State<AddProductScreen> {
         quantiteRestante:
             double.tryParse(_initialQuantityController.text) ?? 1.0,
         unite: _selectedUnit,
-        tailleConditionnement: _isConsumable ? 1.0 : null,
-        prixUnitaire: _isConsumable ? 5.0 : null, // Default price
+        tailleConditionnement: _isConsumable
+            ? double.tryParse(_packagingSizeController.text)
+            : null,
+        prixUnitaire: _isConsumable
+            ? double.tryParse(_unitPriceController.text)
+            : null,
         methodePrevision: _isConsumable ? MethodePrevision.frequence : null,
         frequenceAchatJours: _isConsumable
             ? int.tryParse(_frequencyController.text)
@@ -269,7 +293,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
           Navigator.of(context).pop(true);
         } else {
           // Fallback: Navigate to inventory route if pop is not available
-          Navigator.of(context, rootNavigator: true).pushReplacementNamed('/inventory');
+          Navigator.of(
+            context,
+            rootNavigator: true,
+          ).pushReplacementNamed('/inventory');
         }
       }
     } catch (e, stackTrace) {
@@ -382,7 +409,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 // Product name with smart suggestions
                 _buildSectionTitle('Nom du produit'),
                 SmartProductSearch(
-                  controller: _productNameController, // Utiliser le controller externe
+                  controller:
+                      _productNameController, // Utiliser le controller externe
                   category: _isConsumable ? _selectedCategory : 'durables',
                   onProductSelected: (product) {
                     setState(() {
@@ -395,12 +423,14 @@ class _AddProductScreenState extends State<AddProductScreen> {
                             .toString();
                       }
                     });
-                    
+
                     // Afficher un message si la catégorie a changé
                     if (product.category != _selectedCategory) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Catégorie mise à jour vers "${product.category}"'),
+                          content: Text(
+                            'Catégorie mise à jour vers "${product.category}"',
+                          ),
                           backgroundColor: Colors.blue,
                           duration: const Duration(seconds: 2),
                         ),
@@ -533,7 +563,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
                       color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.outline.withOpacity(0.5),
                       ),
                     ),
                     child: DropdownButtonFormField<String>(
@@ -543,20 +575,46 @@ class _AddProductScreenState extends State<AddProductScreen> {
                         contentPadding: EdgeInsets.zero,
                       ),
                       items: const [
-                        DropdownMenuItem(value: 'hygiene', child: Text('🧴 Hygiène')),
-                        DropdownMenuItem(value: 'menage', child: Text('🧹 Ménage & Entretien')),
-                        DropdownMenuItem(value: 'nourriture', child: Text('🍳 Nourriture & Boissons')),
-                        DropdownMenuItem(value: 'bureau', child: Text('📋 Fournitures Bureau')),
-                        DropdownMenuItem(value: 'maintenance', child: Text('🔧 Maintenance & Réparation')),
-                        DropdownMenuItem(value: 'securite', child: Text('🛡️ Sécurité & Protection')),
-                        DropdownMenuItem(value: 'evenementiel', child: Text('🎉 Événementiel')),
-                        DropdownMenuItem(value: 'autre', child: Text('📦 Autre')),
+                        DropdownMenuItem(
+                          value: 'hygiene',
+                          child: Text('🧴 Hygiène'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'menage',
+                          child: Text('🧹 Ménage & Entretien'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'nourriture',
+                          child: Text('🍳 Nourriture & Boissons'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'bureau',
+                          child: Text('📋 Fournitures Bureau'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'maintenance',
+                          child: Text('🔧 Maintenance & Réparation'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'securite',
+                          child: Text('🛡️ Sécurité & Protection'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'evenementiel',
+                          child: Text('🎉 Événementiel'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'autre',
+                          child: Text('📦 Autre'),
+                        ),
                       ],
-                      onChanged: _isLoading ? null : (value) {
-                        if (value != null) {
-                          setState(() => _selectedCategory = value);
-                        }
-                      },
+                      onChanged: _isLoading
+                          ? null
+                          : (value) {
+                              if (value != null) {
+                                setState(() => _selectedCategory = value);
+                              }
+                            },
                       hint: const Text('Choisir une catégorie'),
                     ),
                   ),
@@ -641,6 +699,177 @@ class _AddProductScreenState extends State<AddProductScreen> {
                             ).colorScheme.onSurface.withOpacity(0.7),
                             fontWeight: FontWeight.w500,
                           ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+
+                // Packaging size and unit price for consumables
+                if (_isConsumable) ...[
+                  _buildSectionTitle('Taille du conditionnement'),
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 24),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _packagingValidation?.isValid == false
+                            ? Theme.of(context).colorScheme.error
+                            : Theme.of(
+                                context,
+                              ).colorScheme.outline.withOpacity(0.5),
+                        width: _packagingValidation?.isValid == false ? 2 : 1,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              CupertinoIcons.cube_box,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withOpacity(0.7),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: TextFormField(
+                                controller: _packagingSizeController,
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                    ),
+                                onChanged: _validatePackagingSize,
+                                decoration: InputDecoration(
+                                  hintText: 'Ex: 1.0',
+                                  border: InputBorder.none,
+                                  contentPadding: EdgeInsets.zero,
+                                  hintStyle: TextStyle(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface.withOpacity(0.7),
+                                  ),
+                                ),
+                                style: TextStyle(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
+                                ),
+                                validator: (value) {
+                                  final result =
+                                      SmartValidator.validatePackagingSize(
+                                        value ?? '',
+                                      );
+                                  return result.isValid
+                                      ? null
+                                      : result.userMessage;
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              _selectedUnit,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withOpacity(0.7),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                        ErrorFeedbackWidget(
+                          validationResult: _packagingValidation,
+                          showDebugInfo: _enableDebugMode,
+                          padding: const EdgeInsets.only(top: 8),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  _buildSectionTitle('Prix unitaire (€)'),
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 24),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _priceValidation?.isValid == false
+                            ? Theme.of(context).colorScheme.error
+                            : Theme.of(
+                                context,
+                              ).colorScheme.outline.withOpacity(0.5),
+                        width: _priceValidation?.isValid == false ? 2 : 1,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              CupertinoIcons.money_euro,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withOpacity(0.7),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: TextFormField(
+                                controller: _unitPriceController,
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                    ),
+                                onChanged: _validateUnitPrice,
+                                decoration: InputDecoration(
+                                  hintText: 'Ex: 2.99',
+                                  border: InputBorder.none,
+                                  contentPadding: EdgeInsets.zero,
+                                  hintStyle: TextStyle(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface.withOpacity(0.7),
+                                  ),
+                                ),
+                                style: TextStyle(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
+                                ),
+                                validator: (value) {
+                                  final result =
+                                      SmartValidator.validateUnitPrice(
+                                        value ?? '',
+                                      );
+                                  return result.isValid
+                                      ? null
+                                      : result.userMessage;
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '€',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withOpacity(0.7),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                        ErrorFeedbackWidget(
+                          validationResult: _priceValidation,
+                          showDebugInfo: _enableDebugMode,
+                          padding: const EdgeInsets.only(top: 8),
                         ),
                       ],
                     ),
