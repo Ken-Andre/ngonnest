@@ -2,10 +2,10 @@ import '../services/error_logger_service.dart';
 
 /// Sévérité des erreurs de validation
 enum ValidationSeverity {
-  info,     // Information seulement (aide UX)
-  warning,  // Avertissement (peut continuer)
-  error,    // Erreur (doit corriger avant soumission)
-  critical  // Erreur critique (bloque complètement)
+  info, // Information seulement (aide UX)
+  warning, // Avertissement (peut continuer)
+  error, // Erreur (doit corriger avant soumission)
+  critical, // Erreur critique (bloque complètement)
 }
 
 /// Résultat d'une validation intelligente
@@ -69,7 +69,6 @@ class ValidationResult {
 /// Validateur intelligent pour les formulaires
 /// Fournit des messages d'erreur contextuels et des suggestions intelligentes
 class SmartValidator {
-
   // Regex patterns pour validation
   static final RegExp _emailRegex = RegExp(
     r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
@@ -77,10 +76,16 @@ class SmartValidator {
   );
 
   static final RegExp _specialCharsRegex = RegExp(r'[<>"/\\|?*\x00-\x1f]');
-  static final RegExp _sqlInjectionRegex = RegExp(r'(\bUNION\b|\bSELECT\b|\bINSERT\b|\bUPDATE\b|\bDELETE\b|\bDROP\b)', caseSensitive: false);
+  static final RegExp _sqlInjectionRegex = RegExp(
+    r'(\bUNION\b|\bSELECT\b|\bINSERT\b|\bUPDATE\b|\bDELETE\b|\bDROP\b)',
+    caseSensitive: false,
+  );
 
   /// Valide le nom d'un produit
-  static ValidationResult validateProductName(String value, {String context = ''}) {
+  static ValidationResult validateProductName(
+    String value, {
+    String context = '',
+  }) {
     if (value.trim().isEmpty) {
       return ValidationResult.error(
         errorCode: 'VAL_001',
@@ -90,7 +95,7 @@ class SmartValidator {
         severity: ValidationSeverity.error,
         suggestions: [
           'Utilisez un nom descriptif',
-          'Évitez les caractères spéciaux'
+          'Évitez les caractères spéciaux',
         ],
         metadata: {'input_length': value.length},
       );
@@ -129,7 +134,7 @@ class SmartValidator {
         severity: ValidationSeverity.warning,
         suggestions: [
           'Remplacez < > " / \\ | ? * par des caractères normaux',
-          'Utilisez des lettres, chiffres et espaces uniquement'
+          'Utilisez des lettres, chiffres et espaces uniquement',
         ],
         metadata: {'special_chars_found': true},
       );
@@ -154,7 +159,11 @@ class SmartValidator {
   }
 
   /// Valide la quantité d'un produit
-  static ValidationResult validateProductQuantity(String value, {String context = '', double maxAllowed = 10000}) {
+  static ValidationResult validateProductQuantity(
+    String value, {
+    String context = '',
+    double maxAllowed = 10000,
+  }) {
     if (value.trim().isEmpty) {
       return ValidationResult.error(
         errorCode: 'VAL_011',
@@ -177,7 +186,7 @@ class SmartValidator {
         severity: ValidationSeverity.error,
         suggestions: [
           'Utilisez uniquement des chiffres (ex: 5)',
-          'Utilisez un point pour les décimales (ex: 5.5)'
+          'Utilisez un point pour les décimales (ex: 5.5)',
         ],
         metadata: {'invalid_format': true, 'input_value': value},
       );
@@ -199,10 +208,14 @@ class SmartValidator {
       return ValidationResult.error(
         errorCode: 'VAL_014',
         userMessage: 'Quantité trop importante',
-        technicalMessage: 'Quantity exceeds maximum allowed: $quantity > $maxAllowed',
+        technicalMessage:
+            'Quantity exceeds maximum allowed: $quantity > $maxAllowed',
         field: 'quantity',
         severity: ValidationSeverity.warning,
-        suggestions: ['Réduisez la quantité', 'Contactez le support pour de gros volumes'],
+        suggestions: [
+          'Réduisez la quantité',
+          'Contactez le support pour de gros volumes',
+        ],
         metadata: {'quantity_value': quantity, 'max_allowed': maxAllowed},
       );
     }
@@ -224,7 +237,11 @@ class SmartValidator {
   }
 
   /// Valide la fréquence d'achat pour les consommables
-  static ValidationResult validateFrequency(String value, {String context = '', int maxDays = 365}) {
+  static ValidationResult validateFrequency(
+    String value, {
+    String context = '',
+    int maxDays = 365,
+  }) {
     if (value.trim().isEmpty) {
       return ValidationResult.error(
         errorCode: 'VAL_021',
@@ -271,7 +288,7 @@ class SmartValidator {
         severity: ValidationSeverity.warning,
         suggestions: [
           'Réduisez la fréquence',
-          'Pour les produits très rares, divisez en achats plus petits'
+          'Pour les produits très rares, divisez en achats plus petits',
         ],
         metadata: {'frequency_value': frequency, 'max_allowed': maxDays},
       );
@@ -287,7 +304,7 @@ class SmartValidator {
         severity: ValidationSeverity.warning,
         suggestions: [
           'Fréquences typiques: 30j (savon), 7j (pain), 90j (dentifrice)',
-          'Augmentez si c\'est trop fréquent'
+          'Augmentez si c\'est trop fréquent',
         ],
         metadata: {'very_short_frequency': true, 'frequency_value': frequency},
       );
@@ -319,7 +336,7 @@ class SmartValidator {
         severity: ValidationSeverity.error,
         suggestions: [
           'Vérifiez que l\'email contient @',
-          'Vérifiez le domaine (ex: gmail.com)'
+          'Vérifiez le domaine (ex: gmail.com)',
         ],
         metadata: {'invalid_format': true, 'input_value': value},
       );
@@ -329,7 +346,8 @@ class SmartValidator {
   }
 
   /// Valide un champ de texte avec longueur maximale
-  static ValidationResult validateTextLength(String value, {
+  static ValidationResult validateTextLength(
+    String value, {
     required String field,
     required int maxLength,
     int minLength = 1,
@@ -338,7 +356,8 @@ class SmartValidator {
     if (value.trim().isEmpty) {
       return ValidationResult.error(
         errorCode: 'VAL_041',
-        userMessage: 'Le champ ${fieldDisplayName.isNotEmpty ? fieldDisplayName : field} est requis',
+        userMessage:
+            'Le champ ${fieldDisplayName.isNotEmpty ? fieldDisplayName : field} est requis',
         technicalMessage: 'Empty field: $field',
         field: field,
         severity: ValidationSeverity.error,
@@ -350,7 +369,8 @@ class SmartValidator {
     if (value.trim().length < minLength) {
       return ValidationResult.error(
         errorCode: 'VAL_042',
-        userMessage: '${fieldDisplayName.isNotEmpty ? fieldDisplayName : 'Le champ'} doit contenir au moins $minLength caractères',
+        userMessage:
+            '${fieldDisplayName.isNotEmpty ? fieldDisplayName : 'Le champ'} doit contenir au moins $minLength caractères',
         technicalMessage: 'Field too short: ${value.length} < $minLength',
         field: field,
         severity: ValidationSeverity.error,
@@ -366,7 +386,8 @@ class SmartValidator {
     if (value.length > maxLength) {
       return ValidationResult.error(
         errorCode: 'VAL_043',
-        userMessage: '${fieldDisplayName.isNotEmpty ? fieldDisplayName : 'Le champ'} ne peut pas dépasser $maxLength caractères',
+        userMessage:
+            '${fieldDisplayName.isNotEmpty ? fieldDisplayName : 'Le champ'} ne peut pas dépasser $maxLength caractères',
         technicalMessage: 'Field too long: ${value.length} > $maxLength',
         field: field,
         severity: ValidationSeverity.error,
@@ -383,7 +404,8 @@ class SmartValidator {
   }
 
   /// Valide une date (pas dans le futur, pas trop ancienne)
-  static ValidationResult validateDate(DateTime? value, {
+  static ValidationResult validateDate(
+    DateTime? value, {
     required String field,
     DateTime? maxDate,
     DateTime? minDate,
@@ -433,6 +455,122 @@ class SmartValidator {
           'min_allowed': minDate.toIso8601String(),
           'too_old': true,
         },
+      );
+    }
+
+    return ValidationResult.valid();
+  }
+
+  /// Valide la taille du conditionnement
+  static ValidationResult validatePackagingSize(
+    String value, {
+    String context = '',
+    double maxAllowed = 100000,
+  }) {
+    if (value.trim().isEmpty) {
+      return ValidationResult.error(
+        errorCode: 'VAL_061',
+        userMessage: 'La taille du conditionnement est requise',
+        technicalMessage: 'Empty packaging size field',
+        field: 'packaging_size',
+        severity: ValidationSeverity.error,
+        suggestions: ['Exemple: 1.5 pour 1,5 kg'],
+        metadata: {'field_empty': true},
+      );
+    }
+
+    final size = double.tryParse(value.replaceAll(',', '.'));
+    if (size == null) {
+      return ValidationResult.error(
+        errorCode: 'VAL_062',
+        userMessage: 'Entrez un nombre valide',
+        technicalMessage: 'Invalid number format: $value',
+        field: 'packaging_size',
+        severity: ValidationSeverity.error,
+        suggestions: ['Utilisez un point pour les décimales (ex: 1.5)'],
+        metadata: {'invalid_format': true, 'input_value': value},
+      );
+    }
+
+    if (size <= 0) {
+      return ValidationResult.error(
+        errorCode: 'VAL_063',
+        userMessage: 'La taille doit être supérieure à 0',
+        technicalMessage: 'Non-positive packaging size: $size',
+        field: 'packaging_size',
+        severity: ValidationSeverity.error,
+        suggestions: ['Entrez une taille positive'],
+        metadata: {'size_value': size, 'zero_or_negative': true},
+      );
+    }
+
+    if (size > maxAllowed) {
+      return ValidationResult.error(
+        errorCode: 'VAL_064',
+        userMessage: 'Valeur trop grande (max $maxAllowed)',
+        technicalMessage: 'Packaging size exceeds maximum: $size > $maxAllowed',
+        field: 'packaging_size',
+        severity: ValidationSeverity.warning,
+        suggestions: ['Réduisez la valeur'],
+        metadata: {'size_value': size, 'max_allowed': maxAllowed},
+      );
+    }
+
+    return ValidationResult.valid();
+  }
+
+  /// Valide le prix unitaire
+  static ValidationResult validateUnitPrice(
+    String value, {
+    String context = '',
+    double maxAllowed = 100000,
+  }) {
+    if (value.trim().isEmpty) {
+      return ValidationResult.error(
+        errorCode: 'VAL_071',
+        userMessage: 'Le prix unitaire est requis',
+        technicalMessage: 'Empty unit price field',
+        field: 'unit_price',
+        severity: ValidationSeverity.error,
+        suggestions: ['Exemple: 2.99'],
+        metadata: {'field_empty': true},
+      );
+    }
+
+    final price = double.tryParse(value.replaceAll(',', '.'));
+    if (price == null) {
+      return ValidationResult.error(
+        errorCode: 'VAL_072',
+        userMessage: 'Entrez un nombre valide',
+        technicalMessage: 'Invalid price format: $value',
+        field: 'unit_price',
+        severity: ValidationSeverity.error,
+        suggestions: ['Utilisez un point pour les décimales (ex: 2.5)'],
+        metadata: {'invalid_format': true, 'input_value': value},
+      );
+    }
+
+    if (price <= 0) {
+      return ValidationResult.error(
+        errorCode: 'VAL_073',
+        userMessage: 'Le prix doit être supérieur à 0',
+        technicalMessage: 'Non-positive unit price: $price',
+        field: 'unit_price',
+        severity: ValidationSeverity.error,
+        suggestions: ['Entrez un prix positif'],
+        metadata: {'price_value': price, 'zero_or_negative': true},
+      );
+    }
+
+    if (price > maxAllowed) {
+      return ValidationResult.error(
+        errorCode: 'VAL_074',
+        userMessage: 'Prix trop élevé (max $maxAllowed)',
+        technicalMessage: 'Unit price exceeds maximum: $price > $maxAllowed',
+        field: 'unit_price',
+        severity: ValidationSeverity.warning,
+        suggestions: ['Vérifiez le montant'],
+        metadata: {'price_value': price, 'max_allowed': maxAllowed},
       );
     }
 

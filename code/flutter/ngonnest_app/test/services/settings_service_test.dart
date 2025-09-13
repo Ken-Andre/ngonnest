@@ -26,10 +26,32 @@ void main() {
       expect(enabled, true);
     });
 
+    test('should return default notification frequency as daily', () async {
+      final freq = await SettingsService.getNotificationFrequency();
+      expect(freq, 'quotidienne');
+    });
+
     test('should save and retrieve notifications setting', () async {
       await SettingsService.setNotificationsEnabled(false);
       final enabled = await SettingsService.getNotificationsEnabled();
       expect(enabled, false);
+    });
+
+    test('should save and retrieve notification frequency', () async {
+      await SettingsService.setNotificationFrequency('hebdomadaire');
+      final freq = await SettingsService.getNotificationFrequency();
+      expect(freq, 'hebdomadaire');
+    });
+
+    test('should return default local data only as true', () async {
+      final local = await SettingsService.getLocalDataOnly();
+      expect(local, true);
+    });
+
+    test('should save and retrieve local data mode', () async {
+      await SettingsService.setLocalDataOnly(false);
+      final local = await SettingsService.getLocalDataOnly();
+      expect(local, false);
     });
 
     test('should return default theme mode as system', () async {
@@ -64,6 +86,8 @@ void main() {
       await SettingsService.setLanguage('en');
       await SettingsService.setNotificationsEnabled(false);
       await SettingsService.setThemeMode(ThemeMode.dark);
+      await SettingsService.setNotificationFrequency('hebdomadaire');
+      await SettingsService.setLocalDataOnly(false);
 
       // Clear all
       await SettingsService.clearAll();
@@ -72,16 +96,22 @@ void main() {
       expect(await SettingsService.getLanguage(), 'fr');
       expect(await SettingsService.getNotificationsEnabled(), true);
       expect(await SettingsService.getThemeMode(), ThemeMode.system);
+      expect(await SettingsService.getNotificationFrequency(), 'quotidienne');
+      expect(await SettingsService.getLocalDataOnly(), true);
     });
 
     test('should get all settings as map', () async {
       await SettingsService.setLanguage('en');
       await SettingsService.setNotificationsEnabled(false);
+      await SettingsService.setNotificationFrequency('hebdomadaire');
+      await SettingsService.setLocalDataOnly(false);
 
       final settings = await SettingsService.getAllSettings();
 
       expect(settings['language'], 'en');
       expect(settings['notifications_enabled'], false);
+      expect(settings['notification_frequency'], 'hebdomadaire');
+      expect(settings['local_data_only'], false);
     });
   });
 }

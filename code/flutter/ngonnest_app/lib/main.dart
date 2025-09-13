@@ -124,6 +124,9 @@ void main() async {
         ChangeNotifierProvider<ConnectivityService>(
           create: (context) => ConnectivityService(),
         ), // Provide ConnectivityService
+        ChangeNotifierProvider<FoyerProvider>(
+          create: (context) => FoyerProvider()..loadFoyerId(),
+        ),
       ],
       child: const MyApp(),
     ),
@@ -179,10 +182,7 @@ class MyApp extends StatelessWidget {
 class AppWithConnectivityOverlay extends StatelessWidget {
   final Widget child;
 
-  const AppWithConnectivityOverlay({
-    super.key,
-    required this.child,
-  });
+  const AppWithConnectivityOverlay({super.key, required this.child});
 
   @override
   Widget build(BuildContext context) {

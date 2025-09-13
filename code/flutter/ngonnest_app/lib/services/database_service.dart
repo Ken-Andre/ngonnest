@@ -110,6 +110,38 @@ class DatabaseService {
     throw Exception('Failed to establish database connection after $_maxRetryAttempts attempts');
   }
 
+  /// Remove all user data from the database
+  Future<void> clearAllData() async {
+    final db = await database;
+
+    // Disable FK checks at the connection level and guarantee restoration
+    await db.execute('PRAGMA foreign_keys = OFF');
+    try {
+      await db.transaction((txn) async {
+        final tables = await txn.rawQuery(
+          "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
+        );
+
+        for (final table in tables) {
+          final tableName = table['name'] as String;
+          if (tableName != 'android_metadata') {
+            await txn.delete(tableName);
+          }
+        }
+
+        // Reset AUTOINCREMENT counters if present
+        try {
+          await txn.execute('DELETE FROM sqlite_sequence');
+        } catch (_) {
+          // sqlite_sequence may not exist; ignore
+        }
+      });
+    } finally {
+      // Always re-enable FK checks even if the transaction fails
+      await db.execute('PRAGMA foreign_keys = ON');
+    }
+  }
+
   /// Validate that a newly created connection is working
   Future<void> _validateNewConnection() async {
     try {

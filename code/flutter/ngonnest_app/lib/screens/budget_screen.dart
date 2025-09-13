@@ -36,17 +36,30 @@ class _BudgetScreenState extends State<BudgetScreen> {
       // Initialize default categories if none exist
       await BudgetService.initializeDefaultCategories(month: _currentMonth);
 
+
       // Ensure spending is up-to-date with purchases for this foyer
       final foyerId = context.read<FoyerProvider>().foyerId;
       if (foyerId != null) {
-        await BudgetService.syncBudgetWithPurchases(foyerId, month: _currentMonth);
+        await BudgetService.syncBudgetWithPurchases(
+          foyerId,
+          month: _currentMonth,
+        );
       }
 
       // Load categories and summary
-      final categories =
-          await BudgetService.getBudgetCategories(month: _currentMonth);
-      final summary =
-          await BudgetService.getBudgetSummary(month: _currentMonth);
+      final categories = await BudgetService.getBudgetCategories(
+        month: _currentMonth,
+      );
+      final foyerId = context.read<FoyerProvider>().foyerId;
+      final summary = foyerId != null
+          ? await BudgetService.getBudgetSummary(foyerId, month: _currentMonth)
+          : {};
+
+
+      final foyerBudget =
+          context.read<FoyerProvider>().foyer?.budgetMensuelEstime ?? 0.0;
+      summary['totalBudget'] = foyerBudget;
+      summary['remaining'] = foyerBudget - (summary['totalSpent'] ?? 0.0);
 
       if (!mounted) return;
       setState(() {
@@ -69,10 +82,8 @@ class _BudgetScreenState extends State<BudgetScreen> {
   Future<void> _showCategoryDialog({BudgetCategory? category}) async {
     final result = await showDialog<bool>(
       context: context,
-      builder: (context) => BudgetCategoryDialog(
-        category: category,
-        month: _currentMonth,
-      ),
+      builder: (context) =>
+          BudgetCategoryDialog(category: category, month: _currentMonth),
     );
 
     if (result == true) {
@@ -85,8 +96,9 @@ class _BudgetScreenState extends State<BudgetScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Supprimer la catégorie'),
-        content:
-            Text('Êtes-vous sûr de vouloir supprimer "${category.name}" ?'),
+        content: Text(
+          'Êtes-vous sûr de vouloir supprimer "${category.name}" ?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -109,9 +121,9 @@ class _BudgetScreenState extends State<BudgetScreen> {
         _loadBudgetData();
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Catégorie supprimée')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Catégorie supprimée')));
         }
       } catch (e) {
         if (mounted) {
@@ -126,7 +138,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
     }
   }
 
-    @override
+  @override
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -221,7 +233,9 @@ class _BudgetScreenState extends State<BudgetScreen> {
                     _buildStatCard(
                       context: context,
                       title: 'Budget',
-                      value: '${(_budgetSummary['totalBudget'] ?? 0.0).toStringAsFixed(1)} €',
+                      value:
+                          '${(_budgetSummary['totalBudget'] ?? 0.0).toStringAsFixed(1)} €',
+
                       subtitle: 'Limite mensuelle',
                       icon: CupertinoIcons.creditcard,
                       color: Theme.of(context).colorScheme.secondary,
@@ -230,11 +244,13 @@ class _BudgetScreenState extends State<BudgetScreen> {
                     _buildStatCard(
                       context: context,
                       title: 'Reste',
-                      value: '${(_budgetSummary['remaining'] ?? 0.0).toStringAsFixed(1)} €',
+                      value:
+                          '${(_budgetSummary['remaining'] ?? 0.0).toStringAsFixed(1)} €',
                       subtitle: 'Disponible',
+
                       icon: CupertinoIcons.money_dollar,
-                      color: (_budgetSummary['remaining'] ?? 0.0) >= 0 
-                          ? Theme.of(context).colorScheme.tertiary 
+                      color: (_budgetSummary['remaining'] ?? 0.0) >= 0
+                          ? Theme.of(context).colorScheme.tertiary
                           : Theme.of(context).colorScheme.error,
                     ),
                   ],
@@ -256,14 +272,20 @@ class _BudgetScreenState extends State<BudgetScreen> {
                   ElevatedButton.icon(
                     onPressed: () => _showCategoryDialog(),
                     icon: const Icon(CupertinoIcons.add, size: 16),
-                    label: const Text('Ajouter', style: TextStyle(fontSize: 14)),
+                    label: const Text(
+                      'Ajouter',
+                      style: TextStyle(fontSize: 14),
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.primary,
                       foregroundColor: Theme.of(context).colorScheme.onPrimary,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                     ),
                   ),
                 ],
@@ -275,24 +297,26 @@ class _BudgetScreenState extends State<BudgetScreen> {
                 child: _isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : _categories.isEmpty
-                        ? _buildEmptyState()
-                        : RefreshIndicator(
-                            onRefresh: _loadBudgetData,
-                            child: ListView.builder(
-                              itemCount: _categories.length,
-                              itemBuilder: (context, index) {
-                                final category = _categories[index];
-                                return BudgetCategoryCard(
-                                  category: category,
-                                  onEdit: () =>
-                                      _showCategoryDialog(category: category),
-                                  onDelete: () => _deleteCategory(category),
-                                  idFoyer:
-                                      context.watch<FoyerProvider>().foyerId,
-                                );
-                              },
-                            ),
-                          ),
+                    ? _buildEmptyState()
+                    : RefreshIndicator(
+                        onRefresh: _loadBudgetData,
+                        child: ListView.builder(
+                          itemCount: _categories.length,
+                          itemBuilder: (context, index) {
+                            final category = _categories[index];
+                            final foyerId =
+                                context.watch<FoyerProvider>().foyerId ?? 0;
+                            return BudgetCategoryCard(
+                              category: category,
+                              onEdit: () =>
+                                  _showCategoryDialog(category: category),
+                              onDelete: () => _deleteCategory(category),
+
+                              idFoyer: context.watch<FoyerProvider>().foyerId,
+                            );
+                          },
+                        ),
+                      ),
               ),
             ],
           ),
@@ -344,7 +368,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
     );
   }
 
-    Widget _buildStatCard({
+  Widget _buildStatCard({
     required BuildContext context,
     required String title,
     required String value,
@@ -387,7 +411,9 @@ class _BudgetScreenState extends State<BudgetScreen> {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.7),
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
