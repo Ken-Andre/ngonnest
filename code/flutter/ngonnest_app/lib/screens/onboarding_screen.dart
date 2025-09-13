@@ -86,6 +86,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       );
 
       final nbPersonnes = selectedSizeData['personCount'] as int;
+      final nbPieces = nbPersonnes <= 2
+          ? 2
+          : nbPersonnes <= 4
+          ? 3
+          : 4;
       final budget = double.tryParse(
         _budgetController.text.replaceAll(',', '.'),
       );
@@ -98,6 +103,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         langue: _selectedLanguage,
         budgetMensuelEstime: budget,
       );
+
 
       final id = await HouseholdService.saveFoyer(foyer);
       if (!mounted) return;

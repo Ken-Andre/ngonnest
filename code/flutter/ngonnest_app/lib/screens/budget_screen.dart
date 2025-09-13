@@ -36,6 +36,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
       // Initialize default categories if none exist
       await BudgetService.initializeDefaultCategories(month: _currentMonth);
 
+
       // Ensure spending is up-to-date with purchases for this foyer
       final foyerId = context.read<FoyerProvider>().foyerId;
       if (foyerId != null) {
@@ -49,9 +50,11 @@ class _BudgetScreenState extends State<BudgetScreen> {
       final categories = await BudgetService.getBudgetCategories(
         month: _currentMonth,
       );
-      final summary = await BudgetService.getBudgetSummary(
-        month: _currentMonth,
-      );
+      final foyerId = context.read<FoyerProvider>().foyerId;
+      final summary = foyerId != null
+          ? await BudgetService.getBudgetSummary(foyerId, month: _currentMonth)
+          : {};
+
 
       final foyerBudget =
           context.read<FoyerProvider>().foyer?.budgetMensuelEstime ?? 0.0;
@@ -232,6 +235,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                       title: 'Budget',
                       value:
                           '${(_budgetSummary['totalBudget'] ?? 0.0).toStringAsFixed(1)} €',
+
                       subtitle: 'Limite mensuelle',
                       icon: CupertinoIcons.creditcard,
                       color: Theme.of(context).colorScheme.secondary,
@@ -243,6 +247,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                       value:
                           '${(_budgetSummary['remaining'] ?? 0.0).toStringAsFixed(1)} €',
                       subtitle: 'Disponible',
+
                       icon: CupertinoIcons.money_dollar,
                       color: (_budgetSummary['remaining'] ?? 0.0) >= 0
                           ? Theme.of(context).colorScheme.tertiary
@@ -299,11 +304,14 @@ class _BudgetScreenState extends State<BudgetScreen> {
                           itemCount: _categories.length,
                           itemBuilder: (context, index) {
                             final category = _categories[index];
+                            final foyerId =
+                                context.watch<FoyerProvider>().foyerId ?? 0;
                             return BudgetCategoryCard(
                               category: category,
                               onEdit: () =>
                                   _showCategoryDialog(category: category),
                               onDelete: () => _deleteCategory(category),
+
                               idFoyer: context.watch<FoyerProvider>().foyerId,
                             );
                           },

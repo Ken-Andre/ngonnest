@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/household_service.dart';
+
 import '../models/foyer.dart';
 
 class FoyerProvider extends ChangeNotifier {

@@ -11,6 +11,7 @@ import '../services/error_logger_service.dart';
 import '../services/navigation_service.dart';
 import '../widgets/error_feedback_widget.dart';
 import '../widgets/smart_product_search.dart';
+import '../services/budget_service.dart';
 
 import '../widgets/smart_quantity_selector.dart';
 import '../widgets/dropdown_categories_durables.dart';
@@ -251,8 +252,14 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
       // Use the repository pattern to create the product
       print('🔄 SAVE PRODUCT: Calling repository.create()...');
-      final productId = await _inventoryRepository.create(objet);
-      print('✅ SAVE PRODUCT: Product created with ID: $productId');
+      if (_foyerId != null) {
+        await BudgetService.checkBudgetAlertsAfterPurchase(
+          _foyerId!,
+          objet.categorie,
+        );
+      }
+        objet.categorie,
+      );
 
       if (mounted) {
         print('🔄 SAVE PRODUCT: Showing success snackbar and popping screen');
