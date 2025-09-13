@@ -967,11 +967,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Text(AppLocalizations.of(context)?.cancel ?? 'Annuler'),
             onPressed: () => Navigator.of(context).pop(),
           ),
-          CupertinoDialogAction(
-            child: Text(AppLocalizations.of(context)?.send ?? 'Envoyer'),
-            onPressed: () async {
-              if (feedbackMessage.trim().isNotEmpty) {
-
+            CupertinoDialogAction(
+              child: Text(AppLocalizations.of(context)?.send ?? 'Envoyer'),
+              onPressed: () async {
+                if (feedbackMessage.trim().isNotEmpty) {
                   try {
                     final response = await http
                         .post(
@@ -991,8 +990,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     Navigator.of(context).pop();
                     _showErrorMessage('Erreur réseau. Réessayez.');
                   }
-            },
-          ),
+                }
+              },
+            ),
         ],
       ),
     );

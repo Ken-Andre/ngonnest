@@ -9,9 +9,7 @@ class SettingsService {
   static const String _localDataOnlyKey = 'local_data_only';
   static const String _themeModeKey = 'theme_mode';
   static const String _lastSyncKey = 'last_sync';
-  static const String _localDataOnlyKey = 'local_data_only';
   static const String _cloudSyncAcceptedKey = 'cloud_sync_accepted';
-  static const String _notificationFrequencyKey = 'notification_frequency';
 
   static SharedPreferences? _prefs;
 
@@ -55,6 +53,7 @@ class SettingsService {
   static Future<bool> setCalendarSyncEnabled(bool enabled) async {
     await initialize();
     return _prefs!.setBool(_calendarSyncEnabledKey, enabled);
+  }
 
   /// Get if user has accepted cloud synchronization
   static Future<bool> getCloudSyncAccepted() async {
@@ -62,7 +61,11 @@ class SettingsService {
     return _prefs!.getBool(_cloudSyncAcceptedKey) ?? false;
   }
 
-
+  /// Set if user has accepted cloud synchronization
+  static Future<bool> setCloudSyncAccepted(bool accepted) async {
+    await initialize();
+    return _prefs!.setBool(_cloudSyncAcceptedKey, accepted);
+  }
 
   /// Get notification frequency setting
   static Future<String> getNotificationFrequency() async {

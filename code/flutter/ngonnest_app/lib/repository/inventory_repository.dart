@@ -17,7 +17,6 @@ class InventoryRepository {
   /// Returns the ID of the newly created item
   Future<int> create(Objet objet) async {
     try {
-      // Calculate rupture date for consumables
       final objetWithRuptureDate = PredictionService.updateRuptureDate(objet);
       final id = await _databaseService.insertObjet(objetWithRuptureDate);
       try {
@@ -27,8 +26,11 @@ class InventoryRepository {
         );
       } catch (e, stackTrace) {
         await ErrorLoggerService.logError(
-          'BudgetService.checkBudgetAlertsAfterPurchase failed: $e',
-          stackTrace,
+          component: 'InventoryRepository',
+          operation: 'create.checkBudgetAlertsAfterPurchase',
+          error: e,
+          stackTrace: stackTrace,
+          severity: ErrorSeverity.medium,
         );
       }
       return id;
@@ -36,19 +38,13 @@ class InventoryRepository {
       print('Database error in InventoryRepository.create: $e');
       print('StackTrace: $stackTrace');
 
-      // Attempt automatic recovery on database errors
       if (_isDatabaseConnectionError(e)) {
-        print(
-          '[InventoryRepository] Database connection error detected, attempting recovery...',
-        );
+        print('[InventoryRepository] Database connection error detected, attempting recovery...');
         try {
           final isValid = await _databaseService.isConnectionValid();
           if (!isValid) {
-            // Try again after potential recovery
             await Future.delayed(const Duration(milliseconds: 200));
-            final objetWithRuptureDate = PredictionService.updateRuptureDate(
-              objet,
-            );
+            final objetWithRuptureDate = PredictionService.updateRuptureDate(objet);
             final id = await _databaseService.insertObjet(objetWithRuptureDate);
             try {
               await BudgetService.checkBudgetAlertsAfterPurchase(
@@ -57,8 +53,11 @@ class InventoryRepository {
               );
             } catch (e, stackTrace) {
               await ErrorLoggerService.logError(
-                'BudgetService.checkBudgetAlertsAfterPurchase failed during recovery: $e',
-                stackTrace,
+                component: 'InventoryRepository',
+                operation: 'create_recovery.checkBudgetAlertsAfterPurchase',
+                error: e,
+                stackTrace: stackTrace,
+                severity: ErrorSeverity.medium,
               );
             }
             return id;
@@ -113,13 +112,11 @@ class InventoryRepository {
   /// Returns the number of affected rows
   Future<int> update(int id, Map<String, dynamic> updates) async {
     try {
-      // First get the existing objet
       final existingObjet = await _databaseService.getObjet(id);
       if (existingObjet == null) {
         throw ArgumentError('Objet with id $id not found');
       }
 
-      // Create updated objet with the provided updates
       final updatedObjet = Objet(
         id: existingObjet.id,
         idFoyer: existingObjet.idFoyer,
@@ -137,8 +134,7 @@ class InventoryRepository {
             updates['quantiteRestante'] ?? existingObjet.quantiteRestante,
         unite: updates['unite'] ?? existingObjet.unite,
         tailleConditionnement:
-            updates['tailleConditionnement'] ??
-            existingObjet.tailleConditionnement,
+            updates['tailleConditionnement'] ?? existingObjet.tailleConditionnement,
         prixUnitaire: updates['prixUnitaire'] ?? existingObjet.prixUnitaire,
         methodePrevision:
             updates['methodePrevision'] ?? existingObjet.methodePrevision,
@@ -146,26 +142,24 @@ class InventoryRepository {
             updates['frequenceAchatJours'] ?? existingObjet.frequenceAchatJours,
         consommationJour:
             updates['consommationJour'] ?? existingObjet.consommationJour,
-        // Trigger budget alerts only when spending-related fields actually changed value
-        final spendingChanged =
-            (updates.containsKey('categorie') && updates['categorie'] != existingObjet.categorie) ||
-            (updates.containsKey('prixUnitaire') && updates['prixUnitaire'] != existingObjet.prixUnitaire) ||
-            (updates.containsKey('quantiteInitiale') && updates['quantiteInitiale'] != existingObjet.quantiteInitiale) ||
-            (updates.containsKey('dateAchat') && updates['dateAchat'] != existingObjet.dateAchat);
-        if (spendingChanged) {
-      // Recalculate rupture date for consumables when updating
-      final objetWithUpdatedRuptureDate = PredictionService.updateRuptureDate(
-        updatedObjet,
       );
+
+      final objetWithUpdatedRuptureDate =
+          PredictionService.updateRuptureDate(updatedObjet);
       final result = await _databaseService.updateObjet(
         objetWithUpdatedRuptureDate,
       );
 
-      // Trigger budget alerts only when spending-related fields changed
-      final spendingChanged = updates.containsKey('categorie') ||
-          updates.containsKey('prixUnitaire') ||
-          updates.containsKey('quantiteInitiale') ||
-          updates.containsKey('dateAchat');
+      final spendingChanged =
+          (updates.containsKey('categorie') &&
+              updates['categorie'] != existingObjet.categorie) ||
+          (updates.containsKey('prixUnitaire') &&
+              updates['prixUnitaire'] != existingObjet.prixUnitaire) ||
+          (updates.containsKey('quantiteInitiale') &&
+              updates['quantiteInitiale'] != existingObjet.quantiteInitiale) ||
+          (updates.containsKey('dateAchat') &&
+              updates['dateAchat'] != existingObjet.dateAchat);
+
       if (spendingChanged) {
         try {
           await BudgetService.checkBudgetAlertsAfterPurchase(
@@ -174,11 +168,15 @@ class InventoryRepository {
           );
         } catch (e, stackTrace) {
           await ErrorLoggerService.logError(
-            'BudgetService.checkBudgetAlertsAfterPurchase failed: $e',
-            stackTrace,
+            component: 'InventoryRepository',
+            operation: 'update.checkBudgetAlertsAfterPurchase',
+            error: e,
+            stackTrace: stackTrace,
+            severity: ErrorSeverity.medium,
           );
         }
       }
+
       return result;
     } catch (e, stackTrace) {
       print('Database error in InventoryRepository.update: $e');
@@ -212,8 +210,11 @@ class InventoryRepository {
       );
     } catch (e, stackTrace) {
       await ErrorLoggerService.logError(
-        'BudgetService.checkBudgetAlertsAfterPurchase failed: $e',
-        stackTrace,
+        component: 'InventoryRepository',
+        operation: 'updateObjet.checkBudgetAlertsAfterPurchase',
+        error: e,
+        stackTrace: stackTrace,
+        severity: ErrorSeverity.medium,
       );
     }
     return result;
