@@ -252,10 +252,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
             double.tryParse(_initialQuantityController.text) ?? 1.0,
         unite: _selectedUnit,
         tailleConditionnement: _isConsumable
-            ? double.tryParse(_packagingSizeController.text)
+            ? (double.tryParse(_packagingSizeController.text.replaceAll(',', '.').trim()) ?? 1.0)
             : null,
         prixUnitaire: _isConsumable
-            ? double.tryParse(_unitPriceController.text)
+            ? (double.tryParse(_unitPriceController.text.replaceAll(',', '.').trim()) ?? 5.0)
             : null,
         methodePrevision: _isConsumable ? MethodePrevision.frequence : null,
         frequenceAchatJours: _isConsumable
