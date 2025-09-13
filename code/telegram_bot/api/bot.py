@@ -3,6 +3,8 @@ import json
 import requests
 import logging
 from typing import Optional, Dict, Any
+from dotenv import load_dotenv
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -54,6 +56,10 @@ def api_call(method: str, data: Optional[Dict[str, Any]] = None):
 
 def send_message(chat_id: int, text: str, parse_mode: str = "Markdown"):
     return api_call("sendMessage", {"chat_id": chat_id, "text": text, "parse_mode": parse_mode})
+
+def handler(event, context):
+    if event['httpMethod'] == 'GET':
+        return {"statusCode": 200, "body": json.dumps({"status": "OK"})}
 
 def handle_update(update: Dict[str, Any]):
     message = update.get("message")
