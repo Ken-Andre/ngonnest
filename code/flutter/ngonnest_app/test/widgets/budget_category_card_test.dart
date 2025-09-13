@@ -31,6 +31,7 @@ void main() {
             onTap: onTap,
             onEdit: onEdit,
             onDelete: onDelete,
+            idFoyer: 1,
           ),
         ),
       );
