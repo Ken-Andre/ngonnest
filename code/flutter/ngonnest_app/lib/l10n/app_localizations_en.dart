@@ -244,4 +244,32 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get allDataDeletedRestart =>
       'All your data has been deleted.\\nThe application will restart.';
+
+  @override
+  String get exportDataConfirm => 'Export all your data to a JSON file?';
+
+  @override
+  String get exportSuccess => 'Data exported successfully';
+
+  @override
+  String get importDataConfirm =>
+      'This operation will replace your current data. Continue?';
+
+  @override
+  String get importSuccess => 'Import successful';
+
+  @override
+  String get storagePermissionRequired =>
+      'Storage permission is required to export data';
+
+  @override
+  String get storagePermissionDenied =>
+      'Storage permission denied. Please grant access in system settings';
+
+  @override
+  String get storagePermissionPermanentlyDenied =>
+      'Storage permission permanently denied. Please enable it in app settings';
+
+  @override
+  String get grantStoragePermission => 'Grant Storage Permission';
 }

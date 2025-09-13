@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import '../models/budget_category.dart';
 import 'budget_expense_history.dart';
+import 'package:provider/provider.dart';
+import '../providers/foyer_provider.dart';
 
 class BudgetCategoryCard extends StatelessWidget {
   final BudgetCategory category;
@@ -20,12 +22,18 @@ class BudgetCategoryCard extends StatelessWidget {
   });
 
   void _showExpenseHistory(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) =>
-            BudgetExpenseHistory(category: category, idFoyer: idFoyer),
-      ),
-    );
+
+    final foyerId = idFoyer ?? context.read<FoyerProvider>().foyerId;
+    if (foyerId != null) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => BudgetExpenseHistory(
+            category: category,
+            idFoyer: foyerId,
+          ),
+        ),
+      );
+    }
   }
 
   @override
@@ -137,6 +145,7 @@ class BudgetCategoryCard extends StatelessWidget {
                             : Theme.of(
                                 context,
                               ).colorScheme.onSurface.withOpacity(0.7),
+
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -150,6 +159,7 @@ class BudgetCategoryCard extends StatelessWidget {
                             : Theme.of(
                                 context,
                               ).colorScheme.onSurface.withOpacity(0.8),
+
                       ),
                     ),
                   ],
@@ -160,9 +170,8 @@ class BudgetCategoryCard extends StatelessWidget {
                 Container(
                   height: 6,
                   decoration: BoxDecoration(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.outline.withOpacity(0.2),
+                    color:
+                        Theme.of(context).colorScheme.outline.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(3),
                   ),
                   child: FractionallySizedBox(
@@ -190,6 +199,7 @@ class BudgetCategoryCard extends StatelessWidget {
                         color: Theme.of(
                           context,
                         ).colorScheme.error.withOpacity(0.3),
+
                       ),
                     ),
                     child: Row(
@@ -225,6 +235,7 @@ class BudgetCategoryCard extends StatelessWidget {
                       color: Theme.of(
                         context,
                       ).colorScheme.onSurface.withOpacity(0.6),
+
                     ),
                   ),
                 ],

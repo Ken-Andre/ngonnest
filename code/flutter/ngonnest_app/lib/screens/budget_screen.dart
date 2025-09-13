@@ -29,11 +29,22 @@ class _BudgetScreenState extends State<BudgetScreen> {
   }
 
   Future<void> _loadBudgetData() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
 
     try {
       // Initialize default categories if none exist
       await BudgetService.initializeDefaultCategories(month: _currentMonth);
+
+
+      // Ensure spending is up-to-date with purchases for this foyer
+      final foyerId = context.read<FoyerProvider>().foyerId;
+      if (foyerId != null) {
+        await BudgetService.syncBudgetWithPurchases(
+          foyerId,
+          month: _currentMonth,
+        );
+      }
 
       // Load categories and summary
       final categories = await BudgetService.getBudgetCategories(
@@ -44,21 +55,27 @@ class _BudgetScreenState extends State<BudgetScreen> {
           ? await BudgetService.getBudgetSummary(foyerId, month: _currentMonth)
           : {};
 
+
+      final foyerBudget =
+          context.read<FoyerProvider>().foyer?.budgetMensuelEstime ?? 0.0;
+      summary['totalBudget'] = foyerBudget;
+      summary['remaining'] = foyerBudget - (summary['totalSpent'] ?? 0.0);
+
+      if (!mounted) return;
       setState(() {
         _categories = categories;
         _budgetSummary = summary;
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur lors du chargement: ${e.toString()}'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur lors du chargement: ${e.toString()}'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
     }
   }
 
@@ -123,6 +140,10 @@ class _BudgetScreenState extends State<BudgetScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     return MainNavigationWrapper(
       currentIndex: 3, // Budget is index 3
       onTabChanged: (index) => NavigationService.navigateToTab(context, index),
@@ -214,7 +235,8 @@ class _BudgetScreenState extends State<BudgetScreen> {
                       title: 'Budget',
                       value:
                           '${(_budgetSummary['totalBudget'] ?? 0.0).toStringAsFixed(1)} €',
-                      subtitle: 'Alloué',
+
+                      subtitle: 'Limite mensuelle',
                       icon: CupertinoIcons.creditcard,
                       color: Theme.of(context).colorScheme.secondary,
                     ),
@@ -225,7 +247,8 @@ class _BudgetScreenState extends State<BudgetScreen> {
                       value:
                           '${(_budgetSummary['remaining'] ?? 0.0).toStringAsFixed(1)} €',
                       subtitle: 'Disponible',
-                      icon: CupertinoIcons.money_dollar_circle,
+
+                      icon: CupertinoIcons.money_dollar,
                       color: (_budgetSummary['remaining'] ?? 0.0) >= 0
                           ? Theme.of(context).colorScheme.tertiary
                           : Theme.of(context).colorScheme.error,
@@ -288,7 +311,8 @@ class _BudgetScreenState extends State<BudgetScreen> {
                               onEdit: () =>
                                   _showCategoryDialog(category: category),
                               onDelete: () => _deleteCategory(category),
-                              idFoyer: foyerId,
+
+                              idFoyer: context.watch<FoyerProvider>().foyerId,
                             );
                           },
                         ),

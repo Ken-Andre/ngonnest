@@ -102,13 +102,22 @@ void main() async {
   final localeProvider = LocaleProvider();
   await localeProvider.initialize();
 
+  // Initialize foyer provider to retrieve stored household ID
+  final foyerProvider = FoyerProvider();
+  await foyerProvider.initialize();
+
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(
           create: (context) => ThemeModeNotifier(initialThemeMode),
         ),
-        ChangeNotifierProvider<LocaleProvider>.value(value: localeProvider),
+        ChangeNotifierProvider<LocaleProvider>.value(
+          value: localeProvider,
+        ),
+        ChangeNotifierProvider<FoyerProvider>.value(
+          value: foyerProvider,
+        ),
         Provider<DatabaseService>(
           create: (context) => DatabaseService(),
         ), // Provide DatabaseService
@@ -292,10 +301,10 @@ class _SplashScreenState extends State<SplashScreen>
                 child: Text(
                   'NgonNest',
                   style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 48,
-                  ),
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 48,
+                      ),
                 ),
               ),
 
@@ -307,9 +316,9 @@ class _SplashScreenState extends State<SplashScreen>
                 child: Text(
                   'Gestion intelligente de votre foyer',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Colors.white.withOpacity(0.9),
-                    fontSize: 18,
-                  ),
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: 18,
+                      ),
                   textAlign: TextAlign.center,
                 ),
               ),

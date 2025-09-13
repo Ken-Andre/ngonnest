@@ -37,6 +37,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   bool _isConsumable = true;
   int? _foyerId;
+  int _householdSize = 4;
   bool _isLoading = true;
   bool _isSaving = false;
 
@@ -77,6 +78,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
     _isConsumable = widget.isConsumable;
     // Éliminer la latence : Initialisation synchrone
     _initializeServices();
+    _getHouseholdSize();
   }
 
   void _initializeServices() {
@@ -604,7 +606,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   SmartQuantitySelector(
                     category: _selectedCategory,
                     selectedProduct: _selectedProductTemplate,
-                    familySize: _getHouseholdSize(),
+                    familySize: _householdSize,
                     onQuantityChanged: (quantity, unit) {
                       setState(() {
                         _initialQuantityController.text = quantity.toString();
@@ -1107,14 +1109,33 @@ class _AddProductScreenState extends State<AddProductScreen> {
   }
 
   /// Obtient la taille du foyer depuis le service Household
-  int _getHouseholdSize() {
-    // Intégration avec HouseholdService pour obtenir la taille réelle
+  Future<void> _getHouseholdSize() async {
     try {
-      // Note: This needs to be awaited properly in a real implementation
-      return 4; // Valeur par défaut temporaire
+      final foyer = await HouseholdService.getFoyer();
+      if (foyer != null) {
+        setState(() {
+          final size = foyer.nbPersonnes;
+          _householdSize = (size == null || size < 1) ? 4 : size;
+        });
+        });
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Foyer introuvable'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } catch (e) {
       print('Erreur récupération taille foyer: $e');
-      return 4; // Valeur par défaut
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur lors de la récupération du foyer: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 }

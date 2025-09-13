@@ -21,6 +21,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   String _selectedHouseholdSize = '';
   String _selectedHousingType = '';
   bool _isLoading = false;
+  final TextEditingController _budgetController = TextEditingController();
+  final TextEditingController _roomsController = TextEditingController();
 
   final List<Map<String, dynamic>> _householdSizes = [
     {
@@ -46,11 +48,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   void dispose() {
     _pageController.dispose();
+    _budgetController.dispose();
+    _roomsController.dispose();
     super.dispose();
   }
 
   void _nextStep() {
-    if (_currentStep < 2) {
+    if (_currentStep < 4) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
@@ -87,16 +91,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           : nbPersonnes <= 4
           ? 3
           : 4;
+      final budget = double.tryParse(
+        _budgetController.text.replaceAll(',', '.'),
+      );
+      final nbPieces = int.tryParse(_roomsController.text) ?? 0;
 
       final foyer = Foyer(
         nbPersonnes: nbPersonnes,
         nbPieces: nbPieces,
         typeLogement: _selectedHousingType,
         langue: _selectedLanguage,
+        budgetMensuelEstime: budget,
       );
 
-      final foyerId = await HouseholdService.saveFoyer(foyer);
-      context.read<FoyerProvider>().setFoyerId(foyerId);
+
+      final id = await HouseholdService.saveFoyer(foyer);
+      if (!mounted) return;
+      final savedFoyer = foyer.copyWith(id: id);
+      context.read<FoyerProvider>().setFoyer(savedFoyer);
 
       if (mounted) {
         Navigator.of(context).pushReplacementNamed('/dashboard');
@@ -139,6 +151,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   _buildLanguageStep(),
                   _buildHouseholdSizeStep(),
                   _buildHousingTypeStep(),
+                  _buildBudgetStep(),
+                  _buildRoomsStep(),
                 ],
               ),
             ),
@@ -190,10 +204,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
           // Progress indicator
           Row(
-            children: List.generate(3, (index) {
+            children: List.generate(5, (index) {
               return Expanded(
                 child: Container(
-                  margin: EdgeInsets.only(right: index < 2 ? 6 : 0),
+                  margin: EdgeInsets.only(right: index < 4 ? 6 : 0),
                   height: 3,
                   decoration: BoxDecoration(
                     color: index <= _currentStep
@@ -599,11 +613,67 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
+  Widget _buildBudgetStep() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 16),
+          Text(
+            'Budget mensuel estimé',
+            style: Theme.of(context).textTheme.displaySmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: AppTheme.neutralBlack,
+              fontSize: 24,
+            ),
+          ),
+          const SizedBox(height: 20),
+          TextField(
+            controller: _budgetController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(labelText: 'Montant en €'),
+          ),
+          const SizedBox(height: 60),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRoomsStep() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 16),
+          Text(
+            'Nombre de pièces',
+            style: Theme.of(context).textTheme.displaySmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: AppTheme.neutralBlack,
+              fontSize: 24,
+            ),
+          ),
+          const SizedBox(height: 20),
+          TextField(
+            controller: _roomsController,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(labelText: 'Pièces'),
+          ),
+          const SizedBox(height: 60),
+        ],
+      ),
+    );
+  }
+
   Widget _buildBottomNavigation() {
     final canProceed =
         _currentStep == 0 && _selectedLanguage.isNotEmpty ||
         _currentStep == 1 && _selectedHouseholdSize.isNotEmpty ||
-        _currentStep == 2 && _selectedHousingType.isNotEmpty;
+        _currentStep == 2 && _selectedHousingType.isNotEmpty ||
+        _currentStep == 3 && _budgetController.text.isNotEmpty ||
+        (_currentStep == 4 && _roomsController.text.isNotEmpty);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -617,7 +687,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           child: _isLoading
               ? const CupertinoActivityIndicator(color: Colors.white)
               : Text(
-                  _currentStep == 2 ? 'Terminer' : 'Continuer',
+                  _currentStep == 4 ? 'Terminer' : 'Continuer',
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,

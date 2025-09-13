@@ -549,6 +549,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'All your data has been deleted.\\nThe application will restart.'**
   String get allDataDeletedRestart;
+
+  /// No description provided for @exportDataConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Export all your data to a JSON file?'**
+  String get exportDataConfirm;
+
+  /// No description provided for @exportSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Data exported successfully'**
+  String get exportSuccess;
+
+  /// No description provided for @importDataConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'This operation will replace your current data. Continue?'**
+  String get importDataConfirm;
+
+  /// No description provided for @importSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Import successful'**
+  String get importSuccess;
+
+  /// No description provided for @storagePermissionRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage permission is required to export data'**
+  String get storagePermissionRequired;
+
+  /// No description provided for @storagePermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage permission denied. Please grant access in system settings'**
+  String get storagePermissionDenied;
+
+  /// No description provided for @storagePermissionPermanentlyDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage permission permanently denied. Please enable it in app settings'**
+  String get storagePermissionPermanentlyDenied;
+
+  /// No description provided for @grantStoragePermission.
+  ///
+  /// In en, this message translates to:
+  /// **'Grant Storage Permission'**
+  String get grantStoragePermission;
 }
 
 class _AppLocalizationsDelegate

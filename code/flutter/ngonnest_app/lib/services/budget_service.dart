@@ -15,11 +15,12 @@ class BudgetService {
   }
 
   /// Get all budget categories for a specific month
-  static Future<List<BudgetCategory>> getBudgetCategories({String? month}) async {
+  static Future<List<BudgetCategory>> getBudgetCategories(
+      {String? month}) async {
     try {
       final db = await _databaseService.database;
       final targetMonth = month ?? getCurrentMonth();
-      
+
       final List<Map<String, dynamic>> maps = await db.query(
         'budget_categories',
         where: 'month = ?',
@@ -100,27 +101,34 @@ class BudgetService {
     }
   }
 
+  /// Sync budget categories with actual purchases
+  static Future<void> syncBudgetWithPurchases(int idFoyer,
+      {String? month}) async {
+    await _updateSpendingFromPurchases(idFoyer, month: month);
+  }
+
   /// Calculate and update spending for all categories based on actual purchases
-  static Future<void> updateSpendingFromPurchases(int idFoyer, {String? month}) async {
+  static Future<void> _updateSpendingFromPurchases(int idFoyer,
+      {String? month}) async {
     try {
-      final db = await _databaseService.database;
       final targetMonth = month ?? getCurrentMonth();
-      
+
       // Get all budget categories for the month
       final categories = await getBudgetCategories(month: targetMonth);
-      
+
       for (final category in categories) {
         // Calculate spending for this category based on objects purchased this month
-        final spending = await _calculateCategorySpending(idFoyer, category.name, targetMonth);
-        
+        final spending = await _calculateCategorySpending(
+            idFoyer, category.name, targetMonth);
+
         // Update the category with new spending amount
         final updatedCategory = category.copyWith(
           spent: spending,
           updatedAt: DateTime.now(),
         );
-        
+
         await updateBudgetCategory(updatedCategory);
-        
+
         // Check if budget is exceeded and trigger alert if needed
         if (updatedCategory.isOverBudget) {
           await _triggerBudgetAlert(updatedCategory);
@@ -138,17 +146,18 @@ class BudgetService {
   }
 
   /// Calculate spending for a specific category in a given month
-  static Future<double> _calculateCategorySpending(int idFoyer, String categoryName, String month) async {
+  static Future<double> _calculateCategorySpending(
+      int idFoyer, String categoryName, String month) async {
     try {
       final db = await _databaseService.database;
-      
+
       // Parse month to get start and end dates
       final monthParts = month.split('-');
       final year = int.parse(monthParts[0]);
       final monthNum = int.parse(monthParts[1]);
       final startDate = DateTime(year, monthNum, 1);
       final endDate = DateTime(year, monthNum + 1, 0); // Last day of month
-      
+
       // Calculate spending based on objects purchased in this month
       final result = await db.rawQuery('''
         SELECT SUM(prix_unitaire) as total_spending
@@ -164,7 +173,7 @@ class BudgetService {
         startDate.toIso8601String(),
         endDate.toIso8601String(),
       ]);
-      
+
       return (result.first['total_spending'] as double?) ?? 0.0;
     } catch (e, stackTrace) {
       await ErrorLoggerService.logError(
@@ -182,7 +191,7 @@ class BudgetService {
   static Future<void> _triggerBudgetAlert(BudgetCategory category) async {
     try {
       final percentage = (category.spendingPercentage * 100).round();
-      
+
       await NotificationService.showBudgetAlert(
         id: category.id ?? DateTime.now().millisecondsSinceEpoch,
         categoryName: category.name,
@@ -203,21 +212,21 @@ class BudgetService {
 
   /// Get monthly expense history for a category
   static Future<List<Map<String, dynamic>>> getMonthlyExpenseHistory(
-    int idFoyer, 
-    String categoryName, 
-    {int monthsBack = 12}
-  ) async {
+      int idFoyer, String categoryName,
+      {int monthsBack = 12}) async {
     try {
       final db = await _databaseService.database;
       final now = DateTime.now();
       final history = <Map<String, dynamic>>[];
-      
+
       for (int i = 0; i < monthsBack; i++) {
         final targetDate = DateTime(now.year, now.month - i, 1);
-        final month = '${targetDate.year}-${targetDate.month.toString().padLeft(2, '0')}';
-        
-        final spending = await _calculateCategorySpending(idFoyer, categoryName, month);
-        
+        final month =
+            '${targetDate.year}-${targetDate.month.toString().padLeft(2, '0')}';
+
+        final spending =
+            await _calculateCategorySpending(idFoyer, categoryName, month);
+
         history.add({
           'month': month,
           'year': targetDate.year,
@@ -226,7 +235,7 @@ class BudgetService {
           'monthName': _getMonthName(targetDate.month),
         });
       }
-      
+
       return history.reversed.toList(); // Return chronological order
     } catch (e, stackTrace) {
       await ErrorLoggerService.logError(
@@ -243,8 +252,19 @@ class BudgetService {
   /// Get month name in French
   static String _getMonthName(int month) {
     const months = [
-      '', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-      'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
+      '',
+      'Janvier',
+      'Février',
+      'Mars',
+      'Avril',
+      'Mai',
+      'Juin',
+      'Juillet',
+      'Août',
+      'Septembre',
+      'Octobre',
+      'Novembre',
+      'Décembre'
     ];
     return months[month];
   }
@@ -253,11 +273,11 @@ class BudgetService {
   static Future<void> initializeDefaultCategories({String? month}) async {
     try {
       final targetMonth = month ?? getCurrentMonth();
-      
+
       // Check if categories already exist for this month
       final existing = await getBudgetCategories(month: targetMonth);
       if (existing.isNotEmpty) return;
-      
+
       // Create default categories based on common household categories
       final defaultCategories = [
         BudgetCategory(name: 'Hygiène', limit: 120.0, month: targetMonth),
@@ -265,7 +285,7 @@ class BudgetService {
         BudgetCategory(name: 'Cuisine', limit: 100.0, month: targetMonth),
         BudgetCategory(name: 'Divers', limit: 60.0, month: targetMonth),
       ];
-      
+
       for (final category in defaultCategories) {
         await createBudgetCategory(category);
       }
@@ -281,26 +301,30 @@ class BudgetService {
   }
 
   /// Trigger budget check and alerts after item purchase/update
-  static Future<void> checkBudgetAlertsAfterPurchase(int idFoyer, String categoryName, {String? month}) async {
+  static Future<void> checkBudgetAlertsAfterPurchase(
+      int idFoyer, String categoryName,
+      {String? month}) async {
     try {
       final targetMonth = month ?? getCurrentMonth();
-      
+
       // Get the budget category for this item's category
       final categories = await getBudgetCategories(month: targetMonth);
-      final matchingCategory = categories.where((cat) => cat.name == categoryName).firstOrNull;
-      
+      final matchingCategory =
+          categories.where((cat) => cat.name == categoryName).firstOrNull;
+
       if (matchingCategory != null) {
         // Calculate current spending for this category
-        final currentSpending = await _calculateCategorySpending(idFoyer, categoryName, targetMonth);
-        
+        final currentSpending = await _calculateCategorySpending(
+            idFoyer, categoryName, targetMonth);
+
         // Update the category with new spending
         final updatedCategory = matchingCategory.copyWith(
           spent: currentSpending,
           updatedAt: DateTime.now(),
         );
-        
+
         await updateBudgetCategory(updatedCategory);
-        
+
         // Check if budget is exceeded and trigger alert
         if (updatedCategory.isOverBudget) {
           await _triggerBudgetAlert(updatedCategory);
@@ -317,21 +341,21 @@ class BudgetService {
     }
   }
 
-  /// Get budget summary for dashboard
-  static Future<Map<String, dynamic>> getBudgetSummary(int idFoyer, {String? month}) async {
+  /// Get budget summary for dashboard (read-only)
+  static Future<Map<String, dynamic>> getBudgetSummary({String? month}) async {
     try {
       final categories = await getBudgetCategories(month: month);
-      
+
       double totalLimit = 0.0;
       double totalSpent = 0.0;
       int overBudgetCount = 0;
-      
+
       for (final category in categories) {
         totalLimit += category.limit;
         totalSpent += category.spent;
         if (category.isOverBudget) overBudgetCount++;
       }
-      
+
       return {
         'totalLimit': totalLimit,
         'totalSpent': totalSpent,
