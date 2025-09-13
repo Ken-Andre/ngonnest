@@ -29,6 +29,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   // Local state for settings not managed by Provider
   bool _notificationsEnabled = true;
+  bool _calendarSyncEnabled = true;
   bool _localDataOnly = true;
   bool _hasAcceptedCloudSync = false;
   String _notificationFrequency = 'quotidienne';
@@ -52,6 +53,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       final notificationsEnabled =
           await SettingsService.getNotificationsEnabled();
+      final calendarSyncEnabled =
+          await SettingsService.getCalendarSyncEnabled();
+
       final localDataOnly = await SettingsService.getLocalDataOnly();
       final hasAcceptedCloudSync = await SettingsService.getCloudSyncAccepted();
       final notificationFrequency =
@@ -62,11 +66,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       setState(() {
         _notificationsEnabled = notificationsEnabled;
         _localDataOnly = localDataOnly;
+        _calendarSyncEnabled = calendarSyncEnabled;
         _hasAcceptedCloudSync = hasAcceptedCloudSync;
         _notificationFrequency = allowedFrequencies.contains(notificationFrequency)
             ? notificationFrequency
             : 'quotidienne';
-
       });
     } catch (e) {
       debugPrint('Error loading settings: $e');
@@ -97,6 +101,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         switch (result) {
           case NotificationPermissionResult.granted:
             setState(() => _notificationsEnabled = true);
+
             await SettingsService.setNotificationsEnabled(true);
             _showSuccessMessage(
               AppLocalizations.of(context)?.settingsSaved ??
@@ -120,6 +125,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         // Disabling notifications
         await NotificationPermissionService.disableNotifications();
         setState(() => _notificationsEnabled = false);
+
         await SettingsService.setNotificationsEnabled(false);
         _showSuccessMessage(
           AppLocalizations.of(context)?.settingsSaved ??
@@ -130,6 +136,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _showErrorMessage('Erreur: $e');
     } finally {
       setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _handleCalendarSyncToggle(bool value) async {
+    setState(() => _calendarSyncEnabled = value);
+    try {
+      await SettingsService.setCalendarSyncEnabled(value);
+      _showSuccessMessage(
+        AppLocalizations.of(context)?.settingsSaved ?? 'Paramètres sauvegardés',
+      );
+    } catch (e) {
+      _showErrorMessage('Erreur: $e');
     }
   }
 
@@ -383,7 +401,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   onChanged: (value) async {
                                     if (value != null) {
                                       setState(
-                                        () => _notificationFrequency = value,
+                                        () => _notificationFrequency = value!,
                                       );
                                       await SettingsService.setNotificationFrequency(
                                         value,
@@ -397,6 +415,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                           ),
                         ],
+                        const SizedBox(height: 24),
+                        _buildSectionTitle('Calendrier'),
+                        _buildSettingCard(
+                          title: _calendarSyncEnabled
+                              ? 'Synchronisation calendrier activée'
+                              : 'Synchronisation calendrier désactivée',
+                          subtitle:
+                              'Ajouter les rappels programmés au calendrier',
+                          child: CupertinoSwitch(
+                            value: _calendarSyncEnabled,
+                            onChanged: (value) async {
+                              await _handleCalendarSyncToggle(value);
+                            },
+                            activeColor: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
                         const SizedBox(height: 24),
                         // Privacy Section
                         _buildSectionTitle(
@@ -557,20 +591,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
                                       valueColor: AlwaysStoppedAnimation<Color>(
-                                        Theme.of(context).colorScheme.onSecondary,
+                                        Theme.of(
+                                          context,
+                                        ).colorScheme.onSecondary,
                                       ),
                                     ),
                                   )
                                 : const Icon(Icons.download, size: 16),
-                            label: Text(_isExporting
-                                ? 'Exportation...'
-                                : (AppLocalizations.of(context)?.export ?? 'Exporter')),
+                            label: Text(
+                              _isExporting
+                                  ? 'Exportation...'
+                                  : (AppLocalizations.of(context)?.export ??
+                                        'Exporter'),
+                            ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: _isExporting
-                                  ? Theme.of(context).colorScheme.secondary.withOpacity(0.6)
+                                  ? Theme.of(
+                                      context,
+                                    ).colorScheme.secondary.withOpacity(0.6)
                                   : Theme.of(context).colorScheme.secondary,
-                              foregroundColor:
-                                  Theme.of(context).colorScheme.onSecondary,
+                              foregroundColor: Theme.of(
+                                context,
+                              ).colorScheme.onSecondary,
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 16,
                                 vertical: 10,
@@ -600,20 +642,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
                                       valueColor: AlwaysStoppedAnimation<Color>(
-                                        Theme.of(context).colorScheme.onSecondary,
+                                        Theme.of(
+                                          context,
+                                        ).colorScheme.onSecondary,
                                       ),
                                     ),
                                   )
                                 : const Icon(Icons.upload, size: 16),
-                            label: Text(_isImporting
-                                ? 'Importation...'
-                                : (AppLocalizations.of(context)?.import ?? 'Importer')),
+                            label: Text(
+                              _isImporting
+                                  ? 'Importation...'
+                                  : (AppLocalizations.of(context)?.import ??
+                                        'Importer'),
+                            ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: _isImporting
-                                  ? Theme.of(context).colorScheme.secondary.withOpacity(0.6)
+                                  ? Theme.of(
+                                      context,
+                                    ).colorScheme.secondary.withOpacity(0.6)
                                   : Theme.of(context).colorScheme.secondary,
-                              foregroundColor:
-                                  Theme.of(context).colorScheme.onSecondary,
+                              foregroundColor: Theme.of(
+                                context,
+                              ).colorScheme.onSecondary,
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 16,
                                 vertical: 10,
@@ -1107,7 +1157,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     );
   }
-
 
 
   void _showPermissionDialog(String title, String message, {bool isPermanent = false}) {

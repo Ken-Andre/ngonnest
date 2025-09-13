@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 class SettingsService {
   static const String _languageKey = 'language';
   static const String _notificationsEnabledKey = 'notifications_enabled';
+  static const String _calendarSyncEnabledKey = 'calendar_sync_enabled';
   static const String _notificationFrequencyKey = 'notification_frequency';
   static const String _localDataOnlyKey = 'local_data_only';
   static const String _themeModeKey = 'theme_mode';
@@ -44,6 +45,16 @@ class SettingsService {
     return _prefs!.setBool(_notificationsEnabledKey, enabled);
   }
 
+  /// Get calendar sync enabled setting
+  static Future<bool> getCalendarSyncEnabled() async {
+    await initialize();
+    return _prefs!.getBool(_calendarSyncEnabledKey) ?? true;
+  }
+
+  /// Set calendar sync enabled setting
+  static Future<bool> setCalendarSyncEnabled(bool enabled) async {
+    await initialize();
+    return _prefs!.setBool(_calendarSyncEnabledKey, enabled);
 
   /// Get if user has accepted cloud synchronization
   static Future<bool> getCloudSyncAccepted() async {
