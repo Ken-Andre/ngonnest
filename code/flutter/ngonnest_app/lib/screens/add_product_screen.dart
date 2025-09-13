@@ -252,10 +252,12 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
       // Use the repository pattern to create the product
       print('🔄 SAVE PRODUCT: Calling repository.create()...');
-      final productId = await _inventoryRepository.create(objet);
-      print('✅ SAVE PRODUCT: Product created with ID: $productId');
-      await BudgetService.checkBudgetAlertsAfterPurchase(
-        _foyerId!,
+      if (_foyerId != null) {
+        await BudgetService.checkBudgetAlertsAfterPurchase(
+          _foyerId!,
+          objet.categorie,
+        );
+      }
         objet.categorie,
       );
 
