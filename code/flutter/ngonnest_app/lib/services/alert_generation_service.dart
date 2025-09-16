@@ -8,8 +8,20 @@ import '../services/database_service.dart';
 import 'prediction_service.dart';
 import 'error_logger_service.dart';
 
-/// Service de génération automatique d'alertes intelligentes
-/// Analyse l'inventaire et génère des alertes contextuelles pour le foyer
+/// Service for generating and managing alerts based on inventory and budget data
+/// Provides comprehensive alert system for stock, budget, recommendations, expiration, and maintenance
+/// 
+/// ⚠️ CRITICAL TODOs FOR CLIENT DELIVERY:
+/// TODO: ALERT_PERSISTENCE - Alert read/resolved states are NOT persisted (lines 520-548)
+///       - markAlertAsRead() and markAlertAsResolved() are placeholder methods
+///       - No database table exists for alert states
+///       - Users cannot track which alerts they've seen
+/// TODO: ALERT_INTEGRATION - Service is not properly integrated with UI
+///       - Dashboard may not display alerts correctly
+///       - No real-time alert updates
+/// TODO: ALERT_TESTING - Alert generation logic needs validation
+///       - Budget alert thresholds may not work as expected
+///       - Expiration date calculations need verification
 class AlertGenerationService {
   static final AlertGenerationService _instance = AlertGenerationService._internal();
   factory AlertGenerationService() => _instance;
@@ -545,3 +557,19 @@ class AlertFilter {
     this.actionRequiredOnly = false,
   });
 }
+
+// TODO-S1: AlertGenerationService - Persistence Implementation (HIGH PRIORITY)
+// Description: Implement persistence for alert read/resolved states
+// Details:
+// - Add database table for alert states (see TODO-D1 in db.dart)
+// - Implement markAlertAsRead() method to save read state to alert_states table
+// - Implement markAlertAsResolved() method to save resolved state to alert_states table
+// - Add alert state filtering in getFilteredAlerts() to exclude read/resolved alerts
+// - Add methods: getAlertState(alertId), isAlertRead(alertId), isAlertResolved(alertId)
+// Impact: Users can't track which alerts they've seen or resolved
+// Required methods to add:
+//   Future<void> markAlertAsRead(int alertId)
+//   Future<void> markAlertAsResolved(int alertId)
+//   Future<bool> isAlertRead(int alertId)
+//   Future<bool> isAlertResolved(int alertId)
+//   Future<List<Alert>> getFilteredAlerts({bool includeRead = false, bool includeResolved = false})

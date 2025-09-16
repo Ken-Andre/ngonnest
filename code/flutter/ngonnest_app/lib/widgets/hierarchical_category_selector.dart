@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import '../models/product_template.dart';
 import '../services/product_intelligence_service.dart';
 
@@ -47,6 +46,21 @@ class _HierarchicalCategorySelectorState extends State<HierarchicalCategorySelec
 
       // Charger les sous-catégories
       _currentSubcategories = await _intelligenceService.getCategoryHierarchy(currentCategory);
+
+      // TODO-W2: HierarchicalCategorySelector - Complete Implementation (MEDIUM PRIORITY)
+      // Description: Complete the category navigation and product selection
+      // Details:
+      // - Implement breadcrumb navigation with proper back navigation
+      // - Complete product template integration with family size consideration
+      // - Add category switching animations for better UX
+      // - Add proper error handling for failed category loads
+      // - Implement search within categories
+      // Impact: Category selection may not be fully intuitive
+      // Required features:
+      //   - Breadcrumb click navigation: _navigateToBreadcrumb(index)
+      //   - Smooth animations between category levels
+      //   - Product template filtering by family size
+      //   - Category favorites/recent selections
 
       // Charger les produits populaires de la catégorie actuelle
       _currentProducts = await _intelligenceService.getPopularProductsByCategory(currentCategory);

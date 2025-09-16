@@ -150,6 +150,7 @@ class ConnectivityService extends ChangeNotifier {
   }
 
   /// Libère les ressources
+  @override
   void dispose() {
     _connectivitySubscription?.cancel();
     _connectivitySubscription = null;

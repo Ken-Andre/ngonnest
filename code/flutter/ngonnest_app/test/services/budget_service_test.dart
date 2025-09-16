@@ -2,9 +2,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
 import 'package:sqflite/sqflite.dart';
-import '../../lib/services/budget_service.dart';
-import '../../lib/services/database_service.dart';
-import '../../lib/models/budget_category.dart';
+import 'package:ngonnest_app/services/budget_service.dart';
+import 'package:ngonnest_app/services/database_service.dart';
+import 'package:ngonnest_app/models/budget_category.dart';
 
 // Generate mocks
 @GenerateMocks([Database, DatabaseService])
@@ -36,11 +36,11 @@ void main() {
         final category = BudgetCategory(
           name: 'Test',
           limit: 100.0,
-          spent: 75.0,
+          spent: 80.5,
           month: '2024-01',
         );
 
-        expect(category.spendingPercentage, equals(0.75));
+        expect(category.spendingPercentage, closeTo(0.805, 0.001));
       });
 
       test('should detect over budget correctly', () {
@@ -85,11 +85,11 @@ void main() {
         final category = BudgetCategory(
           name: 'Test',
           limit: 100.0,
-          spent: 30.0,
+          spent: 33.5,
           month: '2024-01',
         );
 
-        expect(category.remainingBudget, equals(70.0));
+        expect(category.remainingBudget, equals(66.5));
       });
 
       test('should convert to and from map correctly', () {

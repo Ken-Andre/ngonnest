@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import '../../lib/services/budget_service.dart';
-import '../../lib/models/budget_category.dart';
+import 'package:ngonnest_app/services/budget_service.dart';
+import 'package:ngonnest_app/models/budget_category.dart';
 
 void main() {
   group('Budget Alert Tests', () {

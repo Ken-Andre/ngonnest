@@ -175,6 +175,20 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
       }).toList();
     }
 
+    // TODO-SC3: InventoryScreen - Enhanced Filtering (MEDIUM PRIORITY)
+    // Description: Implement urgent items filtering mentioned in comments
+    // Details:
+    // - Add "Urgent" filter option to show items expiring soon or low stock
+    // - Integrate with AlertGenerationService for urgent item detection
+    // - Add ExpiryFilter.urgent enum value
+    // - Add low stock detection based on quantite_restante vs seuil_alerte_quantite
+    // - Combine expiry and stock alerts for comprehensive urgent filtering
+    // Impact: Users cannot quickly filter urgent inventory items
+    // Required implementation:
+    //   case ExpiryFilter.urgent:
+    //     return (daysUntilExpiry >= 0 && daysUntilExpiry <= 3) || 
+    //            (objet.quantiteRestante <= (objet.seuilAlerteQuantite ?? 0))
+
     setState(() {
       _filteredConsommables = filteredConsommables;
       _filteredDurables = filteredDurables;

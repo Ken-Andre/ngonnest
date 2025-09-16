@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
-import '../../lib/widgets/budget_category_card.dart';
-import '../../lib/models/budget_category.dart';
+import 'package:ngonnest_app/widgets/budget_category_card.dart';
+import 'package:ngonnest_app/models/budget_category.dart';
 
 void main() {
   group('BudgetCategoryCard', () {
@@ -13,7 +13,7 @@ void main() {
         id: 1,
         name: 'Test Category',
         limit: 100.0,
-        spent: 75.0,
+        spent: 80.5,
         month: '2024-01',
       );
     });
@@ -31,6 +31,7 @@ void main() {
             onTap: onTap,
             onEdit: onEdit,
             onDelete: onDelete,
+            idFoyer: 1,
           ),
         ),
       );
@@ -42,8 +43,8 @@ void main() {
       await tester.pumpWidget(createTestWidget(testCategory));
 
       expect(find.text('Test Category'), findsOneWidget);
-      expect(find.text('75.0 € / 100.0 €'), findsOneWidget);
-      expect(find.text('75%'), findsOneWidget);
+      expect(find.text('80.5 € / 100.0 €'), findsOneWidget);
+      expect(find.text('81%'), findsOneWidget);
     });
 
     testWidgets('should show remaining budget when not over budget', (
@@ -53,13 +54,13 @@ void main() {
         id: 1,
         name: 'Under Budget',
         limit: 100.0,
-        spent: 60.0,
+        spent: 60.5,
         month: '2024-01',
       );
 
       await tester.pumpWidget(createTestWidget(underBudgetCategory));
 
-      expect(find.text('Reste: 40.0 €'), findsOneWidget);
+      expect(find.text('Reste: 39.5 €'), findsOneWidget);
     });
 
     testWidgets('should show over budget alert when spending exceeds limit', (

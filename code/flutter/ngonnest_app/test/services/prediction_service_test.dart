@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import '../../lib/models/objet.dart';
-import '../../lib/models/foyer.dart';
-import '../../lib/services/prediction_service.dart';
+import 'package:ngonnest_app/models/objet.dart';
+import 'package:ngonnest_app/models/foyer.dart';
+import 'package:ngonnest_app/services/prediction_service.dart';
 
 void main() {
   group('PredictionService Tests - US-4.1', () {

@@ -340,15 +340,6 @@ class NotificationService {
               backgroundColor: Colors.red,
               duration: Duration(seconds: 3),
             ),
-          );
-        }
-      }
-    }
-
-    // You can extend this to handle multiple recurring notifications
-    // by scheduling multiple notifications at different intervals
-  }
-
   static Future<void> cancelNotification(int id) async {
     await _flutterLocalNotificationsPlugin.cancel(id);
   }

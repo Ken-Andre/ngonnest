@@ -40,12 +40,21 @@ class _BudgetExpenseHistoryState extends State<BudgetExpenseHistory> {
       final history = await BudgetService.getMonthlyExpenseHistory(
         widget.idFoyer,
         widget.category.name,
-        monthsBack: 12,
+        monthsBack: 6, // Changed from 12 to 6
       );
 
       final loadTime = DateTime.now().difference(startTime);
       
-      // Ensure loading completes in under 2 seconds as per requirement
+      // TODO-W1: BudgetExpenseHistory - Performance Optimization (MEDIUM PRIORITY)
+      // Description: Optimize loading time to meet <2s requirement
+      // Details:
+      // - Implement data caching for frequently accessed expense history
+      // - Add pagination for large datasets (limit initial load to 6 months)
+      // - Optimize database queries with proper indexing
+      // - Add lazy loading for older data
+      // - Consider using FutureBuilder with cached results
+      // Impact: Expense history may load slowly for users with extensive data
+      // Current performance check:
       if (loadTime.inMilliseconds > 2000) {
         print('Warning: Monthly expense history loaded in ${loadTime.inMilliseconds}ms (>2s requirement)');
       }

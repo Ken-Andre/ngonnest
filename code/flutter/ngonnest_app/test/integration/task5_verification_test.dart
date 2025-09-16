@@ -368,7 +368,7 @@ void main() {
     });
 
     test('Task 5 Implementation Summary', () {
-      print('\n' + '=' * 60);
+      print('\n${'=' * 60}');
       print('TASK 5 IMPLEMENTATION COMPLETE');
       print('=' * 60);
       print(

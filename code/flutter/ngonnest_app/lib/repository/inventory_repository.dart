@@ -6,6 +6,24 @@ import '../services/error_logger_service.dart';
 /// Repository for Inventory (Objet) data operations
 /// Implements the Repository pattern as a wrapper around DatabaseService
 /// to comply with US-3.2 requirements for functional CRUD inventory
+/// 
+/// ⚠️ CRITICAL TODOs FOR CLIENT DELIVERY:
+/// TODO: INVENTORY_CRUD_VALIDATION - CRUD operations may not work properly
+///       - Database connection recovery logic not tested
+///       - Update operations may fail with complex data
+///       - Delete operations may not cascade properly
+/// TODO: INVENTORY_PREDICTION_INTEGRATION - PredictionService integration incomplete
+///       - Rupture date calculations may be inaccurate
+///       - Automatic updates may not trigger properly
+///       - Prediction logic not validated with real data
+/// TODO: INVENTORY_ERROR_RECOVERY - Error recovery mechanisms incomplete
+///       - Database connection errors may not recover gracefully
+///       - Transaction rollback not implemented
+///       - Data consistency not guaranteed during failures
+/// TODO: INVENTORY_PERFORMANCE - Performance issues with large inventories
+///       - Queries may be slow with many items
+///       - Filtering operations not optimized
+///       - Memory usage may be excessive
 class InventoryRepository {
   final DatabaseService _databaseService;
 

@@ -6,6 +6,23 @@ import '../providers/foyer_provider.dart';
 import '../widgets/main_navigation_wrapper.dart';
 import '../services/navigation_service.dart';
 
+/// ⚠️ CRITICAL TODOs FOR CLIENT DELIVERY:
+/// TODO: SAVINGS_TIPS_DATA - Savings tips generation may not work
+///       - BudgetService.generateSavingsTips() may return empty or invalid data
+///       - Spending history calculation needs validation
+///       - Tips personalization logic not tested
+/// TODO: SAVINGS_TIPS_UI - UI components may not display correctly
+///       - Empty state handling incomplete
+///       - Chart rendering may fail with insufficient data
+///       - Tip cards may not show proper urgency indicators
+/// TODO: SAVINGS_TIPS_INTEGRATION - Service integration incomplete
+///       - BudgetService integration not fully tested
+///       - FoyerProvider dependency may cause loading issues
+///       - Data refresh functionality may not work
+/// TODO: SAVINGS_TIPS_PERFORMANCE - Performance issues with data processing
+///       - Monthly breakdown calculation may be slow
+///       - Chart rendering may cause UI freezing
+///       - Large datasets not properly handled
 class SavingsTipsScreen extends StatefulWidget {
   const SavingsTipsScreen({super.key});
 

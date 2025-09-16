@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import '../../lib/widgets/inventory_filter_panel.dart';
+import 'package:ngonnest_app/widgets/inventory_filter_panel.dart';
 
 void main() {
   group('InventoryFilterPanel', () {

@@ -104,7 +104,7 @@ class ErrorLoggerService {
     // Pour les erreurs non prédéfinies, utiliser un hash déterministe
     final operationHash = operation.hashCode % 1000;
     final errorTypeHash = errorType.hashCode % 900;
-    return 'ERR_${operationHash}_${errorTypeHash}';
+    return 'ERR_${operationHash}_$errorTypeHash';
   }
 
   /// Génère un message utilisateur adapté selon le type d'erreur

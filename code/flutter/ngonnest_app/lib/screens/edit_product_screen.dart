@@ -11,6 +11,19 @@ import '../services/budget_service.dart';
 import '../widgets/main_navigation_wrapper.dart';
 import '../services/navigation_service.dart';
 
+/// ⚠️ CRITICAL TODOs FOR CLIENT DELIVERY:
+/// TODO: EDIT_VALIDATION - Form validation may not work properly
+///       - Smart validator integration needs testing
+///       - Category changes not properly validated
+/// TODO: EDIT_SAVE_FUNCTIONALITY - Save operation may fail
+///       - Budget alert integration after edit not tested
+///       - Database update operations need validation
+/// TODO: EDIT_UI_FEEDBACK - User feedback incomplete
+///       - Loading states during save not properly handled
+///       - Error messages may not display correctly
+/// TODO: EDIT_NAVIGATION - Navigation after edit needs testing
+///       - Return to inventory screen may not refresh data
+///       - Edit result not properly communicated to parent
 class EditProductScreen extends StatefulWidget {
   final Objet objet;
 

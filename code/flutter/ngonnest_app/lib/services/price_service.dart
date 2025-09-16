@@ -3,6 +3,22 @@ import '../models/product_price.dart';
 import '../services/database_service.dart';
 import '../services/error_logger_service.dart';
 
+/// Service for managing product prices and price estimation
+/// Provides price data for essential Cameroonian products and price estimation functionality
+/// 
+/// ⚠️ CRITICAL TODOs FOR CLIENT DELIVERY:
+/// TODO: PRICE_DATA_VALIDATION - Price data may be outdated or inaccurate
+///       - Cameroonian prices need market validation
+///       - Currency conversion rates not updated dynamically
+/// TODO: PRICE_SEARCH_FUNCTIONALITY - Search may not work as expected
+///       - Product name matching is basic string comparison
+///       - No fuzzy search or synonym support
+/// TODO: PRICE_ESTIMATION_ACCURACY - Price estimation logic needs validation
+///       - Category-based estimation may be inaccurate
+///       - No regional price variations considered
+/// TODO: PRICE_DATABASE_INTEGRATION - Service not integrated with inventory
+///       - Prices not automatically applied to products
+///       - No price history tracking
 class PriceService {
   static final DatabaseService _databaseService = DatabaseService();
 

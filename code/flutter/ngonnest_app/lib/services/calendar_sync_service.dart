@@ -1,7 +1,20 @@
 import 'package:calendar_events/calendar_events.dart';
 import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
-
+/// Service for synchronizing calendar events with device calendar
+/// Handles permissions and event creation for reminders and alerts
+/// 
+/// ⚠️ CRITICAL TODOs FOR CLIENT DELIVERY:
+/// TODO: CALENDAR_PERMISSIONS - Permission handling may fail on some devices
+///       - iOS calendar permissions not fully tested
+///       - Android permission flow needs validation
+/// TODO: CALENDAR_INTEGRATION - Limited calendar functionality
+///       - No event deletion when alerts are resolved
+///       - No recurring event support
+///       - Event creation may fail silently
+/// TODO: CALENDAR_ERROR_HANDLING - Insufficient error handling
+///       - Calendar unavailable scenarios not handled
+///       - No fallback when calendar access denied
 class CalendarSyncService {
   CalendarSyncService._();
 
@@ -13,7 +26,7 @@ class CalendarSyncService {
 
   Future<bool> _requestPermissions() async {
     if (kIsWeb) {
-      return false;
+          return false;
     }
 
     if (defaultTargetPlatform == TargetPlatform.iOS) {
@@ -26,7 +39,11 @@ class CalendarSyncService {
     if (status.isGranted) {
       return true;
     }
-    return (await Permission.calendar.request()).isGranted;
+    else{
+      return (await Permission.calendar.request()).isGranted;
+    }  
+    // Unsupported platforms (desktop, etc.)
+    return false;
   }
 
   Future<void> addEvent({

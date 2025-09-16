@@ -810,7 +810,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Text(AppLocalizations.of(context)?.accept ?? 'Accepter'),
             onPressed: () {
               if (_hasAcceptedCloudSync) {
-                // TODO: Implement cloud synchronization
+                // TODO-SC2: Implement cloud synchronization
+              // Details: Add proper cloud sync service integration with user consent handling
                 setState(() => _localDataOnly = false);
                 Navigator.of(context).pop();
                 _showSyncEnabledMessage();
@@ -896,7 +897,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Text(AppLocalizations.of(context)?.send ?? 'Envoyer'),
             onPressed: () {
               if (feedbackMessage.trim().isNotEmpty) {
-                // TODO: Implement server-side feedback submission
+                // TODO-SC2: SettingsScreen - Complete Implementation (MEDIUM PRIORITY)
+                // Description: Implement missing dialog methods and cloud sync consent
+                // Details: Implement server-side feedback submission with proper API integration
+                // Impact: Feedback feature is non-functional without backend integration
                 Navigator.of(context).pop();
                 _showFeedbackSentMessage();
               }
@@ -1005,7 +1009,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Text(AppLocalizations.of(context)?.report ?? 'Signaler'),
             onPressed: () {
               if (bugDescription.trim().isNotEmpty) {
-                // TODO: Implement bug report handling with Telegram integration
+                // TODO-SC2: Implement bug report handling with Telegram integration
+                // Details: Add proper API call to submit bug reports to backend service
+                // Required: Integrate with Telegram bot API for automated bug reporting
                 Navigator.of(context).pop();
                 _showBugReportedMessage();
               }
@@ -1414,7 +1420,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // TODO: Implement complete data deletion
+  // TODO-SC2: Implement complete data deletion
+  // Details: Add proper database cleanup and app state reset functionality
   Future<void> _performCompleteDataDeletion() async {
     try {
       _showDeletionSuccessDialog();
@@ -1444,7 +1451,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: const Text('OK'),
             onPressed: () {
               Navigator.of(context).pop();
-              // TODO: Implement app restart or navigation to welcome screen
+              // TODO-SC2: Implement app restart or navigation to welcome screen
+              // Details: Add proper app restart mechanism after data deletion
             },
           ),
         ],
