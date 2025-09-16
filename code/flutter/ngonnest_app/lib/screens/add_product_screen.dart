@@ -13,6 +13,8 @@ import '../services/navigation_service.dart';
 import '../services/budget_service.dart';
 import '../widgets/error_feedback_widget.dart';
 import '../widgets/smart_product_search.dart';
+import '../widgets/smart_product_suggestions.dart';
+import '../services/product_suggestion_service.dart';
 
 import '../widgets/smart_quantity_selector.dart';
 import '../widgets/dropdown_categories_durables.dart';
@@ -196,6 +198,50 @@ class _AddProductScreenState extends State<AddProductScreen> {
     });
   }
 
+  /// Gère la sélection d'une suggestion de produit
+  void _onSuggestionSelected(ProductSuggestion suggestion) {
+    setState(() {
+      _productNameController.text = suggestion.name;
+      _selectedCategory = suggestion.category;
+      _initialQuantityController.text = suggestion.estimatedQuantity.toString();
+      _selectedUnit = suggestion.unit;
+    });
+
+    // Afficher un feedback à l'utilisateur
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('✨ ${suggestion.name} ajouté - ${suggestion.reason}'),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  /// Gère la sélection d'un produit depuis SmartProductSearch
+  void _onProductSelected(ProductTemplate product) {
+    setState(() {
+      _productNameController.text = product.name;
+      _selectedProductTemplate = product;
+      if (product.defaultQuantity != null) {
+        _initialQuantityController.text = product.defaultQuantity.toString();
+      }
+      if (product.category != null && product.category != _selectedCategory) {
+        _selectedCategory = product.category!;
+      }
+    });
+
+    // Afficher un message si la catégorie a changé
+    if (product.category != null && product.category != _selectedCategory) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Catégorie mise à jour vers "${product.category}"'),
+          backgroundColor: Colors.blue,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
   Future<void> _saveProduct() async {
     print('🔄 SAVE PRODUCT: Starting save process...');
     if (kDebugMode) {
@@ -321,14 +367,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
     }
   }
 
-  // @override
-  // void dispose() {
-  //   _productNameController.dispose();
-  //   _initialQuantityController.dispose();
-  //   _frequencyController.dispose();
-  //   _commentairesController.dispose();
-  //   super.dispose();
-  // }
+
 
   @override
   Widget build(BuildContext context) {
@@ -405,34 +444,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 // Product name with smart suggestions
                 _buildSectionTitle('Nom du produit'),
                 SmartProductSearch(
-                  controller:
-                      _productNameController, // Utiliser le controller externe
-                  category: _isConsumable ? _selectedCategory : 'durables',
-                  onProductSelected: (product) {
-                    setState(() {
-                      // Mettre à jour automatiquement la catégorie selon le produit sélectionné
-                      _selectedCategory = product.category;
-                      _productNameController.text = product.name;
-                      if (product.defaultQuantity != null) {
-                        _initialQuantityController.text = product
-                            .defaultQuantity
-                            .toString();
-                      }
-                    });
-
-                    // Afficher un message si la catégorie a changé
-                    if (product.category != _selectedCategory) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            'Catégorie mise à jour vers "${product.category}"',
-                          ),
-                          backgroundColor: Colors.blue,
-                          duration: const Duration(seconds: 2),
-                        ),
-                      );
-                    }
-                  },
+                  category: _isConsumable ? _selectedCategory : '',
+                  onProductSelected: _onProductSelected,
                   onTextChanged: (text) {
                     // Le controller externe est déjà synchronisé
                     // Pas besoin de faire _productNameController.text = text;
