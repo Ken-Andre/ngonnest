@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
-const int _databaseVersion = 8; // Incremented version
+const int _databaseVersion = 9; // Incremented version for performance optimization
 
 Future<Database> initDatabase() async {
   final databasesPath = await getDatabasesPath();
@@ -261,13 +261,46 @@ Future<void> _migrateToVersion8(Database db) async {
       )
     ''');
     
-    // Create index for faster searches
+    // Create optimized indexes for faster searches
     await db.execute('CREATE INDEX idx_product_prices_name ON product_prices(name)');
     await db.execute('CREATE INDEX idx_product_prices_category ON product_prices(category)');
+    await db.execute('CREATE INDEX idx_product_prices_name_category ON product_prices(name, category)');
     
     debugPrint('[DB Migration V8] ✅ product_prices table created.');
   } else {
     debugPrint('[DB Migration V8] ✅ product_prices table already exists.');
+  }
+}
+
+Future<void> _migrateToVersion9(Database db) async {
+  debugPrint('[DB Migration V9] Adding performance indexes for Phase 3 optimization');
+  
+  // Add missing indexes for frequently queried tables
+  try {
+    // Index for objet table - most frequent queries
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_objet_foyer ON objet(id_foyer)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_objet_categorie ON objet(categorie)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_objet_type ON objet(type)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_objet_date_rupture ON objet(date_rupture_prev)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_objet_quantite ON objet(quantite_restante)');
+    
+    // Index for alertes table
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_alertes_objet ON alertes(id_objet)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_alertes_type ON alertes(type_alerte)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_alertes_lu ON alertes(lu)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_alertes_date ON alertes(date_creation)');
+    
+    // Index for budget_categories table
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_budget_month ON budget_categories(month)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_budget_name_month ON budget_categories(name, month)');
+    
+    // Index for reachat_log table
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_reachat_objet ON reachat_log(id_objet)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_reachat_date ON reachat_log(date)');
+    
+    debugPrint('[DB Migration V9] ✅ Performance indexes created.');
+  } catch (e) {
+    debugPrint('[DB Migration V9] ⚠️ Some indexes may already exist: $e');
   }
 }
 
@@ -281,6 +314,7 @@ final Map<int, Future<void> Function(Database)> _migrations = {
   6: _migrateToVersion6,
   7: _migrateToVersion7,
   8: _migrateToVersion8,
+  9: _migrateToVersion9,
 };
 
 // --- Debug (Optional, can be removed or conditional) ---

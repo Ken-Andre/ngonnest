@@ -1,14 +1,26 @@
-import 'package:sqflite/sqflite.dart';
+import 'package:flutter/foundation.dart';
 import '../models/budget_category.dart';
 import '../models/objet.dart';
+import '../models/foyer.dart';
 import '../models/product_price.dart';
-import '../services/database_service.dart';
-import '../services/notification_service.dart';
-import '../services/error_logger_service.dart';
-import '../services/price_service.dart';
+import 'database_service.dart';
+import 'price_service.dart';
+import 'error_logger_service.dart';
 
-class BudgetService {
-  static final DatabaseService _databaseService = DatabaseService();
+/// Service de gestion des budgets avec recommandations intelligentes
+/// 
+/// Gère les catégories budgétaires, le suivi des dépenses, les alertes
+/// et génère des conseils d'économie personnalisés pour les foyers camerounais.
+/// 
+/// Fonctionnalités principales:
+/// - Gestion des catégories budgétaires par mois
+/// - Synchronisation automatique avec les achats
+/// - Recommandations budgétaires basées sur le profil familial
+/// - Conseils d'économie contextualisés
+/// - Analyse des tendances de dépenses
+/// - Alertes de dépassement budgétaire
+class BudgetService extends ChangeNotifier {
+  final DatabaseService _databaseService = DatabaseService();
 
   /// Get current month in YYYY-MM format
   static String getCurrentMonth() {
@@ -20,7 +32,7 @@ class BudgetService {
   static Future<List<BudgetCategory>> getBudgetCategories(
       {String? month}) async {
     try {
-      final db = await _databaseService.database;
+      final db = await DatabaseService().database;
       final targetMonth = month ?? getCurrentMonth();
 
       final List<Map<String, dynamic>> maps = await db.query(
@@ -46,7 +58,7 @@ class BudgetService {
   /// Create a new budget category
   static Future<int> createBudgetCategory(BudgetCategory category) async {
     try {
-      final db = await _databaseService.database;
+      final db = await DatabaseService().database;
       return await db.insert('budget_categories', category.toMap());
     } catch (e, stackTrace) {
       await ErrorLoggerService.logError(
@@ -63,7 +75,7 @@ class BudgetService {
   /// Update an existing budget category
   static Future<int> updateBudgetCategory(BudgetCategory category) async {
     try {
-      final db = await _databaseService.database;
+      final db = await DatabaseService().database;
       return await db.update(
         'budget_categories',
         category.copyWith(updatedAt: DateTime.now()).toMap(),
@@ -85,7 +97,7 @@ class BudgetService {
   /// Delete a budget category
   static Future<int> deleteBudgetCategory(int id) async {
     try {
-      final db = await _databaseService.database;
+      final db = await DatabaseService().database;
       return await db.delete(
         'budget_categories',
         where: 'id = ?',
@@ -151,7 +163,7 @@ class BudgetService {
   static Future<double> _calculateCategorySpending(
       int idFoyer, String categoryName, String month) async {
     try {
-      final db = await _databaseService.database;
+      final db = await DatabaseService().database;
 
       // Parse month to get start and end dates
       final monthParts = month.split('-');
@@ -194,13 +206,9 @@ class BudgetService {
     try {
       final percentage = (category.spendingPercentage * 100).round();
 
-      await NotificationService.showBudgetAlert(
-        id: category.id ?? DateTime.now().millisecondsSinceEpoch,
-        categoryName: category.name,
-        spentAmount: category.spent,
-        limitAmount: category.limit,
-        percentage: percentage,
-      );
+      // TODO: Implement NotificationService.showBudgetAlert when service is available
+      // For now, we'll log the alert to console
+      debugPrint('BUDGET ALERT: ${category.name} exceeded budget by $percentage% (Spent: ${category.spent}, Limit: ${category.limit})');
     } catch (e, stackTrace) {
       await ErrorLoggerService.logError(
         component: 'BudgetService',
@@ -217,7 +225,7 @@ class BudgetService {
       int idFoyer, String categoryName,
       {int monthsBack = 12}) async {
     try {
-      final db = await _databaseService.database;
+      final db = await DatabaseService().database;
       final now = DateTime.now();
       final history = <Map<String, dynamic>>[];
 
@@ -392,7 +400,7 @@ class BudgetService {
   /// Calculer automatiquement le budget recommandé basé sur le profil foyer
   static Future<Map<String, double>> calculateRecommendedBudget(int idFoyer) async {
     try {
-      final db = await _databaseService.database;
+      final db = await DatabaseService().database;
       
       // Récupérer les infos du foyer
       final foyerResult = await db.query(
@@ -547,9 +555,9 @@ class BudgetService {
   /// Conseils généraux basés sur l'historique
   static Future<List<Map<String, dynamic>>> _getGeneralSavingsTips(int idFoyer, String month) async {
     final tips = <Map<String, dynamic>>[];
-    
+
     try {
-      final db = await _databaseService.database;
+      final db = await DatabaseService().database;
       
       // Analyser les achats fréquents
       final frequentItems = await db.rawQuery('''
@@ -601,7 +609,7 @@ class BudgetService {
   /// Obtenir l'historique des dépenses avec tendances
   static Future<Map<String, dynamic>> getSpendingHistory(int idFoyer, {int monthsBack = 6}) async {
     try {
-      final db = await _databaseService.database;
+      final db = await DatabaseService().database;
       final now = DateTime.now();
       final history = <Map<String, dynamic>>[];
       

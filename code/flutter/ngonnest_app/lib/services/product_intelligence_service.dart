@@ -2,17 +2,44 @@ import 'dart:convert';
 import '../models/product_template.dart';
 
 /// Service centralisé pour le renseignement intelligent des produits
-/// Gère recherche, suggestions et apprentissage des préférences utilisateur
+/// 
+/// Gère la recherche intelligente, les suggestions automatiques et 
+/// l'apprentissage des préférences utilisateur pour NgonNest.
+/// 
+/// Fonctionnalités principales:
+/// - Recherche de produits avec scoring de pertinence
+/// - Suggestions basées sur la taille familiale
+/// - Cache optimisé pour les performances
+/// - Calculs de quantités et fréquences recommandées
+/// - Apprentissage des préférences utilisateur
 class ProductIntelligenceService {
   static final ProductIntelligenceService _instance = ProductIntelligenceService._internal();
   factory ProductIntelligenceService() => _instance;
 
   ProductIntelligenceService._internal();
 
-  // Cache des suggestions populaires
+  // Cache des suggestions populaires avec gestion mémoire optimisée
   final Map<String, List<ProductTemplate>> _suggestionsCache = {};
+  static const int _maxCacheSize = 50; // Limite pour éviter la surcharge mémoire
+  
+  /// Nettoie le cache si nécessaire pour optimiser la mémoire
+  void _cleanCacheIfNeeded() {
+    if (_suggestionsCache.length > _maxCacheSize) {
+      // Garde seulement les 25 entrées les plus récentes
+      final keys = _suggestionsCache.keys.toList();
+      final keysToRemove = keys.take(keys.length - 25);
+      for (final key in keysToRemove) {
+        _suggestionsCache.remove(key);
+      }
+    }
+  }
 
   /// Recherche intelligente de produits avec auto-suggestions
+  /// 
+  /// [query] - Terme de recherche
+  /// [category] - Catégorie de produits à filtrer
+  /// 
+  /// Retourne une liste de [ProductTemplate] triée par pertinence
   Future<List<ProductTemplate>> searchProducts(String query, String category) async {
     if (query.isEmpty) return [];
 
@@ -120,7 +147,11 @@ class ProductIntelligenceService {
     print('Learning from user choice: $productId in $category for family size $familySize');
   }
 
-  /// Produits populaires par catégorie
+  /// Produits populaires par catégorie avec cache optimisé
+  /// 
+  /// [category] - Catégorie de produits à récupérer
+  /// 
+  /// Retourne les 5 produits les plus populaires de la catégorie
   Future<List<ProductTemplate>> getPopularProductsByCategory(String category) async {
     if (_suggestionsCache.containsKey(category)) {
       return _suggestionsCache[category]!;
@@ -133,6 +164,7 @@ class ProductIntelligenceService {
                           ..sort((a, b) => b.popularity.compareTo(a.popularity));
 
       _suggestionsCache[category] = sorted.take(5).toList();
+      _cleanCacheIfNeeded(); // Optimisation mémoire
       return _suggestionsCache[category]!;
     } catch (e) {
       print('Erreur récupération produits populaires: $e');

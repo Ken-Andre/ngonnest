@@ -8,6 +8,17 @@ import '../models/alert.dart';
 import '../db.dart';
 import 'error_logger_service.dart';
 
+/// Service centralisé pour la gestion de la base de données SQLite
+/// 
+/// Implémente le pattern Singleton avec gestion des connexions,
+/// retry automatique et optimisations de performance pour NgonNest.
+/// 
+/// Fonctionnalités principales:
+/// - Gestion thread-safe des connexions SQLite
+/// - Retry automatique en cas d'échec
+/// - Cache des connexions avec validation périodique
+/// - Optimisations mémoire et performance
+/// - Logging des erreurs intégré
 class DatabaseService {
   static Database? _database;
   static bool _isConnected = false;
