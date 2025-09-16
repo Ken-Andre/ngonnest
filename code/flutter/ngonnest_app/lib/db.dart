@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
-const int _databaseVersion = 7; // Incremented version
+const int _databaseVersion = 8; // Incremented version
 
 Future<Database> initDatabase() async {
   final databasesPath = await getDatabasesPath();
@@ -240,6 +240,37 @@ Future<void> _migrateToVersion7(Database db) async {
   }
 }
 
+Future<void> _migrateToVersion8(Database db) async {
+  debugPrint('[DB Migration V8] Creating product_prices table for Phase 2');
+  final tables = await db.rawQuery(
+    "SELECT name FROM sqlite_master WHERE type='table' AND name='product_prices'",
+  );
+  if (tables.isEmpty) {
+    await db.execute('''
+      CREATE TABLE product_prices (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        category TEXT NOT NULL,
+        price_fcfa REAL NOT NULL,
+        price_euro REAL NOT NULL,
+        unit TEXT NOT NULL DEFAULT 'piece',
+        brand TEXT,
+        description TEXT,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    ''');
+    
+    // Create index for faster searches
+    await db.execute('CREATE INDEX idx_product_prices_name ON product_prices(name)');
+    await db.execute('CREATE INDEX idx_product_prices_category ON product_prices(category)');
+    
+    debugPrint('[DB Migration V8] ✅ product_prices table created.');
+  } else {
+    debugPrint('[DB Migration V8] ✅ product_prices table already exists.');
+  }
+}
+
 // --- Migrations Map ---
 
 final Map<int, Future<void> Function(Database)> _migrations = {
@@ -249,6 +280,7 @@ final Map<int, Future<void> Function(Database)> _migrations = {
   5: _migrateToVersion5,
   6: _migrateToVersion6,
   7: _migrateToVersion7,
+  8: _migrateToVersion8,
 };
 
 // --- Debug (Optional, can be removed or conditional) ---
@@ -283,6 +315,7 @@ Future<void> initDatabaseAndDebug() async {
   await _debugLogTableStructure(db, 'objet');
   await _debugLogTableStructure(db, 'alertes'); // Corrected this line
   await _debugLogTableStructure(db, 'budget_categories');
+  await _debugLogTableStructure(db, 'product_prices');
   await _debugLogTableStructure(db, 'reachat_log');
   // db.close(); // Close if only for debug
 }

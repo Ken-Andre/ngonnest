@@ -30,6 +30,8 @@ import 'screens/preferences_screen.dart';
 import 'providers/locale_provider.dart';
 import 'providers/foyer_provider.dart';
 import 'services/settings_service.dart';
+import 'services/price_service.dart';
+import 'services/budget_service.dart';
 import 'models/objet.dart'; // Added import for Objet
 
 void main() async {
@@ -261,6 +263,9 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> _checkUserStatus() async {
     try {
+      // Initialize Phase 2 components
+      await _initializePhase2Components();
+      
       final hasProfile = await HouseholdService.hasHouseholdProfile();
 
       if (mounted) {
@@ -275,6 +280,31 @@ class _SplashScreenState extends State<SplashScreen>
       if (mounted) {
         Navigator.of(context).pushReplacementNamed('/onboarding');
       }
+    }
+  }
+
+  Future<void> _initializePhase2Components() async {
+    try {
+      // Initialize product prices database
+      await PriceService.initializeProductPrices();
+      
+      // Initialize recommended budgets if user has a profile
+      final hasProfile = await HouseholdService.hasHouseholdProfile();
+      if (hasProfile) {
+        final foyerId = context.read<FoyerProvider>().foyerId;
+        if (foyerId != null) {
+          await BudgetService.initializeRecommendedBudgets(foyerId);
+        }
+      }
+    } catch (e) {
+      // Log error but don't block app startup
+      await ErrorLoggerService.logError(
+        component: 'SplashScreen',
+        operation: '_initializePhase2Components',
+        error: e,
+        stackTrace: StackTrace.current,
+        severity: ErrorSeverity.medium,
+      );
     }
   }
 
