@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
@@ -9,6 +10,7 @@ import '../services/household_service.dart';
 import '../services/smart_validator.dart';
 import '../services/error_logger_service.dart';
 import '../services/navigation_service.dart';
+import '../services/budget_service.dart';
 import '../widgets/error_feedback_widget.dart';
 import '../widgets/smart_product_search.dart';
 
@@ -18,6 +20,7 @@ import '../widgets/main_navigation_wrapper.dart';
 import '../services/product_intelligence_service.dart';
 import '../models/product_template.dart';
 import '../theme/app_theme.dart';
+// import '../config/cameroon_products.dart';
 
 class AddProductScreen extends StatefulWidget {
   final bool isConsumable;
@@ -36,6 +39,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   bool _isConsumable = true;
   int? _foyerId;
+  int _householdSize = 4; // Taille réelle du foyer
   bool _isLoading = true;
   bool _isSaving = false;
 
@@ -112,6 +116,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
         print('✅ FOYER FOUND: ${foyer.id} - ${foyer.nbPersonnes} personnes');
         setState(() {
           _foyerId = foyer.id;
+          _householdSize = foyer.nbPersonnes; // Récupérer la vraie taille
           _isLoading = false;
         });
       } else {
@@ -125,6 +130,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
         print('✅ DEFAULT FOYER CREATED: $defaultFoyerId');
         setState(() {
           _foyerId = defaultFoyerId;
+          _householdSize = 4; // Taille du foyer par défaut
           _isLoading = false;
         });
       }
@@ -146,8 +152,6 @@ class _AddProductScreenState extends State<AddProductScreen> {
       }
     }
   }
-
-
 
   @override
   void dispose() {
@@ -194,9 +198,11 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   Future<void> _saveProduct() async {
     print('🔄 SAVE PRODUCT: Starting save process...');
-    print(
-      '🔄 SAVE PRODUCT: Form validation: ${_formKey.currentState?.validate()}',
-    );
+    if (kDebugMode) {
+      print(
+        '🔄 SAVE PRODUCT: Form validation: ${_formKey.currentState?.validate()}',
+      );
+    }
     print('🔄 SAVE PRODUCT: Foyer ID: $_foyerId');
     print('🔄 SAVE PRODUCT: Product name: ${_productNameController.text}');
     print('🔄 SAVE PRODUCT: Is consumable: $_isConsumable');
@@ -254,6 +260,20 @@ class _AddProductScreenState extends State<AddProductScreen> {
       final productId = await _inventoryRepository.create(objet);
       print('✅ SAVE PRODUCT: Product created with ID: $productId');
 
+      // Déclencher les alertes budget après ajout d'un produit
+      if (_isConsumable && _foyerId != null) {
+        try {
+          await BudgetService.checkBudgetAlertsAfterPurchase(
+            _foyerId!,
+            _selectedCategory,
+          );
+          print('✅ BUDGET ALERTS: Checked after product creation');
+        } catch (e) {
+          print('⚠️ BUDGET ALERTS: Error checking alerts: $e');
+          // Ne pas bloquer l'ajout du produit si les alertes échouent
+        }
+      }
+
       if (mounted) {
         print('🔄 SAVE PRODUCT: Showing success snackbar and popping screen');
         ScaffoldMessenger.of(context).showSnackBar(
@@ -269,7 +289,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
           Navigator.of(context).pop(true);
         } else {
           // Fallback: Navigate to inventory route if pop is not available
-          Navigator.of(context, rootNavigator: true).pushReplacementNamed('/inventory');
+          Navigator.of(
+            context,
+            rootNavigator: true,
+          ).pushReplacementNamed('/inventory');
         }
       }
     } catch (e, stackTrace) {
@@ -382,7 +405,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 // Product name with smart suggestions
                 _buildSectionTitle('Nom du produit'),
                 SmartProductSearch(
-                  controller: _productNameController, // Utiliser le controller externe
+                  controller:
+                      _productNameController, // Utiliser le controller externe
                   category: _isConsumable ? _selectedCategory : 'durables',
                   onProductSelected: (product) {
                     setState(() {
@@ -395,12 +419,14 @@ class _AddProductScreenState extends State<AddProductScreen> {
                             .toString();
                       }
                     });
-                    
+
                     // Afficher un message si la catégorie a changé
                     if (product.category != _selectedCategory) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Catégorie mise à jour vers "${product.category}"'),
+                          content: Text(
+                            'Catégorie mise à jour vers "${product.category}"',
+                          ),
                           backgroundColor: Colors.blue,
                           duration: const Duration(seconds: 2),
                         ),
@@ -533,7 +559,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
                       color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.outline.withOpacity(0.5),
                       ),
                     ),
                     child: DropdownButtonFormField<String>(
@@ -543,20 +571,46 @@ class _AddProductScreenState extends State<AddProductScreen> {
                         contentPadding: EdgeInsets.zero,
                       ),
                       items: const [
-                        DropdownMenuItem(value: 'hygiene', child: Text('🧴 Hygiène')),
-                        DropdownMenuItem(value: 'menage', child: Text('🧹 Ménage & Entretien')),
-                        DropdownMenuItem(value: 'nourriture', child: Text('🍳 Nourriture & Boissons')),
-                        DropdownMenuItem(value: 'bureau', child: Text('📋 Fournitures Bureau')),
-                        DropdownMenuItem(value: 'maintenance', child: Text('🔧 Maintenance & Réparation')),
-                        DropdownMenuItem(value: 'securite', child: Text('🛡️ Sécurité & Protection')),
-                        DropdownMenuItem(value: 'evenementiel', child: Text('🎉 Événementiel')),
-                        DropdownMenuItem(value: 'autre', child: Text('📦 Autre')),
+                        DropdownMenuItem(
+                          value: 'hygiene',
+                          child: Text('🧴 Hygiène'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'menage',
+                          child: Text('🧹 Ménage & Entretien'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'nourriture',
+                          child: Text('🍳 Nourriture & Boissons'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'bureau',
+                          child: Text('📋 Fournitures Bureau'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'maintenance',
+                          child: Text('🔧 Maintenance & Réparation'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'securite',
+                          child: Text('🛡️ Sécurité & Protection'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'evenementiel',
+                          child: Text('🎉 Événementiel'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'autre',
+                          child: Text('📦 Autre'),
+                        ),
                       ],
-                      onChanged: _isLoading ? null : (value) {
-                        if (value != null) {
-                          setState(() => _selectedCategory = value);
-                        }
-                      },
+                      onChanged: _isLoading
+                          ? null
+                          : (value) {
+                              if (value != null) {
+                                setState(() => _selectedCategory = value);
+                              }
+                            },
                       hint: const Text('Choisir une catégorie'),
                     ),
                   ),
@@ -1071,13 +1125,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   /// Obtient la taille du foyer depuis le service Household
   int _getHouseholdSize() {
-    // Intégration avec HouseholdService pour obtenir la taille réelle
-    try {
-      // Note: This needs to be awaited properly in a real implementation
-      return 4; // Valeur par défaut temporaire
-    } catch (e) {
-      print('Erreur récupération taille foyer: $e');
-      return 4; // Valeur par défaut
-    }
+    // Retourne la taille réelle du foyer chargée depuis HouseholdService
+    return _householdSize;
   }
 }

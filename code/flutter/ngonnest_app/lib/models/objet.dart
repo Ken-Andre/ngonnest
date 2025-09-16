@@ -1,4 +1,5 @@
 enum TypeObjet { consommable, durable }
+
 enum MethodePrevision { frequence, debit }
 
 class Objet {
@@ -22,6 +23,7 @@ class Objet {
   final int seuilAlerteJours;
   final double seuilAlerteQuantite;
   final String? commentaires; // Commentaires personnels pour durables
+  final DateTime? dateModification; // Added
 
   Objet({
     this.id,
@@ -43,7 +45,8 @@ class Objet {
     this.consommationJour,
     this.seuilAlerteJours = 3,
     this.seuilAlerteQuantite = 1,
-    this.commentaires, // Optionnel pour durables
+    this.commentaires,
+    this.dateModification, // Added
   });
 
   Map<String, dynamic> toMap() {
@@ -68,6 +71,7 @@ class Objet {
       'seuil_alerte_jours': seuilAlerteJours,
       'seuil_alerte_quantite': seuilAlerteQuantite,
       'commentaires': commentaires,
+      'date_modification': dateModification?.toIso8601String(), // Added
     };
   }
 
@@ -77,24 +81,47 @@ class Objet {
       idFoyer: map['id_foyer'],
       nom: map['nom'],
       categorie: map['categorie'],
-      type: TypeObjet.values.firstWhere((e) => e.toString().split('.').last == map['type']),
+      type: TypeObjet.values.firstWhere(
+        (e) => e.toString().split('.').last == map['type'],
+      ),
       room: map['room'],
-      dateAchat: map['date_achat'] != null ? DateTime.parse(map['date_achat']) : null,
+      dateAchat: map['date_achat'] != null
+          ? DateTime.parse(map['date_achat'])
+          : null,
       dureeViePrevJours: map['duree_vie_prev_jours'],
-      dateRupturePrev: map['date_rupture_prev'] != null ? DateTime.parse(map['date_rupture_prev']) : null,
-      quantiteInitiale: map['quantite_initiale'],
-      quantiteRestante: map['quantite_restante'],
+      dateRupturePrev: map['date_rupture_prev'] != null
+          ? DateTime.parse(map['date_rupture_prev'])
+          : null,
+      quantiteInitiale: map['quantite_initiale'] is int
+          ? (map['quantite_initiale'] as int).toDouble()
+          : map['quantite_initiale'],
+      quantiteRestante: map['quantite_restante'] is int
+          ? (map['quantite_restante'] as int).toDouble()
+          : map['quantite_restante'],
       unite: map['unite'],
-      tailleConditionnement: map['taille_conditionnement'],
-      prixUnitaire: map['prix_unitaire'],
+      tailleConditionnement: map['taille_conditionnement'] is int
+          ? (map['taille_conditionnement'] as int).toDouble()
+          : map['taille_conditionnement'],
+      prixUnitaire: map['prix_unitaire'] is int
+          ? (map['prix_unitaire'] as int).toDouble()
+          : map['prix_unitaire'],
       methodePrevision: map['methode_prevision'] != null
-          ? MethodePrevision.values.firstWhere((e) => e.toString().split('.').last == map['methode_prevision'])
+          ? MethodePrevision.values.firstWhere(
+              (e) => e.toString().split('.').last == map['methode_prevision'],
+            )
           : null,
       frequenceAchatJours: map['frequence_achat_jours'],
-      consommationJour: map['consommation_jour'],
+      consommationJour: map['consommation_jour'] is int
+          ? (map['consommation_jour'] as int).toDouble()
+          : map['consommation_jour'],
       seuilAlerteJours: map['seuil_alerte_jours'] ?? 3,
-      seuilAlerteQuantite: map['seuil_alerte_quantite'] ?? 1,
+      seuilAlerteQuantite: map['seuil_alerte_quantite'] is int
+          ? (map['seuil_alerte_quantite'] as int).toDouble()
+          : map['seuil_alerte_quantite'] ?? 1.0,
       commentaires: map['commentaires'],
+      dateModification: map['date_modification'] != null
+          ? DateTime.parse(map['date_modification'])
+          : null, // Added
     );
   }
 
@@ -119,6 +146,7 @@ class Objet {
     int? seuilAlerteJours,
     double? seuilAlerteQuantite,
     String? commentaires,
+    DateTime? dateModification, // Added
   }) {
     return Objet(
       id: id ?? this.id,
@@ -133,7 +161,8 @@ class Objet {
       quantiteInitiale: quantiteInitiale ?? this.quantiteInitiale,
       quantiteRestante: quantiteRestante ?? this.quantiteRestante,
       unite: unite ?? this.unite,
-      tailleConditionnement: tailleConditionnement ?? this.tailleConditionnement,
+      tailleConditionnement:
+          tailleConditionnement ?? this.tailleConditionnement,
       prixUnitaire: prixUnitaire ?? this.prixUnitaire,
       methodePrevision: methodePrevision ?? this.methodePrevision,
       frequenceAchatJours: frequenceAchatJours ?? this.frequenceAchatJours,
@@ -141,6 +170,7 @@ class Objet {
       seuilAlerteJours: seuilAlerteJours ?? this.seuilAlerteJours,
       seuilAlerteQuantite: seuilAlerteQuantite ?? this.seuilAlerteQuantite,
       commentaires: commentaires ?? this.commentaires,
+      dateModification: dateModification ?? this.dateModification, // Added
     );
   }
 }

@@ -17,6 +17,7 @@ import 'screens/inventory_screen.dart';
 import 'screens/budget_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/developer_console_screen.dart';
+import 'screens/edit_product_screen.dart';
 import 'services/household_service.dart';
 import 'services/notification_service.dart';
 import 'services/database_service.dart'; // Import DatabaseService
@@ -29,6 +30,7 @@ import 'screens/preferences_screen.dart';
 import 'providers/locale_provider.dart';
 import 'providers/foyer_provider.dart';
 import 'services/settings_service.dart';
+import 'models/objet.dart'; // Added import for Objet
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -112,12 +114,8 @@ void main() async {
         ChangeNotifierProvider(
           create: (context) => ThemeModeNotifier(initialThemeMode),
         ),
-        ChangeNotifierProvider<LocaleProvider>.value(
-          value: localeProvider,
-        ),
-        ChangeNotifierProvider<FoyerProvider>.value(
-          value: foyerProvider,
-        ),
+        ChangeNotifierProvider<LocaleProvider>.value(value: localeProvider),
+        ChangeNotifierProvider<FoyerProvider>.value(value: foyerProvider),
         Provider<DatabaseService>(
           create: (context) => DatabaseService(),
         ), // Provide DatabaseService
@@ -170,6 +168,17 @@ class MyApp extends StatelessWidget {
             const AppWithConnectivityOverlay(child: SettingsScreen()),
         '/developer-console': (context) =>
             const AppWithConnectivityOverlay(child: DeveloperConsoleScreen()),
+        '/edit-objet': (context) {
+          final objet = ModalRoute.of(context)?.settings.arguments as Objet?;
+          if (objet == null) {
+            // Optionally, log an error or navigate to a default error screen
+            // For now, navigating back to inventory as a fallback
+            return const AppWithConnectivityOverlay(child: InventoryScreen());
+          }
+          return AppWithConnectivityOverlay(
+            child: EditProductScreen(objet: objet),
+          );
+        },
       },
     );
   }
@@ -179,10 +188,7 @@ class MyApp extends StatelessWidget {
 class AppWithConnectivityOverlay extends StatelessWidget {
   final Widget child;
 
-  const AppWithConnectivityOverlay({
-    super.key,
-    required this.child,
-  });
+  const AppWithConnectivityOverlay({super.key, required this.child});
 
   @override
   Widget build(BuildContext context) {
@@ -265,6 +271,7 @@ class _SplashScreenState extends State<SplashScreen>
         }
       }
     } catch (e) {
+      // Consider logging this error if it's unexpected
       if (mounted) {
         Navigator.of(context).pushReplacementNamed('/onboarding');
       }
@@ -301,10 +308,10 @@ class _SplashScreenState extends State<SplashScreen>
                 child: Text(
                   'NgonNest',
                   style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 48,
-                      ),
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 48,
+                  ),
                 ),
               ),
 
@@ -316,9 +323,9 @@ class _SplashScreenState extends State<SplashScreen>
                 child: Text(
                   'Gestion intelligente de votre foyer',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Colors.white.withOpacity(0.9),
-                        fontSize: 18,
-                      ),
+                    color: Colors.white.withOpacity(0.9),
+                    fontSize: 18,
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ),

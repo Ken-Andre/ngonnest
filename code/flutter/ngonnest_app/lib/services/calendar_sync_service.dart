@@ -13,33 +13,20 @@ class CalendarSyncService {
 
   Future<bool> _requestPermissions() async {
     if (kIsWeb) {
-      Future<bool> _requestPermissions() async {
-        if (kIsWeb) {
-          return false;
-        }
-
-        if (defaultTargetPlatform == TargetPlatform.iOS) {
-          final result = await _calendarEvents.requestPermission();
-          final permission = CalendarPermission.fromInt(result);
-          return permission == CalendarPermission.allowed;
-        }
-
-        final status = await Permission.calendar.status;
-        if (status.isGranted) {
-          return true;
-        }
-        return (await Permission.calendar.request()).isGranted;
-      }
-
-      final status = await Permission.calendar.status;
-      if (status.isGranted) {
-        return true;
-      }
-      return await Permission.calendar.request().isGranted;
+      return false;
     }
 
-    // Unsupported platforms (desktop, etc.)
-    return false;
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      final result = await _calendarEvents.requestPermission();
+      final permission = CalendarPermission.fromInt(result);
+      return permission == CalendarPermission.allowed;
+    }
+
+    final status = await Permission.calendar.status;
+    if (status.isGranted) {
+      return true;
+    }
+    return (await Permission.calendar.request()).isGranted;
   }
 
   Future<void> addEvent({
