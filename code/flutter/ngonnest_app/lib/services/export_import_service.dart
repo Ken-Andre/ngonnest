@@ -113,6 +113,7 @@ class ExportImportService {
         'Warning: Skipping unknown tables during import: ${unknownTables.join(', ')}',
       );
       skippedTables.addAll(unknownTables);
+
       // Remove unknown tables from the import data
       data.removeWhere((key, value) => unknownTables.contains(key));
     }
