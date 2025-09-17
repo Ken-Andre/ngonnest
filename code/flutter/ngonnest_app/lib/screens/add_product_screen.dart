@@ -16,6 +16,7 @@ import '../widgets/error_feedback_widget.dart';
 import '../widgets/smart_product_search.dart';
 import '../widgets/smart_product_suggestions.dart';
 import '../services/product_suggestion_service.dart';
+// import '../services/budget_service.dart';
 
 import '../widgets/smart_quantity_selector.dart';
 import '../widgets/dropdown_categories_durables.dart';
@@ -50,6 +51,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
   final _productNameController = TextEditingController();
   final _initialQuantityController = TextEditingController(text: '1');
   final _frequencyController = TextEditingController(text: '30');
+  final _unitPriceController = TextEditingController();
+  final _packagingSizeController = TextEditingController();
   final _commentairesController =
       TextEditingController(); // Commentaires pour durables
   String _selectedCategory = 'hygiene'; // Match database naming (no accents)
@@ -62,6 +65,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
   ValidationResult? _productNameValidation;
   ValidationResult? _quantityValidation;
   ValidationResult? _frequencyValidation;
+  ValidationResult? _priceValidation;
+  ValidationResult? _packagingValidation;
   bool _enableDebugMode =
       true; // Active les portes de debuggage en développement
 
@@ -82,12 +87,12 @@ class _AddProductScreenState extends State<AddProductScreen> {
     // Initialize with the passed parameter
     _isConsumable = widget.isConsumable;
     // Éliminer la latence : Initialisation synchrone
-    _initializeServices();
-    
+    _initializeServices();    
     // Track flow started
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AnalyticsService>().logFlowStarted('add_product');
     });
+//     _getHouseholdSize();
   }
 
   void _initializeServices() {
@@ -166,6 +171,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
     _productNameController.dispose();
     _initialQuantityController.dispose();
     _frequencyController.dispose();
+    _unitPriceController.dispose();
+    _packagingSizeController.dispose();
     _commentairesController.dispose();
     super.dispose();
   }
@@ -246,6 +253,21 @@ class _AddProductScreenState extends State<AddProductScreen> {
         ),
       );
     }
+
+//   /// Validation intelligente du prix unitaire
+//   void _validateUnitPrice(String value) {
+//     final result = SmartValidator.validateUnitPrice(value);
+//     setState(() {
+//       _priceValidation = result;
+//     });
+//   }
+
+//   /// Validation intelligente de la taille du conditionnement
+//   void _validatePackagingSize(String value) {
+//     final result = SmartValidator.validatePackagingSize(value);
+//     setState(() {
+//       _packagingValidation = result;
+//     });
   }
 
   Future<void> _saveProduct() async {
@@ -289,8 +311,12 @@ class _AddProductScreenState extends State<AddProductScreen> {
         quantiteRestante:
             double.tryParse(_initialQuantityController.text) ?? 1.0,
         unite: _selectedUnit,
-        tailleConditionnement: _isConsumable ? 1.0 : null,
-        prixUnitaire: _isConsumable ? 5.0 : null, // Default price
+        tailleConditionnement: _isConsumable
+            ? (double.tryParse(_packagingSizeController.text.replaceAll(',', '.').trim()) ?? 1.0)
+            : null,
+        prixUnitaire: _isConsumable
+            ? (double.tryParse(_unitPriceController.text.replaceAll(',', '.').trim()) ?? 5.0)
+            : null,
         methodePrevision: _isConsumable ? MethodePrevision.frequence : null,
         frequenceAchatJours: _isConsumable
             ? int.tryParse(_frequencyController.text)
@@ -334,6 +360,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
           // Ne pas bloquer l'ajout du produit si les alertes échouent
         }
       }
+
 
       if (mounted) {
         print('🔄 SAVE PRODUCT: Showing success snackbar and popping screen');
@@ -461,6 +488,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 SmartProductSearch(
                   category: _isConsumable ? _selectedCategory : '',
                   onProductSelected: _onProductSelected,
+
                   onTextChanged: (text) {
                     // Le controller externe est déjà synchronisé
                     // Pas besoin de faire _productNameController.text = text;
@@ -649,7 +677,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   SmartQuantitySelector(
                     category: _selectedCategory,
                     selectedProduct: _selectedProductTemplate,
-                    familySize: _getHouseholdSize(),
+                    familySize: _householdSize,
                     onQuantityChanged: (quantity, unit) {
                       setState(() {
                         _initialQuantityController.text = quantity.toString();
@@ -723,6 +751,177 @@ class _AddProductScreenState extends State<AddProductScreen> {
                             ).colorScheme.onSurface.withOpacity(0.7),
                             fontWeight: FontWeight.w500,
                           ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+
+                // Packaging size and unit price for consumables
+                if (_isConsumable) ...[
+                  _buildSectionTitle('Taille du conditionnement'),
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 24),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _packagingValidation?.isValid == false
+                            ? Theme.of(context).colorScheme.error
+                            : Theme.of(
+                                context,
+                              ).colorScheme.outline.withOpacity(0.5),
+                        width: _packagingValidation?.isValid == false ? 2 : 1,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              CupertinoIcons.cube_box,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withOpacity(0.7),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: TextFormField(
+                                controller: _packagingSizeController,
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                    ),
+                                onChanged: _validatePackagingSize,
+                                decoration: InputDecoration(
+                                  hintText: 'Ex: 1.0',
+                                  border: InputBorder.none,
+                                  contentPadding: EdgeInsets.zero,
+                                  hintStyle: TextStyle(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface.withOpacity(0.7),
+                                  ),
+                                ),
+                                style: TextStyle(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
+                                ),
+                                validator: (value) {
+                                  final result =
+                                      SmartValidator.validatePackagingSize(
+                                        value ?? '',
+                                      );
+                                  return result.isValid
+                                      ? null
+                                      : result.userMessage;
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              _selectedUnit,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withOpacity(0.7),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                        ErrorFeedbackWidget(
+                          validationResult: _packagingValidation,
+                          showDebugInfo: _enableDebugMode,
+                          padding: const EdgeInsets.only(top: 8),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  _buildSectionTitle('Prix unitaire (€)'),
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 24),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _priceValidation?.isValid == false
+                            ? Theme.of(context).colorScheme.error
+                            : Theme.of(
+                                context,
+                              ).colorScheme.outline.withOpacity(0.5),
+                        width: _priceValidation?.isValid == false ? 2 : 1,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              CupertinoIcons.money_euro,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withOpacity(0.7),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: TextFormField(
+                                controller: _unitPriceController,
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                    ),
+                                onChanged: _validateUnitPrice,
+                                decoration: InputDecoration(
+                                  hintText: 'Ex: 2.99',
+                                  border: InputBorder.none,
+                                  contentPadding: EdgeInsets.zero,
+                                  hintStyle: TextStyle(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface.withOpacity(0.7),
+                                  ),
+                                ),
+                                style: TextStyle(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
+                                ),
+                                validator: (value) {
+                                  final result =
+                                      SmartValidator.validateUnitPrice(
+                                        value ?? '',
+                                      );
+                                  return result.isValid
+                                      ? null
+                                      : result.userMessage;
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '€',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withOpacity(0.7),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                        ErrorFeedbackWidget(
+                          validationResult: _priceValidation,
+                          showDebugInfo: _enableDebugMode,
+                          padding: const EdgeInsets.only(top: 8),
                         ),
                       ],
                     ),
@@ -1155,5 +1354,6 @@ class _AddProductScreenState extends State<AddProductScreen> {
   int _getHouseholdSize() {
     // Retourne la taille réelle du foyer chargée depuis HouseholdService
     return _householdSize;
+
   }
 }

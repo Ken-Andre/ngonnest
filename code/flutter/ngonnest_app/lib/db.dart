@@ -16,6 +16,7 @@ Future<Database> initDatabase() async {
     onCreate: _onCreate,
     onUpgrade: _onUpgrade,
     onDowngrade: onDatabaseDowngradeDelete, // Prevent downgrades
+
   );
 }
 
@@ -46,6 +47,7 @@ Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
       debugPrint('[DB] Applying migration to version $i');
       await _migrations[i]?.call(db);
       debugPrint('[DB] Successfully applied migration to version $i');
+
     }
 
     stopwatch.stop();

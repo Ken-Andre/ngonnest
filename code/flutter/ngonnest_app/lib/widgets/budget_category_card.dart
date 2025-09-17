@@ -10,7 +10,7 @@ class BudgetCategoryCard extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
-  final int? idFoyer; // Add foyer ID for expense history
+  final int idFoyer; // Add foyer ID for expense history
 
   const BudgetCategoryCard({
     super.key,
@@ -18,10 +18,11 @@ class BudgetCategoryCard extends StatelessWidget {
     this.onTap,
     this.onEdit,
     this.onDelete,
-    this.idFoyer,
+    required this.idFoyer,
   });
 
   void _showExpenseHistory(BuildContext context) {
+
     final foyerId = idFoyer ?? context.read<FoyerProvider>().foyerId;
     if (foyerId != null) {
       Navigator.of(context).push(
@@ -141,10 +142,10 @@ class BudgetCategoryCard extends StatelessWidget {
                         fontSize: 14,
                         color: isOverBudget
                             ? Theme.of(context).colorScheme.error
-                            : Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withOpacity(0.7),
+                            : Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withOpacity(0.7),
+
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -155,10 +156,10 @@ class BudgetCategoryCard extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                         color: isOverBudget
                             ? Theme.of(context).colorScheme.error
-                            : Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withOpacity(0.8),
+                            : Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withOpacity(0.8),
+
                       ),
                     ),
                   ],
@@ -190,14 +191,15 @@ class BudgetCategoryCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color:
-                          Theme.of(context).colorScheme.error.withOpacity(0.1),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.error.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .error
-                            .withOpacity(0.3),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.error.withOpacity(0.3),
+
                       ),
                     ),
                     child: Row(
@@ -230,10 +232,10 @@ class BudgetCategoryCard extends StatelessWidget {
                     'Reste: ${category.remainingBudget.toStringAsFixed(1)} €',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withOpacity(0.6),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.6),
+
                     ),
                   ),
                 ],

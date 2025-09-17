@@ -11,6 +11,7 @@ import 'package:ngonnest_app/repository/inventory_repository.dart';
 import 'package:ngonnest_app/services/budget_service.dart';
 import 'package:ngonnest_app/services/database_service.dart';
 
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 

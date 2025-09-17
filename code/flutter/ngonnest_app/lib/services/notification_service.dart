@@ -185,7 +185,8 @@ class NotificationService {
       } catch (e) {
         debugPrint('Failed to add calendar event: $e');
         if (context != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
+          final messenger = ScaffoldMessenger.maybeOf(context);
+          messenger?.showSnackBar(
             const SnackBar(
               content: Text("Impossible d'ajouter l'événement au calendrier"),
               backgroundColor: Colors.red,

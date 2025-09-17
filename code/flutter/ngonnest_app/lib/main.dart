@@ -167,6 +167,9 @@ void main() async {
         ChangeNotifierProvider<ConnectivityService>(
           create: (context) => ConnectivityService(),
         ), // Provide ConnectivityService
+        ChangeNotifierProvider<FoyerProvider>(
+          create: (context) => FoyerProvider()..loadFoyerId(),
+        ),
       ],
       child: const MyApp(),
     ),

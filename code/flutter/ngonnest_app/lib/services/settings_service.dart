@@ -5,8 +5,11 @@ class SettingsService {
   static const String _languageKey = 'language';
   static const String _notificationsEnabledKey = 'notifications_enabled';
   static const String _calendarSyncEnabledKey = 'calendar_sync_enabled';
+  static const String _notificationFrequencyKey = 'notification_frequency';
+  static const String _localDataOnlyKey = 'local_data_only';
   static const String _themeModeKey = 'theme_mode';
   static const String _lastSyncKey = 'last_sync';
+  static const String _cloudSyncAcceptedKey = 'cloud_sync_accepted';
 
   static SharedPreferences? _prefs;
 
@@ -50,6 +53,42 @@ class SettingsService {
   static Future<bool> setCalendarSyncEnabled(bool enabled) async {
     await initialize();
     return _prefs!.setBool(_calendarSyncEnabledKey, enabled);
+  }
+
+  /// Get if user has accepted cloud synchronization
+  static Future<bool> getCloudSyncAccepted() async {
+    await initialize();
+    return _prefs!.getBool(_cloudSyncAcceptedKey) ?? false;
+  }
+
+  /// Set if user has accepted cloud synchronization
+  static Future<bool> setCloudSyncAccepted(bool accepted) async {
+    await initialize();
+    return _prefs!.setBool(_cloudSyncAcceptedKey, accepted);
+  }
+
+  /// Get notification frequency setting
+  static Future<String> getNotificationFrequency() async {
+    await initialize();
+    return _prefs!.getString(_notificationFrequencyKey) ?? 'quotidienne';
+  }
+
+  /// Set notification frequency setting
+  static Future<bool> setNotificationFrequency(String frequency) async {
+    await initialize();
+    return _prefs!.setString(_notificationFrequencyKey, frequency);
+  }
+
+  /// Get local data only mode setting
+  static Future<bool> getLocalDataOnly() async {
+    await initialize();
+    return _prefs!.getBool(_localDataOnlyKey) ?? true;
+  }
+
+  /// Set local data only mode setting
+  static Future<bool> setLocalDataOnly(bool value) async {
+    await initialize();
+    return _prefs!.setBool(_localDataOnlyKey, value);
   }
 
   /// Get theme mode setting

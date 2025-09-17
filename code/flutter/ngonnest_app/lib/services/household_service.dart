@@ -49,7 +49,12 @@ class HouseholdService {
       return result;
     } catch (e, stackTrace) {
       // Log simple dans la console - comme en Python/Java
-      ConsoleLogger.error('HouseholdService', 'saveFoyer', e, stackTrace: stackTrace);
+      ConsoleLogger.error(
+        'HouseholdService',
+        'saveFoyer',
+        e,
+        stackTrace: stackTrace,
+      );
 
       // Log détaillé pour le système de debugging existant
       await ErrorLoggerService.logError(
@@ -69,15 +74,24 @@ class HouseholdService {
 
   // Create and save foyer from raw data
   static Future<int> createAndSaveFoyer(
-      int nbPersonnes,
-      String typeLogement,
-      String langue,
-      {int? nbPieces}) async {
+    int nbPersonnes,
+    String typeLogement,
+    String langue, {
+    int? nbPieces,
+    double? budgetMensuelEstime,
+  }) async {
     final foyer = Foyer(
       nbPersonnes: nbPersonnes,
-      nbPieces: nbPieces ?? (nbPersonnes <= 2 ? 2 : nbPersonnes <= 4 ? 3 : 4),
+      nbPieces:
+          nbPieces ??
+          (nbPersonnes <= 2
+              ? 2
+              : nbPersonnes <= 4
+              ? 3
+              : 4),
       typeLogement: typeLogement,
       langue: langue,
+      budgetMensuelEstime: budgetMensuelEstime,
     );
     return await saveFoyer(foyer);
   }
@@ -85,8 +99,8 @@ class HouseholdService {
   // Get foyer data with caching
   static Future<Foyer?> getFoyer() async {
     // Check if we have a valid cached version
-    if (_cachedFoyer != null && 
-        _lastFetchTime != null && 
+    if (_cachedFoyer != null &&
+        _lastFetchTime != null &&
         DateTime.now().difference(_lastFetchTime!) < _cacheDuration) {
       return _cachedFoyer;
     }
@@ -94,11 +108,11 @@ class HouseholdService {
     try {
       final repo = await foyerRepository;
       final foyer = await repo.get();
-      
+
       // Update cache
       _cachedFoyer = foyer;
       _lastFetchTime = DateTime.now();
-      
+
       return foyer;
     } catch (e) {
       // If we have a cached version, return it even if it's stale

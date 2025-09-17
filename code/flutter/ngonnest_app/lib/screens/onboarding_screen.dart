@@ -22,25 +22,27 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   String _selectedHouseholdSize = '';
   String _selectedHousingType = '';
   bool _isLoading = false;
+  final TextEditingController _budgetController = TextEditingController();
+  final TextEditingController _roomsController = TextEditingController();
 
   final List<Map<String, dynamic>> _householdSizes = [
     {
       'id': 'small',
       'label': 'Petit (1-2 personnes)',
       'icon': '👤',
-      'personCount': 2
+      'personCount': 2,
     },
     {
       'id': 'medium',
       'label': 'Moyen (3-4 personnes)',
       'icon': '👥',
-      'personCount': 4
+      'personCount': 4,
     },
     {
       'id': 'large',
       'label': 'Grand (5+ personnes)',
       'icon': '👨‍👩‍👧‍👦',
-      'personCount': 6
+      'personCount': 6,
     },
   ];
 
@@ -57,11 +59,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   void dispose() {
     _pageController.dispose();
+    _budgetController.dispose();
+    _roomsController.dispose();
     super.dispose();
   }
 
   void _nextStep() {
-    if (_currentStep < 2) {
+    if (_currentStep < 4) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
@@ -96,19 +100,26 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       final nbPieces = nbPersonnes <= 2
           ? 2
           : nbPersonnes <= 4
-              ? 3
-              : 4;
+          ? 3
+          : 4;
+      final budget = double.tryParse(
+        _budgetController.text.replaceAll(',', '.'),
+      );
+      final nbPieces = int.tryParse(_roomsController.text) ?? 0;
 
       final foyer = Foyer(
         nbPersonnes: nbPersonnes,
         nbPieces: nbPieces,
         typeLogement: _selectedHousingType,
         langue: _selectedLanguage,
+        budgetMensuelEstime: budget,
       );
+
 
       final id = await HouseholdService.saveFoyer(foyer);
       if (!mounted) return;
-      context.read<FoyerProvider>().setFoyerId(id);
+      final savedFoyer = foyer.copyWith(id: id);
+      context.read<FoyerProvider>().setFoyer(savedFoyer);
 
       // Track onboarding completion and household profile setup
       final analyticsService = context.read<AnalyticsService>();
@@ -161,6 +172,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   _buildLanguageStep(),
                   _buildHouseholdSizeStep(),
                   _buildHousingTypeStep(),
+                  _buildBudgetStep(),
+                  _buildRoomsStep(),
                 ],
               ),
             ),
@@ -212,10 +225,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
           // Progress indicator
           Row(
-            children: List.generate(3, (index) {
+            children: List.generate(5, (index) {
               return Expanded(
                 child: Container(
-                  margin: EdgeInsets.only(right: index < 2 ? 6 : 0),
+                  margin: EdgeInsets.only(right: index < 4 ? 6 : 0),
                   height: 3,
                   decoration: BoxDecoration(
                     color: index <= _currentStep
@@ -261,28 +274,27 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   children: [
                     Text(
                       '🏠',
-                      style: Theme.of(context)
-                          .textTheme
-                          .headlineLarge
+                      style: Theme.of(context).textTheme.headlineLarge
                           ?.copyWith(
-                              fontSize: 32), // Reduced font size using theme
+                            fontSize: 32,
+                          ), // Reduced font size using theme
                     ),
                     const SizedBox(height: 12), // Reduced from 24
                     Text(
                       'Bienvenue !',
                       style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.neutralBlack,
-                          ),
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.neutralBlack,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 8), // Reduced from 16
                     Text(
                       'NgonNest vous aide à gérer vos produits ménagers facilement',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: AppTheme.neutralGrey,
-                            fontSize: 14,
-                          ),
+                        color: AppTheme.neutralGrey,
+                        fontSize: 14,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -294,14 +306,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               Text(
                 'Sélectionnez votre langue',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.neutralBlack,
-                      fontSize: 18,
-                    ),
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.neutralBlack,
+                  fontSize: 18,
+                ),
               ),
 
               const SizedBox(height: 12), // Reduced from 24
-
               // Language options
               ...Language.values.map((lang) => _buildLanguageOption(lang)),
 
@@ -367,10 +378,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ),
           child: Row(
             children: [
-              Text(
-                Language.getFlag(lang),
-                style: TextStyle(fontSize: 24),
-              ),
+              Text(Language.getFlag(lang), style: TextStyle(fontSize: 24)),
               const SizedBox(width: 16),
               Expanded(
                 child: Text(
@@ -406,10 +414,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Text(
             'Votre foyer',
             style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.neutralBlack,
-                  fontSize: 24,
-                ),
+              fontWeight: FontWeight.bold,
+              color: AppTheme.neutralBlack,
+              fontSize: 24,
+            ),
           ),
 
           const SizedBox(height: 8),
@@ -417,9 +425,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Text(
             'Sélectionnez la taille de votre foyer',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppTheme.neutralGrey,
-                  fontSize: 14,
-                ),
+              color: AppTheme.neutralGrey,
+              fontSize: 14,
+            ),
           ),
 
           const SizedBox(height: 20),
@@ -472,10 +480,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Center(
-                  child: Text(
-                    size['icon']!,
-                    style: TextStyle(fontSize: 24),
-                  ),
+                  child: Text(size['icon']!, style: TextStyle(fontSize: 24)),
                 ),
               ),
               const SizedBox(width: 16),
@@ -488,8 +493,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color:
-                            isSelected ? Colors.white : AppTheme.neutralBlack,
+                        color: isSelected
+                            ? Colors.white
+                            : AppTheme.neutralBlack,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -529,10 +535,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Text(
             'Type de logement',
             style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.neutralBlack,
-                  fontSize: 24,
-                ),
+              fontWeight: FontWeight.bold,
+              color: AppTheme.neutralBlack,
+              fontSize: 24,
+            ),
           ),
 
           const SizedBox(height: 8),
@@ -540,9 +546,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Text(
             'Pour des recommandations personnalisées',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppTheme.neutralGrey,
-                  fontSize: 14,
-                ),
+              color: AppTheme.neutralGrey,
+              fontSize: 14,
+            ),
           ),
 
           const SizedBox(height: 20),
@@ -628,10 +634,67 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
+  Widget _buildBudgetStep() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 16),
+          Text(
+            'Budget mensuel estimé',
+            style: Theme.of(context).textTheme.displaySmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: AppTheme.neutralBlack,
+              fontSize: 24,
+            ),
+          ),
+          const SizedBox(height: 20),
+          TextField(
+            controller: _budgetController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(labelText: 'Montant en €'),
+          ),
+          const SizedBox(height: 60),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRoomsStep() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 16),
+          Text(
+            'Nombre de pièces',
+            style: Theme.of(context).textTheme.displaySmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: AppTheme.neutralBlack,
+              fontSize: 24,
+            ),
+          ),
+          const SizedBox(height: 20),
+          TextField(
+            controller: _roomsController,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(labelText: 'Pièces'),
+          ),
+          const SizedBox(height: 60),
+        ],
+      ),
+    );
+  }
+
   Widget _buildBottomNavigation() {
-    final canProceed = _currentStep == 0 && _selectedLanguage.isNotEmpty ||
+    final canProceed =
+        _currentStep == 0 && _selectedLanguage.isNotEmpty ||
         _currentStep == 1 && _selectedHouseholdSize.isNotEmpty ||
-        _currentStep == 2 && _selectedHousingType.isNotEmpty;
+        _currentStep == 2 && _selectedHousingType.isNotEmpty ||
+        _currentStep == 3 && _budgetController.text.isNotEmpty ||
+        (_currentStep == 4 && _roomsController.text.isNotEmpty);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -645,7 +708,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           child: _isLoading
               ? const CupertinoActivityIndicator(color: Colors.white)
               : Text(
-                  _currentStep == 2 ? 'Terminer' : 'Continuer',
+                  _currentStep == 4 ? 'Terminer' : 'Continuer',
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
