@@ -7,10 +7,10 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 /// Sévérité des erreurs pour priorisation et reporting
 enum ErrorSeverity {
-  low,      // Erreurs mineures (validation UI)
-  medium,   // Erreurs fonctionnelles (DB, réseau léger)
-  high,     // Erreurs critiques (crash, données perdues)
-  critical  // Erreurs système (app unusable)
+  low, // Erreurs mineures (validation UI)
+  medium, // Erreurs fonctionnelles (DB, réseau léger)
+  high, // Erreurs critiques (crash, données perdues)
+  critical, // Erreurs système (app unusable)
 }
 
 /// Entrée de log structuré pour le debugging professionnel
@@ -66,7 +66,9 @@ class ErrorLogEntry {
     component: json['component'],
     operation: json['operation'],
     errorCode: json['error_code'],
-    severity: ErrorSeverity.values.firstWhere((e) => e.toString().split('.').last == json['severity']),
+    severity: ErrorSeverity.values.firstWhere(
+      (e) => e.toString().split('.').last == json['severity'],
+    ),
     userMessage: json['user_message'],
     technicalMessage: json['technical_message'],
     stackTrace: json['stack_trace'],
@@ -87,11 +89,11 @@ class ErrorLoggerService {
   static String _generateErrorCode(dynamic error, String operation) {
     // Codes prédéfinis pour les erreurs communes
     final Map<String, String> errorCodes = {
-      'PlatformException': 'SYS_001',     // Erreurs système/Android
-      'DatabaseException': 'DB_001',      // Erreurs base de données
-      'ValidationError': 'VAL_000',       // Erreurs de validation (sera spécifié)
-      'NetworkException': 'NET_001',      // Erreurs réseau
-      'PermissionException': 'PERM_001',   // Erreurs permissions
+      'PlatformException': 'SYS_001', // Erreurs système/Android
+      'DatabaseException': 'DB_001', // Erreurs base de données
+      'ValidationError': 'VAL_000', // Erreurs de validation (sera spécifié)
+      'NetworkException': 'NET_001', // Erreurs réseau
+      'PermissionException': 'PERM_001', // Erreurs permissions
     };
 
     final errorType = error.runtimeType.toString();
@@ -174,7 +176,7 @@ class ErrorLoggerService {
     required String component,
     required String operation,
     required dynamic error,
-    required StackTrace stackTrace,
+    StackTrace? stackTrace,
     ErrorSeverity severity = ErrorSeverity.medium,
     Map<String, dynamic>? metadata,
     String? userId,
@@ -186,7 +188,9 @@ class ErrorLoggerService {
 
       // Log console toujours (indépendamment du stockage)
       if (kDebugMode) {
-        debugPrint('🔴 [ERROR_LOG] $errorCode | $component.$operation | $userMessage');
+        debugPrint(
+          '🔴 [ERROR_LOG] $errorCode | $component.$operation | $userMessage',
+        );
         debugPrint('   Technical: ${error.toString()}');
       }
 
@@ -219,7 +223,6 @@ class ErrorLoggerService {
           debugPrint('   Log entry: ${logEntry.toJson()}');
         }
       }
-
     } catch (logError) {
       // Fallback ultime : seulement console (pas de crash de l'app)
       debugPrint('❌ Failed to log error: $logError');
@@ -239,7 +242,9 @@ class ErrorLoggerService {
         if (content.isNotEmpty) {
           try {
             final jsonList = jsonDecode(content) as List<dynamic>;
-            existingLogs = jsonList.map((e) => ErrorLogEntry.fromJson(e)).toList();
+            existingLogs = jsonList
+                .map((e) => ErrorLogEntry.fromJson(e))
+                .toList();
           } catch (parseError) {
             // Si le fichier est corrompu, on le vide proprement
             debugPrint('⚠️ Error log file corrupted, starting fresh');
@@ -255,16 +260,18 @@ class ErrorLoggerService {
         existingLogs = existingLogs.sublist(existingLogs.length - 1000);
       }
 
-      final jsonString = jsonEncode(existingLogs.map((e) => e.toJson()).toList());
+      final jsonString = jsonEncode(
+        existingLogs.map((e) => e.toJson()).toList(),
+      );
       await logFile.writeAsString(jsonString);
-
     } catch (e) {
       debugPrint('❌ Failed to save error log: $e');
       // Essai de fallback : écrire un log basique
       try {
         final directory = await getApplicationDocumentsDirectory();
         final fallbackFile = File('${directory.path}/error_log_fallback.txt');
-        final basicLog = '${entry.timestamp}: ${entry.component}.${entry.operation} - ${entry.errorCode}\n';
+        final basicLog =
+            '${entry.timestamp}: ${entry.component}.${entry.operation} - ${entry.errorCode}\n';
         await fallbackFile.writeAsString(basicLog, mode: FileMode.append);
       } catch (fallbackError) {
         // Dernier fallback : seulement console
@@ -288,7 +295,6 @@ class ErrorLoggerService {
 
       final jsonList = jsonDecode(content) as List<dynamic>;
       return jsonList.map((e) => ErrorLogEntry.fromJson(e)).toList();
-
     } catch (e) {
       debugPrint('❌ Failed to read error logs: $e');
       return [];
@@ -310,14 +316,19 @@ class ErrorLoggerService {
       final logs = jsonList.map((e) => ErrorLogEntry.fromJson(e)).toList();
 
       final cutoffDate = DateTime.now().subtract(Duration(days: daysToKeep));
-      final recentLogs = logs.where((log) => log.timestamp.isAfter(cutoffDate)).toList();
+      final recentLogs = logs
+          .where((log) => log.timestamp.isAfter(cutoffDate))
+          .toList();
 
       if (recentLogs.length != logs.length) {
-        final jsonString = jsonEncode(recentLogs.map((e) => e.toJson()).toList());
+        final jsonString = jsonEncode(
+          recentLogs.map((e) => e.toJson()).toList(),
+        );
         await logFile.writeAsString(jsonString);
-        debugPrint('🧹 Cleaned ${logs.length - recentLogs.length} old error logs');
+        debugPrint(
+          '🧹 Cleaned ${logs.length - recentLogs.length} old error logs',
+        );
       }
-
     } catch (e) {
       debugPrint('❌ Failed to clean error logs: $e');
     }
@@ -340,7 +351,9 @@ class ErrorLoggerService {
       metadata: {
         'field': fieldName,
         'input_length': value.length,
-        'input_preview': value.length > 50 ? '${value.substring(0, 50)}...' : value,
+        'input_preview': value.length > 50
+            ? '${value.substring(0, 50)}...'
+            : value,
         ...?metadata,
       },
     );

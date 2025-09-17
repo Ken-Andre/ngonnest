@@ -15,20 +15,12 @@ import 'dart:io';
   Directory,
   File,
 ])
-import 'error_logger_service_test.mocks.dart';
+// import 'error_logger_service_test.mocks.dart';
 
 void main() {
   group('ErrorLoggerService', () {
-    late MockDeviceInfoPlugin mockDeviceInfo;
-    late MockPackageInfo mockPackageInfo;
-    late MockDirectory mockDirectory;
-    late MockFile mockFile;
-
     setUp(() {
-      mockDeviceInfo = MockDeviceInfoPlugin();
-      mockPackageInfo = MockPackageInfo();
-      mockDirectory = MockDirectory();
-      mockFile = MockFile();
+      // Clear any existing test state if needed
     });
 
     group('ErrorSeverity enum', () {

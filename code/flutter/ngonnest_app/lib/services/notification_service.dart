@@ -104,7 +104,7 @@ class NotificationService {
           priority: Priority.high,
           showWhen: true,
           icon: '@mipmap/ic_launcher',
-          color: Color(0xFFFF4444), // Red
+          color: const Color(0xFFFF4444), // Red
         );
 
     const DarwinNotificationDetails iOSPlatformChannelSpecifics =
@@ -211,7 +211,7 @@ class NotificationService {
           priority: Priority.defaultPriority,
           showWhen: true,
           icon: '@mipmap/ic_launcher',
-          color: Color(0xFF22C55E), // Green
+          color: const Color(0xFF22C55E), // Green
         );
 
     const DarwinNotificationDetails iOSPlatformChannelSpecifics =
@@ -251,7 +251,7 @@ class NotificationService {
           priority: Priority.high,
           showWhen: true,
           icon: '@mipmap/ic_launcher',
-          color: Color(0xFFFF4444), // Red
+          color: const Color(0xFFFF4444), // Red
         );
 
     const DarwinNotificationDetails iOSPlatformChannelSpecifics =
@@ -340,6 +340,12 @@ class NotificationService {
               backgroundColor: Colors.red,
               duration: Duration(seconds: 3),
             ),
+          );
+        }
+      }
+    }
+  }
+
   static Future<void> cancelNotification(int id) async {
     await _flutterLocalNotificationsPlugin.cancel(id);
   }

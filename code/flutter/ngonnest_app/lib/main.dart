@@ -1,5 +1,7 @@
 import 'dart:isolate';
+import 'dart:io' show Platform;
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 // import 'package:flutter/services.dart';
@@ -7,6 +9,7 @@ import 'package:ngonnest_app/services/console_logger.dart';
 import 'package:ngonnest_app/services/error_logger_service.dart';
 
 import 'package:provider/provider.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart'; // Import for FFI
 import 'package:workmanager/workmanager.dart';
 import 'l10n/app_localizations.dart';
 
@@ -37,27 +40,37 @@ import 'models/objet.dart'; // Added import for Objet
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Initialize sqflite FFI for desktop and testing environments
+  if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
+    ConsoleLogger.info('[Main] SQFlite FFI initialized for desktop.');
+  }
+
   // Initialisation du logger simple
   ConsoleLogger.init(LogMode.debug);
 
   // 🚀 HOOK GLOBAL ERREURS FLUTTER - Capture 100% des erreurs non gérées
-  FlutterError.onError = (FlutterErrorDetails details) async {
-    await ErrorLoggerService.logError(
-      component: 'FlutterFramework',
-      operation: 'renderError',
-      error: details.exception,
-      stackTrace: details.stack ?? StackTrace.current,
-      severity: ErrorSeverity.high,
-      metadata: {
-        'library': details.library,
-        'context': details.context?.toString(),
-        'summary': details.summary.toString(),
-        'silentCrash': true,
-      },
-    );
-    // Log console également
-    debugPrint('🔴 [FLUTTER ERROR] ${details.exception.toString()}');
-  };
+  // Only set up in non-test environments to avoid conflicts with Flutter Test framework
+  if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+    FlutterError.onError = (FlutterErrorDetails details) async {
+      await ErrorLoggerService.logError(
+        component: 'FlutterFramework',
+        operation: 'renderError',
+        error: details.exception,
+        stackTrace: details.stack ?? StackTrace.current,
+        severity: ErrorSeverity.high,
+        metadata: {
+          'library': details.library,
+          'context': details.context?.toString(),
+          'summary': details.summary.toString(),
+          'silentCrash': true,
+        },
+      );
+      // Log console également
+      debugPrint('🔴 [FLUTTER ERROR] ${details.exception.toString()}');
+    };
+  }
 
   // Capture erreurs Isolates non gérées
   Isolate.current.addErrorListener(
@@ -74,25 +87,38 @@ void main() async {
     }).sendPort,
   );
 
-  // Initialize Workmanager - désactivé en debug pour éviter la surveillance réseau continue
-  // qui viole la politique de confidentialité et consomme inutilement la batterie
-  Workmanager().initialize(
-    callbackDispatcher,
-    isInDebugMode: false, // Désactivé pour respecter la confidentialité
-  );
+  // Initialize Workmanager only if not on web and not in a test environment
+  final isTesting = Platform.environment.containsKey('FLUTTER_TEST');
+  if (!kIsWeb && !isTesting) {
+    ConsoleLogger.info('[Main] Initializing Workmanager...');
+    Workmanager().initialize(
+      callbackDispatcher,
+      isInDebugMode: false, // Désactivé pour respecter la confidentialité
+    );
 
-  final constraints = Constraints(
-    networkType: NetworkType.connected, // A hint that the task is important
-  );
+    final constraints = Constraints(
+      networkType: NetworkType.connected, // A hint that the task is important
+    );
 
-  // Register a periodic task to check for alerts (e.g., every 15 minutes)
-  Workmanager().registerPeriodicTask(
-    "ngonnest_alert_check_task",
-    "alertCheckTask",
-    frequency: const Duration(minutes: 15), // Run every 15 minutes
-    initialDelay: const Duration(minutes: 1), // Start after 1 minute
-    constraints: constraints,
-  );
+    // Register a periodic task to check for alerts (e.g., every 15 minutes)
+    Workmanager().registerPeriodicTask(
+      "ngonnest_alert_check_task",
+      "alertCheckTask",
+      frequency: const Duration(minutes: 15), // Run every 15 minutes
+      initialDelay: const Duration(minutes: 1), // Start after 1 minute
+      constraints: constraints,
+    );
+    ConsoleLogger.info('[Main] Workmanager initialized and task registered.');
+  } else {
+    if (isTesting)
+      ConsoleLogger.info(
+        '[Main] Workmanager initialization skipped (FLUTTER_TEST environment).',
+      );
+    if (kIsWeb)
+      ConsoleLogger.info(
+        '[Main] Workmanager initialization skipped (Web environment).',
+      );
+  }
 
   // Initialize notifications
   await NotificationService.initialize();
@@ -175,6 +201,14 @@ class MyApp extends StatelessWidget {
           if (objet == null) {
             // Optionally, log an error or navigate to a default error screen
             // For now, navigating back to inventory as a fallback
+            ErrorLoggerService.logError(
+              component: 'MyAppRouter',
+              operation: 'navigateToEditObjet',
+              error:
+                  'Attempted to navigate to /edit-objet with null Objet argument.',
+              severity: ErrorSeverity.medium,
+              stackTrace: StackTrace.current,
+            );
             return const AppWithConnectivityOverlay(child: InventoryScreen());
           }
           return AppWithConnectivityOverlay(
@@ -265,7 +299,7 @@ class _SplashScreenState extends State<SplashScreen>
     try {
       // Initialize Phase 2 components
       await _initializePhase2Components();
-      
+
       final hasProfile = await HouseholdService.hasHouseholdProfile();
 
       if (mounted) {
@@ -275,8 +309,16 @@ class _SplashScreenState extends State<SplashScreen>
           Navigator.of(context).pushReplacementNamed('/onboarding');
         }
       }
-    } catch (e) {
-      // Consider logging this error if it's unexpected
+    } catch (e, stackTrace) {
+      // Added stackTrace
+      await ErrorLoggerService.logError(
+        // Log error during user status check
+        component: 'SplashScreen',
+        operation: '_checkUserStatus',
+        error: e,
+        stackTrace: stackTrace,
+        severity: ErrorSeverity.high,
+      );
       if (mounted) {
         Navigator.of(context).pushReplacementNamed('/onboarding');
       }
@@ -287,7 +329,7 @@ class _SplashScreenState extends State<SplashScreen>
     try {
       // Initialize product prices database
       await PriceService.initializeProductPrices();
-      
+
       // Initialize recommended budgets if user has a profile
       final hasProfile = await HouseholdService.hasHouseholdProfile();
       if (hasProfile) {
@@ -296,13 +338,14 @@ class _SplashScreenState extends State<SplashScreen>
           await BudgetService.initializeRecommendedBudgets(foyerId);
         }
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      // Added stackTrace
       // Log error but don't block app startup
       await ErrorLoggerService.logError(
         component: 'SplashScreen',
         operation: '_initializePhase2Components',
         error: e,
-        stackTrace: StackTrace.current,
+        stackTrace: stackTrace, // Pass stackTrace
         severity: ErrorSeverity.medium,
       );
     }
