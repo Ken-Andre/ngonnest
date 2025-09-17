@@ -340,12 +340,24 @@ class CameroonPrices {
   static String _normalizeProductName(String name) {
     return name
         .toLowerCase()
-        .replaceAll(' ', '_')
+        // Remove common prepositions and articles
+        .replaceAll(RegExp(r'\b(de|du|des|la|le|les|un|une|et|à|a|au|aux|en|dans|sur|pour|par|avec|sans)\b', caseSensitive: false), '')
+        // Normalize accented characters
         .replaceAll('é', 'e')
         .replaceAll('è', 'e')
         .replaceAll('à', 'a')
         .replaceAll('ç', 'c')
-        .replaceAll(RegExp(r'[^\w]'), '');
+        .replaceAll('î', 'i')
+        .replaceAll('ô', 'o')
+        .replaceAll('û', 'u')
+        // Replace spaces with underscores
+        .replaceAll(' ', '_')
+        // Remove any remaining non-word characters except underscores
+        .replaceAll(RegExp(r'[^\w_]'), '')
+        // Remove multiple consecutive underscores
+        .replaceAll(RegExp(r'_+'), '_')
+        // Remove leading/trailing underscores
+        .replaceAll(RegExp(r'^_|_$'), '');
   }
 
   /// Calcule le budget estimé pour une liste de produits

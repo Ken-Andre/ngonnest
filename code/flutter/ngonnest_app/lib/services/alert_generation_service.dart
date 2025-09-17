@@ -153,28 +153,31 @@ class AlertGenerationService {
       }
 
       // Alerte basée sur la quantité restante
-      final percentageRemaining =
-          (item.quantiteRestante / item.quantiteInitiale) * 100;
-      if (percentageRemaining <= 20 && percentageRemaining > 0) {
-        alerts.add(
-          Alert(
-            id: 'quantity_low_${item.id}',
-            type: AlertType.stockLow,
-            priority: AlertPriority.medium,
-            title: '📦 Quantité faible',
-            message: '${item.nom}: ${percentageRemaining.toInt()}% restant',
-            productId: item.id?.toString(),
-            productName: item.nom,
-            urgencyScore: 60 - percentageRemaining.toInt(),
-            actionRequired: false,
-            suggestedActions: [
-              'Surveiller la consommation',
-              'Prévoir un réapprovisionnement',
-            ],
-            createdAt: DateTime.now(),
-            metadata: {'percentageRemaining': percentageRemaining},
-          ),
-        );
+      // Prevent division by zero error
+      if (item.quantiteInitiale > 0) {
+        final percentageRemaining =
+            (item.quantiteRestante / item.quantiteInitiale) * 100;
+        if (percentageRemaining <= 20 && percentageRemaining > 0) {
+          alerts.add(
+            Alert(
+              id: 'quantity_low_${item.id}',
+              type: AlertType.stockLow,
+              priority: AlertPriority.medium,
+              title: '📦 Quantité faible',
+              message: '${item.nom}: ${percentageRemaining.toInt()}% restant',
+              productId: item.id?.toString(),
+              productName: item.nom,
+              urgencyScore: 60 - percentageRemaining.toInt(),
+              actionRequired: false,
+              suggestedActions: [
+                'Surveiller la consommation',
+                'Prévoir un réapprovisionnement',
+              ],
+              createdAt: DateTime.now(),
+              metadata: {'percentageRemaining': percentageRemaining},
+            ),
+          );
+        }
       }
     }
 

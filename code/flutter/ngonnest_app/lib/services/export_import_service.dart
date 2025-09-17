@@ -71,8 +71,11 @@ class ExportImportService {
     return jsonEncode(exportData);
   }
 
-  Future<void> importFromJson(String jsonString) async {
+  Future<ImportResult> importFromJson(String jsonString) async {
     late final Map<String, dynamic> data;
+    final List<String> skippedTables = [];
+    final List<String> importedTables = [];
+    final List<String> failedTables = [];
 
     try {
       final parsed = jsonDecode(jsonString);
@@ -109,6 +112,7 @@ class ExportImportService {
       print(
         'Warning: Skipping unknown tables during import: ${unknownTables.join(', ')}',
       );
+      skippedTables.addAll(unknownTables);
       // Remove unknown tables from the import data
       data.removeWhere((key, value) => unknownTables.contains(key));
     }
@@ -145,16 +149,22 @@ class ExportImportService {
           final table = entry.key;
           if (!existingTables.contains(table)) continue;
 
-          final rows = List<Map<String, dynamic>>.from(entry.value as List);
+          try {
+            final rows = List<Map<String, dynamic>>.from(entry.value as List);
 
-          // Use batch insert for better performance
-          final batch = txn.batch();
+            // Use batch insert for better performance
+            final batch = txn.batch();
 
-          for (final row in rows) {
-            batch.insert(table, row);
+            for (final row in rows) {
+              batch.insert(table, row);
+            }
+
+            await batch.commit(noResult: true);
+            importedTables.add(table);
+          } catch (e) {
+            failedTables.add(table);
+            print('Failed to import table $table: $e');
           }
-
-          await batch.commit(noResult: true);
         }
 
         // Check foreign key integrity after import
@@ -172,6 +182,15 @@ class ExportImportService {
         await txn.execute('PRAGMA foreign_keys = ${wasFkOn ? 'ON' : 'OFF'}');
       }
     });
+
+    return ImportResult(
+      success: failedTables.isEmpty,
+      importedTables: importedTables,
+      skippedTables: skippedTables,
+      failedTables: failedTables,
+      totalTablesAttempted: data.length,
+      message: ImportResult._generateResultMessage(importedTables, skippedTables, failedTables),
+    );
   }
 
   /// Get list of tables that will be exported
@@ -206,5 +225,46 @@ class ExportImportService {
     } catch (e) {
       return false;
     }
+  }
+}
+
+/// Result of an import operation
+class ImportResult {
+  final bool success;
+  final List<String> importedTables;
+  final List<String> skippedTables;
+  final List<String> failedTables;
+  final int totalTablesAttempted;
+  final String message;
+
+  const ImportResult({
+    required this.success,
+    required this.importedTables,
+    required this.skippedTables,
+    required this.failedTables,
+    required this.totalTablesAttempted,
+    required this.message,
+  });
+
+  static String _generateResultMessage(
+    List<String> imported,
+    List<String> skipped,
+    List<String> failed,
+  ) {
+    final parts = <String>[];
+
+    if (imported.isNotEmpty) {
+      parts.add('${imported.length} table(s) imported successfully');
+    }
+
+    if (skipped.isNotEmpty) {
+      parts.add('${skipped.length} table(s) skipped (unknown tables)');
+    }
+
+    if (failed.isNotEmpty) {
+      parts.add('${failed.length} table(s) failed to import');
+    }
+
+    return parts.join(', ');
   }
 }
