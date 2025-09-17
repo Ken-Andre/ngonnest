@@ -5,8 +5,11 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 // import 'package:flutter/services.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'package:ngonnest_app/services/console_logger.dart';
 import 'package:ngonnest_app/services/error_logger_service.dart';
+import 'package:ngonnest_app/services/analytics_service.dart';
 
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart'; // Import for FFI
@@ -39,6 +42,17 @@ import 'models/objet.dart'; // Added import for Objet
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase (only on mobile platforms)
+  if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+    try {
+      await Firebase.initializeApp();
+      await AnalyticsService().initialize();
+      ConsoleLogger.info('[Main] Firebase and Analytics initialized.');
+    } catch (e) {
+      ConsoleLogger.error('Main', 'FirebaseInit', e);
+    }
+  }
 
   // Initialize sqflite FFI for desktop and testing environments
   if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
@@ -147,6 +161,9 @@ void main() async {
         Provider<DatabaseService>(
           create: (context) => DatabaseService(),
         ), // Provide DatabaseService
+        Provider<AnalyticsService>(
+          create: (context) => AnalyticsService(),
+        ), // Provide AnalyticsService
         ChangeNotifierProvider<ConnectivityService>(
           create: (context) => ConnectivityService(),
         ), // Provide ConnectivityService
@@ -163,8 +180,12 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final themeMode = context.watch<ThemeModeNotifier>().themeMode;
     final locale = context.watch<LocaleProvider>().locale;
+    final analyticsService = context.read<AnalyticsService>();
 
     return MaterialApp(
+      navigatorObservers: analyticsService.observer != null
+          ? [analyticsService.observer!]
+          : [],
       title: 'NgonNest',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,

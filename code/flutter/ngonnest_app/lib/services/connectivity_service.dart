@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'analytics_service.dart';
 
 /// Service de gestion de la connectivité réseau pour NgonNest MVP
 /// Fournit des notifications dynamiques comme YouTube pour l'état réseau
@@ -13,6 +14,8 @@ class ConnectivityService extends ChangeNotifier {
   ConnectivityService._internal() {
     _initConnectivity();
   }
+
+  final AnalyticsService _analytics = AnalyticsService();
 
   final Connectivity _connectivity = Connectivity();
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
@@ -44,7 +47,11 @@ class ConnectivityService extends ChangeNotifier {
 
       // Écoute des changements
       _connectivitySubscription = _connectivity.onConnectivityChanged.listen(
-        _updateConnectivityStatus,
+        (results) {
+          _updateConnectivityStatus(results);
+          // Track connectivity changes for analytics
+          _analytics.trackConnectivityChange(results.first);
+        },
         onError: (error) {
           print('[ConnectivityService] Erreur surveillance réseau: $error');
           _showOfflineBanner();

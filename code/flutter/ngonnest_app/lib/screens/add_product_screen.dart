@@ -11,6 +11,7 @@ import '../services/smart_validator.dart';
 import '../services/error_logger_service.dart';
 import '../services/navigation_service.dart';
 import '../services/budget_service.dart';
+import '../services/analytics_service.dart';
 import '../widgets/error_feedback_widget.dart';
 import '../widgets/smart_product_search.dart';
 import '../widgets/smart_product_suggestions.dart';
@@ -82,6 +83,11 @@ class _AddProductScreenState extends State<AddProductScreen> {
     _isConsumable = widget.isConsumable;
     // Éliminer la latence : Initialisation synchrone
     _initializeServices();
+    
+    // Track flow started
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AnalyticsService>().logFlowStarted('add_product');
+    });
   }
 
   void _initializeServices() {
@@ -305,6 +311,15 @@ class _AddProductScreenState extends State<AddProductScreen> {
       print('🔄 SAVE PRODUCT: Calling repository.create()...');
       final productId = await _inventoryRepository.create(objet);
       print('✅ SAVE PRODUCT: Product created with ID: $productId');
+      
+      // Track core action - item added
+      final analyticsService = context.read<AnalyticsService>();
+      await analyticsService.logItemAction('added', params: {
+        'product_type': _isConsumable ? 'consumable' : 'durable',
+        'category': _selectedCategory,
+        'product_id': productId.toString(),
+      });
+      await analyticsService.logFlowCompleted('add_product');
 
       // Déclencher les alertes budget après ajout d'un produit
       if (_isConsumable && _foyerId != null) {

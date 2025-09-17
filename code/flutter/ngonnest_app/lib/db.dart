@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'services/analytics_service.dart';
 
-const int _databaseVersion = 9; // Incremented version for performance optimization
+const int _databaseVersion =
+    9; // Incremented version for performance optimization
 
 Future<Database> initDatabase() async {
   final databasesPath = await getDatabasesPath();
@@ -32,18 +34,44 @@ Future<void> _onCreate(Database db, int version) async {
 
 Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
   debugPrint('[DB] Upgrading database from version $oldVersion to $newVersion');
-  for (int i = oldVersion + 1; i <= newVersion; i++) {
-    debugPrint('[DB] Applying migration to version $i');
-    try {
+
+  // Track migration attempt
+  final analytics = AnalyticsService();
+  await analytics.logMigrationAttempt(oldVersion, newVersion);
+
+  final stopwatch = Stopwatch()..start();
+
+  try {
+    for (int i = oldVersion + 1; i <= newVersion; i++) {
+      debugPrint('[DB] Applying migration to version $i');
       await _migrations[i]?.call(db);
       debugPrint('[DB] Successfully applied migration to version $i');
-    } catch (e) {
-      debugPrint('[DB] Error applying migration to version $i: $e');
-      // Consider re-throwing or specific error handling if a migration fails
-      rethrow;
     }
+
+    stopwatch.stop();
+    // Track successful migration
+    await analytics.logMigrationSuccess(
+      oldVersion,
+      newVersion,
+      stopwatch.elapsedMilliseconds,
+    );
+  } catch (e) {
+    stopwatch.stop();
+    debugPrint(
+      '[DB] Error applying migration from $oldVersion to $newVersion: $e',
+    );
+
+    // Track failed migration
+    await analytics.logMigrationFailure(
+      oldVersion,
+      newVersion,
+      e.toString().substring(0, 50), // Truncate error for analytics
+    );
+
+    rethrow;
   }
 }
+// }
 
 Future<void> _createV1Schema(Database db) async {
   debugPrint('[DB] Applying V1 schema (foyer, objet_v1, reachat_log)');
@@ -260,12 +288,18 @@ Future<void> _migrateToVersion8(Database db) async {
         updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
       )
     ''');
-    
+
     // Create optimized indexes for faster searches
-    await db.execute('CREATE INDEX idx_product_prices_name ON product_prices(name)');
-    await db.execute('CREATE INDEX idx_product_prices_category ON product_prices(category)');
-    await db.execute('CREATE INDEX idx_product_prices_name_category ON product_prices(name, category)');
-    
+    await db.execute(
+      'CREATE INDEX idx_product_prices_name ON product_prices(name)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_product_prices_category ON product_prices(category)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_product_prices_name_category ON product_prices(name, category)',
+    );
+
     debugPrint('[DB Migration V8] ✅ product_prices table created.');
   } else {
     debugPrint('[DB Migration V8] ✅ product_prices table already exists.');
@@ -273,31 +307,59 @@ Future<void> _migrateToVersion8(Database db) async {
 }
 
 Future<void> _migrateToVersion9(Database db) async {
-  debugPrint('[DB Migration V9] Adding performance indexes for Phase 3 optimization');
-  
+  debugPrint(
+    '[DB Migration V9] Adding performance indexes for Phase 3 optimization',
+  );
+
   // Add missing indexes for frequently queried tables
   try {
     // Index for objet table - most frequent queries
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_objet_foyer ON objet(id_foyer)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_objet_categorie ON objet(categorie)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_objet_type ON objet(type)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_objet_date_rupture ON objet(date_rupture_prev)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_objet_quantite ON objet(quantite_restante)');
-    
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_objet_foyer ON objet(id_foyer)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_objet_categorie ON objet(categorie)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_objet_type ON objet(type)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_objet_date_rupture ON objet(date_rupture_prev)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_objet_quantite ON objet(quantite_restante)',
+    );
+
     // Index for alertes table
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_alertes_objet ON alertes(id_objet)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_alertes_type ON alertes(type_alerte)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_alertes_lu ON alertes(lu)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_alertes_date ON alertes(date_creation)');
-    
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_alertes_objet ON alertes(id_objet)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_alertes_type ON alertes(type_alerte)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_alertes_lu ON alertes(lu)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_alertes_date ON alertes(date_creation)',
+    );
+
     // Index for budget_categories table
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_budget_month ON budget_categories(month)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_budget_name_month ON budget_categories(name, month)');
-    
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_budget_month ON budget_categories(month)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_budget_name_month ON budget_categories(name, month)',
+    );
+
     // Index for reachat_log table
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_reachat_objet ON reachat_log(id_objet)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_reachat_date ON reachat_log(date)');
-    
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_reachat_objet ON reachat_log(id_objet)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_reachat_date ON reachat_log(date)',
+    );
+
     debugPrint('[DB Migration V9] ✅ Performance indexes created.');
   } catch (e) {
     debugPrint('[DB Migration V9] ⚠️ Some indexes may already exist: $e');
