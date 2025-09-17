@@ -1,44 +1,43 @@
-import 'dart:isolate';
 import 'dart:io' show Platform;
+import 'dart:isolate';
 
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 // import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
+import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode;
+import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:ngonnest_app/services/analytics_debug_helper.dart';
+import 'package:ngonnest_app/services/analytics_service.dart';
 import 'package:ngonnest_app/services/console_logger.dart';
 import 'package:ngonnest_app/services/error_logger_service.dart';
-import 'package:ngonnest_app/services/analytics_service.dart';
-
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart'; // Import for FFI
 import 'package:workmanager/workmanager.dart';
-import 'l10n/app_localizations.dart';
 
-import 'screens/onboarding_screen.dart';
-import 'screens/dashboard_screen.dart';
+import 'l10n/app_localizations.dart';
+import 'models/objet.dart'; // Added import for Objet
+import 'providers/foyer_provider.dart';
+import 'providers/locale_provider.dart';
 import 'screens/add_product_screen.dart';
-import 'screens/inventory_screen.dart';
 import 'screens/budget_screen.dart';
-import 'screens/settings_screen.dart';
+import 'screens/dashboard_screen.dart';
 import 'screens/developer_console_screen.dart';
 import 'screens/edit_product_screen.dart';
+import 'screens/inventory_screen.dart';
+import 'screens/onboarding_screen.dart';
+import 'screens/preferences_screen.dart';
+import 'screens/settings_screen.dart';
+import 'services/background_task_service.dart'; // Import BackgroundTaskService
+import 'services/budget_service.dart';
+import 'services/connectivity_service.dart'; // Import ConnectivityService
+import 'services/database_service.dart'; // Import DatabaseService
 import 'services/household_service.dart';
 import 'services/notification_service.dart';
-import 'services/database_service.dart'; // Import DatabaseService
-import 'services/background_task_service.dart'; // Import BackgroundTaskService
-import 'services/connectivity_service.dart'; // Import ConnectivityService
-import 'widgets/connectivity_banner.dart'; // Import ConnectivityBanner
+import 'services/price_service.dart';
+import 'services/settings_service.dart';
 import 'theme/app_theme.dart';
 import 'theme/theme_mode_notifier.dart'; // Import the new file
-import 'screens/preferences_screen.dart';
-import 'providers/locale_provider.dart';
-import 'providers/foyer_provider.dart';
-import 'services/settings_service.dart';
-import 'services/price_service.dart';
-import 'services/budget_service.dart';
-import 'models/objet.dart'; // Added import for Objet
+import 'widgets/connectivity_banner.dart'; // Import ConnectivityBanner
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -48,9 +47,16 @@ void main() async {
     try {
       await Firebase.initializeApp();
       await AnalyticsService().initialize();
+
+      // Run debug test in development
+      if (kDebugMode) {
+        await AnalyticsDebugHelper.testFirebaseSetup();
+      }
+
       ConsoleLogger.info('[Main] Firebase and Analytics initialized.');
     } catch (e) {
-      ConsoleLogger.error('Main', 'FirebaseInit', e);
+      ConsoleLogger.error('[Main]', 'Firebase initialization failed', e);
+      // Continue app startup even if Firebase fails
     }
   }
 

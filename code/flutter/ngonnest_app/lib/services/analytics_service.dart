@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:io';
+
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:device_info_plus/device_info_plus.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
+
 import 'error_logger_service.dart';
 
 /// Service for tracking custom analytics metrics as defined in the NgonNest analytics specification
@@ -16,7 +18,7 @@ class AnalyticsService {
 
   FirebaseAnalytics? _analytics;
   FirebaseAnalyticsObserver? _observer;
-  // ErrorLoggerService _errorLogger = ErrorLoggerService();
+  // final ErrorLoggerService _errorLogger = ErrorLoggerService();
 
   // Session tracking
   DateTime? _offlineSessionStart;
@@ -34,27 +36,36 @@ class AnalyticsService {
   /// Initialize Firebase Analytics
   Future<void> initialize() async {
     try {
-      _analytics = FirebaseAnalytics.instance;
-      _observer = FirebaseAnalyticsObserver(analytics: _analytics!);
+      // Only initialize on mobile platforms where Firebase is configured
+      if (Platform.isAndroid || Platform.isIOS) {
+        _analytics = FirebaseAnalytics.instance;
+        _observer = FirebaseAnalyticsObserver(analytics: _analytics!);
 
-      // Set up user properties
-      await _setUserProperties();
+        // Set up user properties
+        await _setUserProperties();
 
-      // Track app initialization
-      await logEvent(
-        'app_initialized',
-        parameters: {
-          'platform': Platform.operatingSystem,
-          'app_version': await _getAppVersion(),
-        },
-      );
+        // Track app initialization
+        await logEvent(
+          'app_initialized',
+          parameters: {
+            'platform': Platform.operatingSystem,
+            'app_version': await _getAppVersion(),
+          },
+        );
+
+        print('[Analytics] Firebase Analytics initialized successfully');
+      } else {
+        print('[Analytics] Firebase Analytics not available on this platform');
+      }
     } catch (e, stackTrace) {
+      print('[Analytics] Firebase Analytics initialization failed: $e');
       await ErrorLoggerService.logError(
         component: 'AnalyticsService',
         operation: 'initialize',
         error: e,
         stackTrace: stackTrace,
       );
+      // Don't rethrow - analytics failure shouldn't break the app
     }
   }
 

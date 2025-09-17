@@ -18,6 +18,11 @@ web/
 # Generated files
 *.iml
 *.g.dart
+.idea/
+*.zip
+*.png
+*.sql
+
 
 # Bot Telegram / backend
 node_modules/
