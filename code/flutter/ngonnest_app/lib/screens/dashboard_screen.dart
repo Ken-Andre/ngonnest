@@ -16,6 +16,24 @@ import '../widgets/connectivity_banner.dart';
 import '../widgets/main_navigation_wrapper.dart';
 import '../widgets/sync_banner.dart';
 
+/// ⚠️ CRITICAL TODOs FOR CLIENT DELIVERY:
+/// TODO: DASHBOARD_DATA_LOADING - Data loading may fail or be incomplete
+///       - Household profile loading not properly handled
+///       - Inventory stats calculation may be inaccurate
+///       - Alert integration not fully functional
+/// TODO: DASHBOARD_ALERTS_DISPLAY - Alert display functionality incomplete
+///       - AlertGenerationService integration not tested
+///       - Alert filtering and sorting may not work
+///       - Real-time alert updates not implemented
+/// TODO: DASHBOARD_NAVIGATION - Navigation actions need validation
+///       - Quick action buttons may not navigate correctly
+///       - Tab navigation integration incomplete
+/// TODO: DASHBOARD_ERROR_HANDLING - Error states not properly handled
+///       - Database connection errors not gracefully handled
+///       - Loading states may hang indefinitely
+/// TODO: DASHBOARD_PERFORMANCE - Performance issues with large datasets
+///       - Stats calculation may be slow with many items
+///       - UI may freeze during data loading
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 

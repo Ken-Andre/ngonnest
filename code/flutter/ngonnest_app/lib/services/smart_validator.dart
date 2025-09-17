@@ -1,4 +1,3 @@
-import '../services/error_logger_service.dart';
 
 /// Sévérité des erreurs de validation
 enum ValidationSeverity {

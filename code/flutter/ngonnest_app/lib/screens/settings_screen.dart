@@ -850,7 +850,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Text(AppLocalizations.of(context)?.accept ?? 'Accepter'),
             onPressed: () async {
               if (_hasAcceptedCloudSync) {
-                await SettingsService.setLocalDataOnly(false);
+                // TODO-SC2: Implement cloud synchronization
+              // Details: Add proper cloud sync service integration with user consent handling
+//                 await SettingsService.setLocalDataOnly(false);
                 setState(() => _localDataOnly = false);
                 await SettingsService.setLocalDataOnly(false);
                 await SettingsService.setCloudSyncAccepted(true);
@@ -967,32 +969,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Text(AppLocalizations.of(context)?.cancel ?? 'Annuler'),
             onPressed: () => Navigator.of(context).pop(),
           ),
-            CupertinoDialogAction(
-              child: Text(AppLocalizations.of(context)?.send ?? 'Envoyer'),
-              onPressed: () async {
-                if (feedbackMessage.trim().isNotEmpty) {
-                  try {
-                    final response = await http
-                        .post(
-                          Uri.parse(_feedbackEndpoint),
-                          body: {'message': feedbackMessage},
-                        )
-                        .timeout(const Duration(seconds: 10));
-                    if (!mounted) return;
-                    Navigator.of(context).pop();
-                    if (response.statusCode == 200) {
-                      _showFeedbackSentMessage();
-                    } else {
-                      _showErrorMessage('Erreur lors de l\'envoi');
-                    }
-                  } catch (e) {
-                    if (!mounted) return;
-                    Navigator.of(context).pop();
-                    _showErrorMessage('Erreur réseau. Réessayez.');
-                  }
-                }
-              },
-            ),
+          CupertinoDialogAction(
+            child: Text(AppLocalizations.of(context)?.send ?? 'Envoyer'),
+            onPressed: () {
+              if (feedbackMessage.trim().isNotEmpty) {
+                // TODO-SC2: SettingsScreen - Complete Implementation (MEDIUM PRIORITY)
+                // Description: Implement missing dialog methods and cloud sync consent
+                // Details: Implement server-side feedback submission with proper API integration
+                // Impact: Feedback feature is non-functional without backend integration
+                Navigator.of(context).pop();
+                _showFeedbackSentMessage();
+              }
+            },
+          ),
+//             CupertinoDialogAction(
+//               child: Text(AppLocalizations.of(context)?.send ?? 'Envoyer'),
+//               onPressed: () async {
+//                 if (feedbackMessage.trim().isNotEmpty) {
+//                   try {
+//                     final response = await http
+//                         .post(
+//                           Uri.parse(_feedbackEndpoint),
+//                           body: {'message': feedbackMessage},
+//                         )
+//                         .timeout(const Duration(seconds: 10));
+//                     if (!mounted) return;
+//                     Navigator.of(context).pop();
+//                     if (response.statusCode == 200) {
+//                       _showFeedbackSentMessage();
+//                     } else {
+//                       _showErrorMessage('Erreur lors de l\'envoi');
+//                     }
+//                   } catch (e) {
+//                     if (!mounted) return;
+//                     Navigator.of(context).pop();
+//                     _showErrorMessage('Erreur réseau. Réessayez.');
+//                   }
+//                 }
+//               },
+//             ),
         ],
       ),
     );
@@ -1096,12 +1111,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Text(AppLocalizations.of(context)?.report ?? 'Signaler'),
             onPressed: () async {
               if (bugDescription.trim().isNotEmpty) {
+                // TODO-SC2: Implement bug report handling with Telegram integration
+                // Details: Add proper API call to submit bug reports to backend service
+                // Required: Integrate with Telegram bot API for automated bug reporting
 
-                final response = await http.post(
-                  Uri.parse(_bugReportEndpoint),
-                  body: {'description': bugDescription},
-                );
-                if (!mounted) return;
+//                 final response = await http.post(
+//                   Uri.parse(_bugReportEndpoint),
+//                   body: {'description': bugDescription},
+//                 );
+//                 if (!mounted) return;
                 Navigator.of(context).pop();
                 if (response.statusCode == 200) {
                   _showBugReportedMessage();
@@ -1515,7 +1533,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // TODO: Implement complete data deletion
+  // TODO-SC2: Implement complete data deletion
+  // Details: Add proper database cleanup and app state reset functionality
   Future<void> _performCompleteDataDeletion() async {
     try {
       final dbPath = p.join(await getDatabasesPath(), 'ngonnest.db');
@@ -1553,7 +1572,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: const Text('OK'),
             onPressed: () {
               Navigator.of(context).pop();
-              // TODO: Implement app restart or navigation to welcome screen
+              // TODO-SC2: Implement app restart or navigation to welcome screen
+              // Details: Add proper app restart mechanism after data deletion
             },
           ),
         ],

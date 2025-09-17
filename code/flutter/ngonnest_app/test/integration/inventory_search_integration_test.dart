@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
-import '../../lib/screens/inventory_screen.dart';
-import '../../lib/services/database_service.dart';
-import '../../lib/models/objet.dart';
-import '../../lib/models/foyer.dart';
+import 'package:ngonnest_app/screens/inventory_screen.dart';
+import 'package:ngonnest_app/services/database_service.dart';
+import 'package:ngonnest_app/models/objet.dart';
+import 'package:ngonnest_app/models/foyer.dart';
 
 void main() {
   group('Inventory Search Integration', () {

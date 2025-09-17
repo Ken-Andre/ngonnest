@@ -1,12 +1,18 @@
 import 'dart:isolate';
+import 'dart:io' show Platform;
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 // import 'package:flutter/services.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'package:ngonnest_app/services/console_logger.dart';
 import 'package:ngonnest_app/services/error_logger_service.dart';
+import 'package:ngonnest_app/services/analytics_service.dart';
 
 import 'package:provider/provider.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart'; // Import for FFI
 import 'package:workmanager/workmanager.dart';
 import 'l10n/app_localizations.dart';
 
@@ -17,6 +23,7 @@ import 'screens/inventory_screen.dart';
 import 'screens/budget_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/developer_console_screen.dart';
+import 'screens/edit_product_screen.dart';
 import 'services/household_service.dart';
 import 'services/notification_service.dart';
 import 'services/database_service.dart'; // Import DatabaseService
@@ -29,31 +36,55 @@ import 'screens/preferences_screen.dart';
 import 'providers/locale_provider.dart';
 import 'providers/foyer_provider.dart';
 import 'services/settings_service.dart';
+import 'services/price_service.dart';
+import 'services/budget_service.dart';
+import 'models/objet.dart'; // Added import for Objet
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase (only on mobile platforms)
+  if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+    try {
+      await Firebase.initializeApp();
+      await AnalyticsService().initialize();
+      ConsoleLogger.info('[Main] Firebase and Analytics initialized.');
+    } catch (e) {
+      ConsoleLogger.error('Main', 'FirebaseInit', e);
+    }
+  }
+
+  // Initialize sqflite FFI for desktop and testing environments
+  if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
+    ConsoleLogger.info('[Main] SQFlite FFI initialized for desktop.');
+  }
 
   // Initialisation du logger simple
   ConsoleLogger.init(LogMode.debug);
 
   // 🚀 HOOK GLOBAL ERREURS FLUTTER - Capture 100% des erreurs non gérées
-  FlutterError.onError = (FlutterErrorDetails details) async {
-    await ErrorLoggerService.logError(
-      component: 'FlutterFramework',
-      operation: 'renderError',
-      error: details.exception,
-      stackTrace: details.stack ?? StackTrace.current,
-      severity: ErrorSeverity.high,
-      metadata: {
-        'library': details.library,
-        'context': details.context?.toString(),
-        'summary': details.summary.toString(),
-        'silentCrash': true,
-      },
-    );
-    // Log console également
-    debugPrint('🔴 [FLUTTER ERROR] ${details.exception.toString()}');
-  };
+  // Only set up in non-test environments to avoid conflicts with Flutter Test framework
+  if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+    FlutterError.onError = (FlutterErrorDetails details) async {
+      await ErrorLoggerService.logError(
+        component: 'FlutterFramework',
+        operation: 'renderError',
+        error: details.exception,
+        stackTrace: details.stack ?? StackTrace.current,
+        severity: ErrorSeverity.high,
+        metadata: {
+          'library': details.library,
+          'context': details.context?.toString(),
+          'summary': details.summary.toString(),
+          'silentCrash': true,
+        },
+      );
+      // Log console également
+      debugPrint('🔴 [FLUTTER ERROR] ${details.exception.toString()}');
+    };
+  }
 
   // Capture erreurs Isolates non gérées
   Isolate.current.addErrorListener(
@@ -70,25 +101,38 @@ void main() async {
     }).sendPort,
   );
 
-  // Initialize Workmanager - désactivé en debug pour éviter la surveillance réseau continue
-  // qui viole la politique de confidentialité et consomme inutilement la batterie
-  Workmanager().initialize(
-    callbackDispatcher,
-    isInDebugMode: false, // Désactivé pour respecter la confidentialité
-  );
+  // Initialize Workmanager only if not on web and not in a test environment
+  final isTesting = Platform.environment.containsKey('FLUTTER_TEST');
+  if (!kIsWeb && !isTesting) {
+    ConsoleLogger.info('[Main] Initializing Workmanager...');
+    Workmanager().initialize(
+      callbackDispatcher,
+      isInDebugMode: false, // Désactivé pour respecter la confidentialité
+    );
 
-  final constraints = Constraints(
-    networkType: NetworkType.connected, // A hint that the task is important
-  );
+    final constraints = Constraints(
+      networkType: NetworkType.connected, // A hint that the task is important
+    );
 
-  // Register a periodic task to check for alerts (e.g., every 15 minutes)
-  Workmanager().registerPeriodicTask(
-    "ngonnest_alert_check_task",
-    "alertCheckTask",
-    frequency: const Duration(minutes: 15), // Run every 15 minutes
-    initialDelay: const Duration(minutes: 1), // Start after 1 minute
-    constraints: constraints,
-  );
+    // Register a periodic task to check for alerts (e.g., every 15 minutes)
+    Workmanager().registerPeriodicTask(
+      "ngonnest_alert_check_task",
+      "alertCheckTask",
+      frequency: const Duration(minutes: 15), // Run every 15 minutes
+      initialDelay: const Duration(minutes: 1), // Start after 1 minute
+      constraints: constraints,
+    );
+    ConsoleLogger.info('[Main] Workmanager initialized and task registered.');
+  } else {
+    if (isTesting)
+      ConsoleLogger.info(
+        '[Main] Workmanager initialization skipped (FLUTTER_TEST environment).',
+      );
+    if (kIsWeb)
+      ConsoleLogger.info(
+        '[Main] Workmanager initialization skipped (Web environment).',
+      );
+  }
 
   // Initialize notifications
   await NotificationService.initialize();
@@ -112,15 +156,14 @@ void main() async {
         ChangeNotifierProvider(
           create: (context) => ThemeModeNotifier(initialThemeMode),
         ),
-        ChangeNotifierProvider<LocaleProvider>.value(
-          value: localeProvider,
-        ),
-        ChangeNotifierProvider<FoyerProvider>.value(
-          value: foyerProvider,
-        ),
+        ChangeNotifierProvider<LocaleProvider>.value(value: localeProvider),
+        ChangeNotifierProvider<FoyerProvider>.value(value: foyerProvider),
         Provider<DatabaseService>(
           create: (context) => DatabaseService(),
         ), // Provide DatabaseService
+        Provider<AnalyticsService>(
+          create: (context) => AnalyticsService(),
+        ), // Provide AnalyticsService
         ChangeNotifierProvider<ConnectivityService>(
           create: (context) => ConnectivityService(),
         ), // Provide ConnectivityService
@@ -140,8 +183,12 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final themeMode = context.watch<ThemeModeNotifier>().themeMode;
     final locale = context.watch<LocaleProvider>().locale;
+    final analyticsService = context.read<AnalyticsService>();
 
     return MaterialApp(
+      navigatorObservers: analyticsService.observer != null
+          ? [analyticsService.observer!]
+          : [],
       title: 'NgonNest',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
@@ -173,6 +220,25 @@ class MyApp extends StatelessWidget {
             const AppWithConnectivityOverlay(child: SettingsScreen()),
         '/developer-console': (context) =>
             const AppWithConnectivityOverlay(child: DeveloperConsoleScreen()),
+        '/edit-objet': (context) {
+          final objet = ModalRoute.of(context)?.settings.arguments as Objet?;
+          if (objet == null) {
+            // Optionally, log an error or navigate to a default error screen
+            // For now, navigating back to inventory as a fallback
+            ErrorLoggerService.logError(
+              component: 'MyAppRouter',
+              operation: 'navigateToEditObjet',
+              error:
+                  'Attempted to navigate to /edit-objet with null Objet argument.',
+              severity: ErrorSeverity.medium,
+              stackTrace: StackTrace.current,
+            );
+            return const AppWithConnectivityOverlay(child: InventoryScreen());
+          }
+          return AppWithConnectivityOverlay(
+            child: EditProductScreen(objet: objet),
+          );
+        },
       },
     );
   }
@@ -255,6 +321,9 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> _checkUserStatus() async {
     try {
+      // Initialize Phase 2 components
+      await _initializePhase2Components();
+
       final hasProfile = await HouseholdService.hasHouseholdProfile();
 
       if (mounted) {
@@ -264,10 +333,45 @@ class _SplashScreenState extends State<SplashScreen>
           Navigator.of(context).pushReplacementNamed('/onboarding');
         }
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      // Added stackTrace
+      await ErrorLoggerService.logError(
+        // Log error during user status check
+        component: 'SplashScreen',
+        operation: '_checkUserStatus',
+        error: e,
+        stackTrace: stackTrace,
+        severity: ErrorSeverity.high,
+      );
       if (mounted) {
         Navigator.of(context).pushReplacementNamed('/onboarding');
       }
+    }
+  }
+
+  Future<void> _initializePhase2Components() async {
+    try {
+      // Initialize product prices database
+      await PriceService.initializeProductPrices();
+
+      // Initialize recommended budgets if user has a profile
+      final hasProfile = await HouseholdService.hasHouseholdProfile();
+      if (hasProfile) {
+        final foyerId = context.read<FoyerProvider>().foyerId;
+        if (foyerId != null) {
+          await BudgetService.initializeRecommendedBudgets(foyerId);
+        }
+      }
+    } catch (e, stackTrace) {
+      // Added stackTrace
+      // Log error but don't block app startup
+      await ErrorLoggerService.logError(
+        component: 'SplashScreen',
+        operation: '_initializePhase2Components',
+        error: e,
+        stackTrace: stackTrace, // Pass stackTrace
+        severity: ErrorSeverity.medium,
+      );
     }
   }
 
@@ -301,10 +405,10 @@ class _SplashScreenState extends State<SplashScreen>
                 child: Text(
                   'NgonNest',
                   style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 48,
-                      ),
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 48,
+                  ),
                 ),
               ),
 
@@ -316,9 +420,9 @@ class _SplashScreenState extends State<SplashScreen>
                 child: Text(
                   'Gestion intelligente de votre foyer',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Colors.white.withOpacity(0.9),
-                        fontSize: 18,
-                      ),
+                    color: Colors.white.withOpacity(0.9),
+                    fontSize: 18,
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ),

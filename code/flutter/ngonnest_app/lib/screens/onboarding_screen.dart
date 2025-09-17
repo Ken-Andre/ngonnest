@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/foyer.dart';
 import '../models/household_profile.dart';
 import '../services/household_service.dart';
+import '../services/analytics_service.dart';
 import '../theme/app_theme.dart';
 import 'package:provider/provider.dart';
 import '../providers/foyer_provider.dart';
@@ -44,6 +45,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       'personCount': 6,
     },
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Track onboarding started
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AnalyticsService>().logOnboardingStarted();
+      context.read<AnalyticsService>().logFlowStarted('onboarding');
+    });
+  }
 
   @override
   void dispose() {
@@ -109,6 +120,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       if (!mounted) return;
       final savedFoyer = foyer.copyWith(id: id);
       context.read<FoyerProvider>().setFoyer(savedFoyer);
+
+      // Track onboarding completion and household profile setup
+      final analyticsService = context.read<AnalyticsService>();
+      await analyticsService.logOnboardingCompleted();
+      await analyticsService.logFlowCompleted('onboarding');
+      await analyticsService.setHouseholdProfile(
+        householdSize: nbPersonnes,
+        householdType: _selectedHousingType,
+        primaryLanguage: _selectedLanguage,
+      );
 
       if (mounted) {
         Navigator.of(context).pushReplacementNamed('/dashboard');

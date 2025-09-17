@@ -313,8 +313,20 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
         await HouseholdService.saveHouseholdProfile(updatedProfile);
       }
 
-      // TODO: Save notification preferences to local storage
-      // This would be implemented in a separate service
+      // TODO-SC1: PreferencesScreen - Notification Preferences Persistence (HIGH PRIORITY)
+      // Description: Implement notification preferences storage
+      // Details:
+      // - Create NotificationPreferencesService class
+      // - Save frequency and enable/disable settings to local storage (SharedPreferences)
+      // - Load preferences on app startup in initState()
+      // - Add methods: saveNotificationFrequency(), getNotificationFrequency()
+      // - Add methods: saveNotificationEnabled(), isNotificationEnabled()
+      // - Persist _notificationsEnabled and _notificationFrequency variables
+      // Impact: Notification preferences are not persisted between app sessions
+      // Required service methods:
+      //   Future<void> saveNotificationPreferences(bool enabled, String frequency)
+      //   Future<Map<String, dynamic>> getNotificationPreferences()
+      //   Future<void> resetNotificationPreferences()
 
       if (mounted) {
         Navigator.of(context).pushReplacementNamed('/dashboard');

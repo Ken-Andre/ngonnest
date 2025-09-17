@@ -104,7 +104,7 @@ class NotificationService {
           priority: Priority.high,
           showWhen: true,
           icon: '@mipmap/ic_launcher',
-          color: Color(0xFFFF4444), // Red
+          color: const Color(0xFFFF4444), // Red
         );
 
     const DarwinNotificationDetails iOSPlatformChannelSpecifics =
@@ -212,7 +212,7 @@ class NotificationService {
           priority: Priority.defaultPriority,
           showWhen: true,
           icon: '@mipmap/ic_launcher',
-          color: Color(0xFF22C55E), // Green
+          color: const Color(0xFF22C55E), // Green
         );
 
     const DarwinNotificationDetails iOSPlatformChannelSpecifics =
@@ -252,7 +252,7 @@ class NotificationService {
           priority: Priority.high,
           showWhen: true,
           icon: '@mipmap/ic_launcher',
-          color: Color(0xFFFF4444), // Red
+          color: const Color(0xFFFF4444), // Red
         );
 
     const DarwinNotificationDetails iOSPlatformChannelSpecifics =
@@ -345,9 +345,6 @@ class NotificationService {
         }
       }
     }
-
-    // You can extend this to handle multiple recurring notifications
-    // by scheduling multiple notifications at different intervals
   }
 
   static Future<void> cancelNotification(int id) async {

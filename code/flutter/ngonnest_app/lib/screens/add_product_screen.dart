@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
@@ -9,9 +10,13 @@ import '../services/household_service.dart';
 import '../services/smart_validator.dart';
 import '../services/error_logger_service.dart';
 import '../services/navigation_service.dart';
+import '../services/budget_service.dart';
+import '../services/analytics_service.dart';
 import '../widgets/error_feedback_widget.dart';
 import '../widgets/smart_product_search.dart';
-import '../services/budget_service.dart';
+import '../widgets/smart_product_suggestions.dart';
+import '../services/product_suggestion_service.dart';
+// import '../services/budget_service.dart';
 
 import '../widgets/smart_quantity_selector.dart';
 import '../widgets/dropdown_categories_durables.dart';
@@ -19,6 +24,7 @@ import '../widgets/main_navigation_wrapper.dart';
 import '../services/product_intelligence_service.dart';
 import '../models/product_template.dart';
 import '../theme/app_theme.dart';
+// import '../config/cameroon_products.dart';
 
 class AddProductScreen extends StatefulWidget {
   final bool isConsumable;
@@ -37,7 +43,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   bool _isConsumable = true;
   int? _foyerId;
-  int _householdSize = 4;
+  int _householdSize = 4; // Taille réelle du foyer
   bool _isLoading = true;
   bool _isSaving = false;
 
@@ -81,8 +87,12 @@ class _AddProductScreenState extends State<AddProductScreen> {
     // Initialize with the passed parameter
     _isConsumable = widget.isConsumable;
     // Éliminer la latence : Initialisation synchrone
-    _initializeServices();
-    _getHouseholdSize();
+    _initializeServices();    
+    // Track flow started
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AnalyticsService>().logFlowStarted('add_product');
+    });
+//     _getHouseholdSize();
   }
 
   void _initializeServices() {
@@ -119,6 +129,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
         print('✅ FOYER FOUND: ${foyer.id} - ${foyer.nbPersonnes} personnes');
         setState(() {
           _foyerId = foyer.id;
+          _householdSize = foyer.nbPersonnes; // Récupérer la vraie taille
           _isLoading = false;
         });
       } else {
@@ -132,6 +143,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
         print('✅ DEFAULT FOYER CREATED: $defaultFoyerId');
         setState(() {
           _foyerId = defaultFoyerId;
+          _householdSize = 4; // Taille du foyer par défaut
           _isLoading = false;
         });
       }
@@ -199,27 +211,72 @@ class _AddProductScreenState extends State<AddProductScreen> {
     });
   }
 
-  /// Validation intelligente du prix unitaire
-  void _validateUnitPrice(String value) {
-    final result = SmartValidator.validateUnitPrice(value);
+  /// Gère la sélection d'une suggestion de produit
+  void _onSuggestionSelected(ProductSuggestion suggestion) {
     setState(() {
-      _priceValidation = result;
+      _productNameController.text = suggestion.name;
+      _selectedCategory = suggestion.category;
+      _initialQuantityController.text = suggestion.estimatedQuantity.toString();
+      _selectedUnit = suggestion.unit;
     });
+
+    // Afficher un feedback à l'utilisateur
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('✨ ${suggestion.name} ajouté - ${suggestion.reason}'),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
-  /// Validation intelligente de la taille du conditionnement
-  void _validatePackagingSize(String value) {
-    final result = SmartValidator.validatePackagingSize(value);
+  /// Gère la sélection d'un produit depuis SmartProductSearch
+  void _onProductSelected(ProductTemplate product) {
     setState(() {
-      _packagingValidation = result;
+      _productNameController.text = product.name;
+      _selectedProductTemplate = product;
+      if (product.defaultQuantity != null) {
+        _initialQuantityController.text = product.defaultQuantity.toString();
+      }
+      if (product.category != null && product.category != _selectedCategory) {
+        _selectedCategory = product.category!;
+      }
     });
+
+    // Afficher un message si la catégorie a changé
+    if (product.category != null && product.category != _selectedCategory) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Catégorie mise à jour vers "${product.category}"'),
+          backgroundColor: Colors.blue,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+
+//   /// Validation intelligente du prix unitaire
+//   void _validateUnitPrice(String value) {
+//     final result = SmartValidator.validateUnitPrice(value);
+//     setState(() {
+//       _priceValidation = result;
+//     });
+//   }
+
+//   /// Validation intelligente de la taille du conditionnement
+//   void _validatePackagingSize(String value) {
+//     final result = SmartValidator.validatePackagingSize(value);
+//     setState(() {
+//       _packagingValidation = result;
+//     });
   }
 
   Future<void> _saveProduct() async {
     print('🔄 SAVE PRODUCT: Starting save process...');
-    print(
-      '🔄 SAVE PRODUCT: Form validation: ${_formKey.currentState?.validate()}',
-    );
+    if (kDebugMode) {
+      print(
+        '🔄 SAVE PRODUCT: Form validation: ${_formKey.currentState?.validate()}',
+      );
+    }
     print('🔄 SAVE PRODUCT: Foyer ID: $_foyerId');
     print('🔄 SAVE PRODUCT: Product name: ${_productNameController.text}');
     print('🔄 SAVE PRODUCT: Is consumable: $_isConsumable');
@@ -278,14 +335,32 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
       // Use the repository pattern to create the product
       print('🔄 SAVE PRODUCT: Calling repository.create()...');
-      if (_foyerId != null) {
-        await BudgetService.checkBudgetAlertsAfterPurchase(
-          _foyerId!,
-          objet.categorie,
-        );
+      final productId = await _inventoryRepository.create(objet);
+      print('✅ SAVE PRODUCT: Product created with ID: $productId');
+      
+      // Track core action - item added
+      final analyticsService = context.read<AnalyticsService>();
+      await analyticsService.logItemAction('added', params: {
+        'product_type': _isConsumable ? 'consumable' : 'durable',
+        'category': _selectedCategory,
+        'product_id': productId.toString(),
+      });
+      await analyticsService.logFlowCompleted('add_product');
+
+      // Déclencher les alertes budget après ajout d'un produit
+      if (_isConsumable && _foyerId != null) {
+        try {
+          await BudgetService.checkBudgetAlertsAfterPurchase(
+            _foyerId!,
+            _selectedCategory,
+          );
+          print('✅ BUDGET ALERTS: Checked after product creation');
+        } catch (e) {
+          print('⚠️ BUDGET ALERTS: Error checking alerts: $e');
+          // Ne pas bloquer l'ajout du produit si les alertes échouent
+        }
       }
-        objet.categorie,
-      );
+
 
       if (mounted) {
         print('🔄 SAVE PRODUCT: Showing success snackbar and popping screen');
@@ -334,14 +409,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
     }
   }
 
-  // @override
-  // void dispose() {
-  //   _productNameController.dispose();
-  //   _initialQuantityController.dispose();
-  //   _frequencyController.dispose();
-  //   _commentairesController.dispose();
-  //   super.dispose();
-  // }
+
 
   @override
   Widget build(BuildContext context) {
@@ -418,34 +486,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 // Product name with smart suggestions
                 _buildSectionTitle('Nom du produit'),
                 SmartProductSearch(
-                  controller:
-                      _productNameController, // Utiliser le controller externe
-                  category: _isConsumable ? _selectedCategory : 'durables',
-                  onProductSelected: (product) {
-                    setState(() {
-                      // Mettre à jour automatiquement la catégorie selon le produit sélectionné
-                      _selectedCategory = product.category;
-                      _productNameController.text = product.name;
-                      if (product.defaultQuantity != null) {
-                        _initialQuantityController.text = product
-                            .defaultQuantity
-                            .toString();
-                      }
-                    });
+                  category: _isConsumable ? _selectedCategory : '',
+                  onProductSelected: _onProductSelected,
 
-                    // Afficher un message si la catégorie a changé
-                    if (product.category != _selectedCategory) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            'Catégorie mise à jour vers "${product.category}"',
-                          ),
-                          backgroundColor: Colors.blue,
-                          duration: const Duration(seconds: 2),
-                        ),
-                      );
-                    }
-                  },
                   onTextChanged: (text) {
                     // Le controller externe est déjà synchronisé
                     // Pas besoin de faire _productNameController.text = text;
@@ -1308,33 +1351,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
   }
 
   /// Obtient la taille du foyer depuis le service Household
-  Future<void> _getHouseholdSize() async {
-    try {
-      final foyer = await HouseholdService.getFoyer();
-      if (foyer != null) {
-        setState(() {
-          final size = foyer.nbPersonnes;
-          _householdSize = (size == null || size < 1) ? 4 : size;
-        });
-        });
-      } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Foyer introuvable'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } catch (e) {
-      print('Erreur récupération taille foyer: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur lors de la récupération du foyer: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
+  int _getHouseholdSize() {
+    // Retourne la taille réelle du foyer chargée depuis HouseholdService
+    return _householdSize;
+
   }
 }

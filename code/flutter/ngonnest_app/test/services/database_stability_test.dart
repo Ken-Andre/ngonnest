@@ -1,10 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'dart:io';
-import '../../lib/services/database_service.dart';
-import '../../lib/services/error_logger_service.dart';
-import '../../lib/repository/foyer_repository.dart';
-import '../../lib/repository/inventory_repository.dart';
+import 'package:ngonnest_app/services/database_service.dart';
+import 'package:ngonnest_app/services/error_logger_service.dart';
+import 'package:ngonnest_app/repository/foyer_repository.dart';
+import 'package:ngonnest_app/repository/inventory_repository.dart';
 
 /// Test suite to verify database connection stability improvements
 /// Tests the enhanced singleton pattern with automatic recovery mechanisms

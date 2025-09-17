@@ -4,12 +4,13 @@ import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
-import '../../lib/models/budget_category.dart';
-import '../../lib/models/foyer.dart';
-import '../../lib/models/objet.dart';
-import '../../lib/repository/inventory_repository.dart';
-import '../../lib/services/budget_service.dart';
-import '../../lib/services/database_service.dart';
+import 'package:ngonnest_app/models/budget_category.dart';
+import 'package:ngonnest_app/models/foyer.dart';
+import 'package:ngonnest_app/models/objet.dart';
+import 'package:ngonnest_app/repository/inventory_repository.dart';
+import 'package:ngonnest_app/services/budget_service.dart';
+import 'package:ngonnest_app/services/database_service.dart';
+
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

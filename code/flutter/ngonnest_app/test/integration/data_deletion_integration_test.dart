@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:sqflite/sqflite.dart';
 import 'package:ngonnest_app/services/database_service.dart';
 import 'package:ngonnest_app/services/settings_service.dart';
 

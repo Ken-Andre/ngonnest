@@ -8,6 +8,7 @@ import '../widgets/budget_category_card.dart';
 import '../widgets/budget_category_dialog.dart';
 import 'package:provider/provider.dart';
 import '../providers/foyer_provider.dart';
+import 'savings_tips_screen.dart';
 
 class BudgetScreen extends StatefulWidget {
   const BudgetScreen({super.key});
@@ -257,7 +258,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                 ),
               const SizedBox(height: 24),
 
-              // Categories section header
+              // Categories section header with actions
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -269,24 +270,45 @@ class _BudgetScreenState extends State<BudgetScreen> {
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
-                  ElevatedButton.icon(
-                    onPressed: () => _showCategoryDialog(),
-                    icon: const Icon(CupertinoIcons.add, size: 16),
-                    label: const Text(
-                      'Ajouter',
-                      style: TextStyle(fontSize: 14),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                  Row(
+                    children: [
+                      // Conseils button
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const SavingsTipsScreen(),
+                            ),
+                          );
+                        },
+                        icon: const Icon(CupertinoIcons.lightbulb, size: 16),
+                        label: const Text('Conseils', style: TextStyle(fontSize: 14)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Theme.of(context).colorScheme.secondary,
+                          foregroundColor: Theme.of(context).colorScheme.onSecondary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        ),
                       ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
+                      const SizedBox(width: 8),
+                      // Add category button
+                      ElevatedButton.icon(
+                        onPressed: () => _showCategoryDialog(),
+                        icon: const Icon(CupertinoIcons.add, size: 16),
+                        label: const Text('Ajouter', style: TextStyle(fontSize: 14)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        ),
                       ),
-                    ),
+                    ],
+
                   ),
                 ],
               ),

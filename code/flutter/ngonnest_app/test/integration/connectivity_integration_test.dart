@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
-import '../../lib/services/connectivity_service.dart';
-import '../../lib/widgets/connectivity_banner.dart';
-import '../../lib/main.dart';
+import 'package:ngonnest_app/services/connectivity_service.dart';
+import 'package:ngonnest_app/widgets/connectivity_banner.dart';
+import 'package:ngonnest_app/main.dart';
 
 void main() {
   group('Connectivity Integration Tests', () {

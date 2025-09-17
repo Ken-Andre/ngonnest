@@ -49,7 +49,12 @@ class ExportImportService {
     // Add export metadata
     final metadata = {
       'export_timestamp': DateTime.now().toIso8601String(),
-      'app_version': '1.0.0', // TODO: Get from pubspec
+      'app_version': '1.0.0', // TODO-S2: ExportImportService - App Version Retrieval (MEDIUM PRIORITY)
+      // Description: Implement actual app version retrieval
+      // Details: Replace placeholder with package_info_plus package integration
+      // Required: Add package_info_plus dependency to pubspec.yaml
+      // Implementation: Use PackageInfo.fromPlatform().then((info) => info.version)
+      // Impact: Export metadata lacks proper version information
       'exported_tables': data.keys.toList(),
       'security_note': 'This export contains user data. Keep secure.',
     };

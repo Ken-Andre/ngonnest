@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
-import '../../lib/widgets/connectivity_banner.dart';
-import '../../lib/services/connectivity_service.dart';
+import 'package:ngonnest_app/widgets/connectivity_banner.dart';
+import 'package:ngonnest_app/services/connectivity_service.dart';
 
 void main() {
   group('ConnectivityBanner Widget Tests', () {

@@ -1,6 +1,7 @@
 /// Configuration des catégories durables pour NgonNest MVP
 /// Définit les 4 catégories principales pour organiser les biens durables
 /// Finalité MVP : "Catalogue catégories durables maisons Camerounaises pour organiser les biens durables"
+library;
 
 /// Liste fixe des catégories durables disponibles
 const List<Map<String, String>> CATEGORIES_DURABLES = [

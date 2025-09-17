@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
-import '../../lib/widgets/budget_category_card.dart';
-import '../../lib/models/budget_category.dart';
+import 'package:ngonnest_app/widgets/budget_category_card.dart';
+import 'package:ngonnest_app/models/budget_category.dart';
 
 void main() {
   group('BudgetCategoryCard', () {

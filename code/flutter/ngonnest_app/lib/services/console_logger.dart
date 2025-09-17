@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 
 /// Logger simple comme en Python/Java - affiche directement dans la console Flutter
 class ConsoleLogger {

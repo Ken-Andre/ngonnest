@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import '../../lib/widgets/quick_quantity_update.dart';
-import '../../lib/models/objet.dart';
+import 'package:ngonnest_app/widgets/quick_quantity_update.dart';
+import 'package:ngonnest_app/models/objet.dart';
 
 void main() {
   group('QuickQuantityUpdate', () {

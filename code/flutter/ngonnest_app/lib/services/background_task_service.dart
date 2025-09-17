@@ -1,14 +1,11 @@
 import 'package:workmanager/workmanager.dart';
 import 'package:flutter/material.dart';
-import 'package:path/path.dart';
-import 'package:sqflite/sqflite.dart';
 import 'notification_service.dart';
 import 'database_service.dart';
 import 'household_service.dart';
 import 'error_logger_service.dart';
 import '../models/alert.dart';
 import '../models/household_profile.dart';
-import '../db.dart';
 
 // This function will be called in the background by Workmanager
 @pragma('vm:entry-point')
