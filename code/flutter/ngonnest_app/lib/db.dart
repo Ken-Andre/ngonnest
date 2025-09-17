@@ -1,10 +1,10 @@
 import 'package:flutter/foundation.dart';
-import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'package:sqflite/sqflite.dart';
+
 import 'services/analytics_service.dart';
 
-const int _databaseVersion =
-    9; // Incremented version for performance optimization
+const int _databaseVersion = 10; // Added room column for import compatibility
 
 Future<Database> initDatabase() async {
   final databasesPath = await getDatabasesPath();
@@ -106,8 +106,7 @@ Future<void> _createV1Schema(Database db) async {
       prix_unitaire REAL,
       methode_prevision TEXT CHECK (methode_prevision IN ('frequence', 'debit')),
       frequence_achat_jours INTEGER,
-      consommation_jour REAL,
-      // seuil_alerte_jours, seuil_alerte_quantite, commentaires will be added via migrations
+      consommation_jour REAL, -- seuil_alerte_jours, seuil_alerte_quantite, commentaires will be added via migrations
       FOREIGN KEY (id_foyer) REFERENCES foyer (id)
     )
   ''');
@@ -368,6 +367,23 @@ Future<void> _migrateToVersion9(Database db) async {
   }
 }
 
+Future<void> _migrateToVersion10(Database db) async {
+  debugPrint(
+    '[DB Migration V10] Adding room column to objet table for import compatibility',
+  );
+  final objetColumns = await db.rawQuery("PRAGMA table_info(objet)");
+  bool hasRoom = objetColumns.any((col) => col['name'] == 'room');
+
+  if (!hasRoom) {
+    await db.execute('ALTER TABLE objet ADD COLUMN room TEXT');
+    debugPrint('[DB Migration V10] ✅ room column added to objet table.');
+  } else {
+    debugPrint(
+      '[DB Migration V10] ✅ room column already exists in objet table.',
+    );
+  }
+}
+
 // --- Migrations Map ---
 
 final Map<int, Future<void> Function(Database)> _migrations = {
@@ -379,6 +395,7 @@ final Map<int, Future<void> Function(Database)> _migrations = {
   7: _migrateToVersion7,
   8: _migrateToVersion8,
   9: _migrateToVersion9,
+  10: _migrateToVersion10,
 };
 
 // --- Debug (Optional, can be removed or conditional) ---

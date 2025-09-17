@@ -1,5 +1,7 @@
 import 'dart:convert';
+
 import 'package:sqflite/sqflite.dart';
+
 import 'database_service.dart';
 
 /// Enhanced export/import service with security, performance, and integrity checks
@@ -7,7 +9,7 @@ class ExportImportService {
   final Future<Database> Function() _dbProvider;
 
   ExportImportService({Future<Database> Function()? databaseProvider})
-      : _dbProvider = databaseProvider ?? (() => DatabaseService().database);
+    : _dbProvider = databaseProvider ?? (() => DatabaseService().database);
 
   /// Tables that should NOT be exported (contain sensitive data)
   static const List<String> _sensitiveTables = [
@@ -19,8 +21,11 @@ class ExportImportService {
   /// Tables that are safe to export (user data)
   static const List<String> _safeTables = [
     'foyer',
-    'objets',
+    'objet', // Note: actual table name is 'objet' not 'objets'
+    'alertes',
     'budget_categories',
+    'reachat_log',
+    'product_prices',
     'inventory_transactions',
     'shopping_lists',
     'product_templates',
@@ -40,7 +45,8 @@ class ExportImportService {
       final tableName = table['name'] as String;
 
       // Only export safe tables, skip sensitive ones
-      if (_safeTables.contains(tableName) && !_sensitiveTables.contains(tableName)) {
+      if (_safeTables.contains(tableName) &&
+          !_sensitiveTables.contains(tableName)) {
         final rows = await db.query(tableName);
         data[tableName] = rows;
       }
@@ -49,7 +55,8 @@ class ExportImportService {
     // Add export metadata
     final metadata = {
       'export_timestamp': DateTime.now().toIso8601String(),
-      'app_version': '1.0.0', // TODO-S2: ExportImportService - App Version Retrieval (MEDIUM PRIORITY)
+      'app_version':
+          '1.0.0', // TODO-S2: ExportImportService - App Version Retrieval (MEDIUM PRIORITY)
       // Description: Implement actual app version retrieval
       // Details: Replace placeholder with package_info_plus package integration
       // Required: Add package_info_plus dependency to pubspec.yaml
@@ -59,10 +66,7 @@ class ExportImportService {
       'security_note': 'This export contains user data. Keep secure.',
     };
 
-    final exportData = {
-      '_metadata': metadata,
-      ...data,
-    };
+    final exportData = {'_metadata': metadata, ...data};
 
     return jsonEncode(exportData);
   }
@@ -97,21 +101,32 @@ class ExportImportService {
     );
     final existingTables = tables.map((t) => t['name'] as String).toSet();
 
-    // Validate tables exist
-    final unknownTables = data.keys.where((t) => !existingTables.contains(t)).toList();
+    // Filter out tables that don't exist in the current database
+    final unknownTables = data.keys
+        .where((t) => !existingTables.contains(t))
+        .toList();
     if (unknownTables.isNotEmpty) {
-      throw FormatException('Unknown tables: ${unknownTables.join(', ')}');
+      print(
+        'Warning: Skipping unknown tables during import: ${unknownTables.join(', ')}',
+      );
+      // Remove unknown tables from the import data
+      data.removeWhere((key, value) => unknownTables.contains(key));
     }
 
     // Validate only safe tables are being imported
-    final unsafeTables = data.keys.where((t) => _sensitiveTables.contains(t)).toList();
+    final unsafeTables = data.keys
+        .where((t) => _sensitiveTables.contains(t))
+        .toList();
     if (unsafeTables.isNotEmpty) {
-      throw FormatException('Cannot import sensitive tables: ${unsafeTables.join(', ')}');
+      throw FormatException(
+        'Cannot import sensitive tables: ${unsafeTables.join(', ')}',
+      );
     }
 
     // Handle foreign keys properly
     final fkStatus = await db.rawQuery('PRAGMA foreign_keys');
-    final wasFkOn = (fkStatus.isNotEmpty && fkStatus.first['foreign_keys'] == 1);
+    final wasFkOn =
+        (fkStatus.isNotEmpty && fkStatus.first['foreign_keys'] == 1);
 
     await db.transaction((txn) async {
       // Disable FK checks during import
@@ -145,9 +160,10 @@ class ExportImportService {
         // Check foreign key integrity after import
         final violations = await txn.rawQuery('PRAGMA foreign_key_check');
         if (violations.isNotEmpty) {
-          throw Exception('Import failed: ${violations.length} foreign key violations found');
+          throw Exception(
+            'Import failed: ${violations.length} foreign key violations found',
+          );
         }
-
       } catch (e) {
         // Transaction will be rolled back automatically on exception
         throw Exception('Import failed: $e');
@@ -167,7 +183,10 @@ class ExportImportService {
 
     return tables
         .map((t) => t['name'] as String)
-        .where((table) => _safeTables.contains(table) && !_sensitiveTables.contains(table))
+        .where(
+          (table) =>
+              _safeTables.contains(table) && !_sensitiveTables.contains(table),
+        )
         .toList();
   }
 
@@ -180,7 +199,9 @@ class ExportImportService {
       }
 
       // Check for sensitive tables
-      final sensitiveTables = parsed.keys.where((t) => _sensitiveTables.contains(t));
+      final sensitiveTables = parsed.keys.where(
+        (t) => _sensitiveTables.contains(t),
+      );
       return sensitiveTables.isEmpty;
     } catch (e) {
       return false;

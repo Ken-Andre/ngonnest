@@ -1,20 +1,23 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/foyer.dart';
+
 import '../models/alert.dart';
+import '../models/foyer.dart';
 import '../models/household_profile.dart';
-import '../services/household_service.dart';
+import '../repository/inventory_repository.dart';
+import '../services/analytics_service.dart';
 import '../services/database_service.dart';
 import '../services/error_logger_service.dart';
+import '../services/household_service.dart';
 import '../services/navigation_service.dart';
-import '../repository/inventory_repository.dart';
 import '../theme/app_theme.dart';
-import 'add_product_screen.dart';
 import '../theme/theme_mode_notifier.dart';
 import '../widgets/connectivity_banner.dart';
 import '../widgets/main_navigation_wrapper.dart';
 import '../widgets/sync_banner.dart';
+import 'add_product_screen.dart';
 
 /// ⚠️ CRITICAL TODOs FOR CLIENT DELIVERY:
 /// TODO: DASHBOARD_DATA_LOADING - Data loading may fail or be incomplete
@@ -59,12 +62,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    // _databaseService is available after initState, in didChangeDependencies
-    // but we need it here, so we'll fetch it in a post-frame callback.
+
+    // Initialize services
+    _databaseService = DatabaseService();
+    _inventoryRepository = InventoryRepository(_databaseService);
+
+    _loadDashboardData();
+
+    // Track dashboard view for analytics testing
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _databaseService = context.read<DatabaseService>();
-      _inventoryRepository = InventoryRepository(_databaseService);
-      _loadDashboardData();
+      if (mounted) {
+        try {
+          context.read<AnalyticsService>().logEvent(
+            'screen_viewed',
+            parameters: {
+              'screen_name': 'dashboard',
+              'timestamp': DateTime.now().millisecondsSinceEpoch,
+            },
+          );
+        } catch (e) {
+          print('Analytics error: $e');
+        }
+      }
     });
   }
 
@@ -92,20 +111,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
               DateTime.now(); // Update sync time on successful data load
         });
 
-        // Log succès du chargement du dashboard
-        await ErrorLoggerService.logError(
-          component: 'DashboardScreen',
-          operation: 'loadDashboardData',
-          error: 'SUCCESS: Dashboard loaded successfully',
-          stackTrace: StackTrace.current,
-          severity: ErrorSeverity.low,
-          metadata: {
-            'foyerId': foyer.id,
-            'totalItems': totalItems,
-            'expiringSoon': expiringSoon,
-            'urgentAlerts': alerts.length,
-          },
-        );
+        // Log succès du chargement du dashboard (debug uniquement)
+        if (kDebugMode) {
+          print(
+            '[Dashboard] Successfully loaded: ${foyer.id} - $totalItems items, $expiringSoon expiring',
+          );
+        }
       }
     } catch (e, stackTrace) {
       // Log détaillé pour debugging
