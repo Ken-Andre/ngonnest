@@ -37,7 +37,6 @@ class _BudgetScreenState extends State<BudgetScreen> {
       // Initialize default categories if none exist
       await BudgetService.initializeDefaultCategories(month: _currentMonth);
 
-
       // Ensure spending is up-to-date with purchases for this foyer
       final foyerId = context.read<FoyerProvider>().foyerId;
       if (foyerId != null) {
@@ -51,11 +50,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
       final categories = await BudgetService.getBudgetCategories(
         month: _currentMonth,
       );
-      final foyerId = context.read<FoyerProvider>().foyerId;
-      final summary = foyerId != null
-          ? await BudgetService.getBudgetSummary(foyerId, month: _currentMonth)
-          : {};
-
+      final summary = await BudgetService.getBudgetSummary(month: _currentMonth);
 
       final foyerBudget =
           context.read<FoyerProvider>().foyer?.budgetMensuelEstime ?? 0.0;
@@ -282,14 +277,24 @@ class _BudgetScreenState extends State<BudgetScreen> {
                           );
                         },
                         icon: const Icon(CupertinoIcons.lightbulb, size: 16),
-                        label: const Text('Conseils', style: TextStyle(fontSize: 14)),
+                        label: const Text(
+                          'Conseils',
+                          style: TextStyle(fontSize: 14),
+                        ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).colorScheme.secondary,
-                          foregroundColor: Theme.of(context).colorScheme.onSecondary,
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.secondary,
+                          foregroundColor: Theme.of(
+                            context,
+                          ).colorScheme.onSecondary,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -297,18 +302,27 @@ class _BudgetScreenState extends State<BudgetScreen> {
                       ElevatedButton.icon(
                         onPressed: () => _showCategoryDialog(),
                         icon: const Icon(CupertinoIcons.add, size: 16),
-                        label: const Text('Ajouter', style: TextStyle(fontSize: 14)),
+                        label: const Text(
+                          'Ajouter',
+                          style: TextStyle(fontSize: 14),
+                        ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).colorScheme.primary,
-                          foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.primary,
+                          foregroundColor: Theme.of(
+                            context,
+                          ).colorScheme.onPrimary,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
                         ),
                       ),
                     ],
-
                   ),
                 ],
               ),
@@ -334,7 +348,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                                   _showCategoryDialog(category: category),
                               onDelete: () => _deleteCategory(category),
 
-                              idFoyer: context.watch<FoyerProvider>().foyerId,
+                              idFoyer: foyerId,
                             );
                           },
                         ),

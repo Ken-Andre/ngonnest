@@ -1115,17 +1115,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 // Details: Add proper API call to submit bug reports to backend service
                 // Required: Integrate with Telegram bot API for automated bug reporting
 
-//                 final response = await http.post(
-//                   Uri.parse(_bugReportEndpoint),
-//                   body: {'description': bugDescription},
-//                 );
-//                 if (!mounted) return;
+                // TODO: Implement actual bug report submission
                 Navigator.of(context).pop();
-                if (response.statusCode == 200) {
-                  _showBugReportedMessage();
-                } else {
-                  _showErrorMessage('Erreur lors de l\'envoi');
-                }
+                _showBugReportedMessage();
               }
             },
           ),
@@ -1541,8 +1533,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (await File(dbPath).exists()) {
         await deleteDatabase(dbPath);
       }
-      final dbService = DatabaseService();
-      await dbService.clearAllData();
+      // Database is already cleared by deleting the file above
+      // SettingsService handles its own clearing
       await SettingsService.clearAll();
       if (!mounted) return;
       _showDeletionSuccessDialog();

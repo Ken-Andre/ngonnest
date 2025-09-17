@@ -87,12 +87,12 @@ class _AddProductScreenState extends State<AddProductScreen> {
     // Initialize with the passed parameter
     _isConsumable = widget.isConsumable;
     // Éliminer la latence : Initialisation synchrone
-    _initializeServices();    
+    _initializeServices();
     // Track flow started
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AnalyticsService>().logFlowStarted('add_product');
     });
-//     _getHouseholdSize();
+    //     _getHouseholdSize();
   }
 
   void _initializeServices() {
@@ -211,6 +211,21 @@ class _AddProductScreenState extends State<AddProductScreen> {
     });
   }
 
+  //   /// Validation intelligente du prix unitaire
+  void _validateUnitPrice(String value) {
+    final result = SmartValidator.validateUnitPrice(value);
+    setState(() {
+      _priceValidation = result;
+    });
+  }
+
+  //   /// Validation intelligente de la taille du conditionnement
+  //   void _validatePackagingSize(String value) {
+  //     final result = SmartValidator.validatePackagingSize(value);
+  //     setState(() {
+  //       _packagingValidation = result;
+  //     });
+
   /// Gère la sélection d'une suggestion de produit
   void _onSuggestionSelected(ProductSuggestion suggestion) {
     setState(() {
@@ -253,21 +268,6 @@ class _AddProductScreenState extends State<AddProductScreen> {
         ),
       );
     }
-
-//   /// Validation intelligente du prix unitaire
-//   void _validateUnitPrice(String value) {
-//     final result = SmartValidator.validateUnitPrice(value);
-//     setState(() {
-//       _priceValidation = result;
-//     });
-//   }
-
-//   /// Validation intelligente de la taille du conditionnement
-//   void _validatePackagingSize(String value) {
-//     final result = SmartValidator.validatePackagingSize(value);
-//     setState(() {
-//       _packagingValidation = result;
-//     });
   }
 
   Future<void> _saveProduct() async {
@@ -312,10 +312,16 @@ class _AddProductScreenState extends State<AddProductScreen> {
             double.tryParse(_initialQuantityController.text) ?? 1.0,
         unite: _selectedUnit,
         tailleConditionnement: _isConsumable
-            ? (double.tryParse(_packagingSizeController.text.replaceAll(',', '.').trim()) ?? 1.0)
+            ? (double.tryParse(
+                    _packagingSizeController.text.replaceAll(',', '.').trim(),
+                  ) ??
+                  1.0)
             : null,
         prixUnitaire: _isConsumable
-            ? (double.tryParse(_unitPriceController.text.replaceAll(',', '.').trim()) ?? 5.0)
+            ? (double.tryParse(
+                    _unitPriceController.text.replaceAll(',', '.').trim(),
+                  ) ??
+                  5.0)
             : null,
         methodePrevision: _isConsumable ? MethodePrevision.frequence : null,
         frequenceAchatJours: _isConsumable
@@ -337,14 +343,17 @@ class _AddProductScreenState extends State<AddProductScreen> {
       print('🔄 SAVE PRODUCT: Calling repository.create()...');
       final productId = await _inventoryRepository.create(objet);
       print('✅ SAVE PRODUCT: Product created with ID: $productId');
-      
+
       // Track core action - item added
       final analyticsService = context.read<AnalyticsService>();
-      await analyticsService.logItemAction('added', params: {
-        'product_type': _isConsumable ? 'consumable' : 'durable',
-        'category': _selectedCategory,
-        'product_id': productId.toString(),
-      });
+      await analyticsService.logItemAction(
+        'added',
+        params: {
+          'product_type': _isConsumable ? 'consumable' : 'durable',
+          'category': _selectedCategory,
+          'product_id': productId.toString(),
+        },
+      );
       await analyticsService.logFlowCompleted('add_product');
 
       // Déclencher les alertes budget après ajout d'un produit
@@ -360,7 +369,6 @@ class _AddProductScreenState extends State<AddProductScreen> {
           // Ne pas bloquer l'ajout du produit si les alertes échouent
         }
       }
-
 
       if (mounted) {
         print('🔄 SAVE PRODUCT: Showing success snackbar and popping screen');
@@ -408,8 +416,6 @@ class _AddProductScreenState extends State<AddProductScreen> {
       }
     }
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -794,7 +800,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                                     const TextInputType.numberWithOptions(
                                       decimal: true,
                                     ),
-                                onChanged: _validatePackagingSize,
+                                onChanged: null,
                                 decoration: InputDecoration(
                                   hintText: 'Ex: 1.0',
                                   border: InputBorder.none,
@@ -1354,6 +1360,5 @@ class _AddProductScreenState extends State<AddProductScreen> {
   int _getHouseholdSize() {
     // Retourne la taille réelle du foyer chargée depuis HouseholdService
     return _householdSize;
-
   }
 }

@@ -8,10 +8,10 @@ import 'price_service.dart';
 import 'error_logger_service.dart';
 
 /// Service de gestion des budgets avec recommandations intelligentes
-/// 
+///
 /// Gère les catégories budgétaires, le suivi des dépenses, les alertes
 /// et génère des conseils d'économie personnalisés pour les foyers camerounais.
-/// 
+///
 /// Fonctionnalités principales:
 /// - Gestion des catégories budgétaires par mois
 /// - Synchronisation automatique avec les achats
@@ -29,8 +29,9 @@ class BudgetService extends ChangeNotifier {
   }
 
   /// Get all budget categories for a specific month
-  static Future<List<BudgetCategory>> getBudgetCategories(
-      {String? month}) async {
+  static Future<List<BudgetCategory>> getBudgetCategories({
+    String? month,
+  }) async {
     try {
       final db = await DatabaseService().database;
       final targetMonth = month ?? getCurrentMonth();
@@ -116,14 +117,18 @@ class BudgetService extends ChangeNotifier {
   }
 
   /// Sync budget categories with actual purchases
-  static Future<void> syncBudgetWithPurchases(int idFoyer,
-      {String? month}) async {
+  static Future<void> syncBudgetWithPurchases(
+    int idFoyer, {
+    String? month,
+  }) async {
     await _updateSpendingFromPurchases(idFoyer, month: month);
   }
 
   /// Calculate and update spending for all categories based on actual purchases
-  static Future<void> _updateSpendingFromPurchases(int idFoyer,
-      {String? month}) async {
+  static Future<void> _updateSpendingFromPurchases(
+    int idFoyer, {
+    String? month,
+  }) async {
     try {
       final targetMonth = month ?? getCurrentMonth();
 
@@ -133,7 +138,10 @@ class BudgetService extends ChangeNotifier {
       for (final category in categories) {
         // Calculate spending for this category based on objects purchased this month
         final spending = await _calculateCategorySpending(
-            idFoyer, category.name, targetMonth);
+          idFoyer,
+          category.name,
+          targetMonth,
+        );
 
         // Update the category with new spending amount
         final updatedCategory = category.copyWith(
@@ -161,7 +169,10 @@ class BudgetService extends ChangeNotifier {
 
   /// Calculate spending for a specific category in a given month
   static Future<double> _calculateCategorySpending(
-      int idFoyer, String categoryName, String month) async {
+    int idFoyer,
+    String categoryName,
+    String month,
+  ) async {
     try {
       final db = await DatabaseService().database;
 
@@ -173,7 +184,8 @@ class BudgetService extends ChangeNotifier {
       final endDate = DateTime(year, monthNum + 1, 0); // Last day of month
 
       // Calculate spending based on objects purchased in this month
-      final result = await db.rawQuery('''
+      final result = await db.rawQuery(
+        '''
         SELECT SUM(prix_unitaire) as total_spending
         FROM objet 
         WHERE id_foyer = ? 
@@ -181,12 +193,14 @@ class BudgetService extends ChangeNotifier {
         AND date_achat >= ? 
         AND date_achat <= ?
         AND prix_unitaire IS NOT NULL
-      ''', [
-        idFoyer,
-        categoryName,
-        startDate.toIso8601String(),
-        endDate.toIso8601String(),
-      ]);
+      ''',
+        [
+          idFoyer,
+          categoryName,
+          startDate.toIso8601String(),
+          endDate.toIso8601String(),
+        ],
+      );
 
       return (result.first['total_spending'] as double?) ?? 0.0;
     } catch (e, stackTrace) {
@@ -208,7 +222,9 @@ class BudgetService extends ChangeNotifier {
 
       // TODO: Implement NotificationService.showBudgetAlert when service is available
       // For now, we'll log the alert to console
-      debugPrint('BUDGET ALERT: ${category.name} exceeded budget by $percentage% (Spent: ${category.spent}, Limit: ${category.limit})');
+      debugPrint(
+        'BUDGET ALERT: ${category.name} exceeded budget by $percentage% (Spent: ${category.spent}, Limit: ${category.limit})',
+      );
     } catch (e, stackTrace) {
       await ErrorLoggerService.logError(
         component: 'BudgetService',
@@ -222,8 +238,10 @@ class BudgetService extends ChangeNotifier {
 
   /// Get monthly expense history for a category
   static Future<List<Map<String, dynamic>>> getMonthlyExpenseHistory(
-      int idFoyer, String categoryName,
-      {int monthsBack = 12}) async {
+    int idFoyer,
+    String categoryName, {
+    int monthsBack = 12,
+  }) async {
     try {
       final db = await DatabaseService().database;
       final now = DateTime.now();
@@ -234,8 +252,11 @@ class BudgetService extends ChangeNotifier {
         final month =
             '${targetDate.year}-${targetDate.month.toString().padLeft(2, '0')}';
 
-        final spending =
-            await _calculateCategorySpending(idFoyer, categoryName, month);
+        final spending = await _calculateCategorySpending(
+          idFoyer,
+          categoryName,
+          month,
+        );
 
         history.add({
           'month': month,
@@ -274,7 +295,7 @@ class BudgetService extends ChangeNotifier {
       'Septembre',
       'Octobre',
       'Novembre',
-      'Décembre'
+      'Décembre',
     ];
     return months[month];
   }
@@ -312,20 +333,26 @@ class BudgetService extends ChangeNotifier {
 
   /// Trigger budget check and alerts after item purchase/update
   static Future<void> checkBudgetAlertsAfterPurchase(
-      int idFoyer, String categoryName,
-      {String? month}) async {
+    int idFoyer,
+    String categoryName, {
+    String? month,
+  }) async {
     try {
       final targetMonth = month ?? getCurrentMonth();
 
       // Get the budget category for this item's category
       final categories = await getBudgetCategories(month: targetMonth);
-      final matchingCategory =
-          categories.where((cat) => cat.name == categoryName).firstOrNull;
+      final matchingCategory = categories
+          .where((cat) => cat.name == categoryName)
+          .firstOrNull;
 
       if (matchingCategory != null) {
         // Calculate current spending for this category
         final currentSpending = await _calculateCategorySpending(
-            idFoyer, categoryName, targetMonth);
+          idFoyer,
+          categoryName,
+          targetMonth,
+        );
 
         // Update the category with new spending
         final updatedCategory = matchingCategory.copyWith(
@@ -352,7 +379,9 @@ class BudgetService extends ChangeNotifier {
   }
 
   /// Get budget summary for dashboard (read-only)
-  static Future<Map<String, dynamic>> getBudgetSummary({String? month}) async {
+  static Future<Map<String, dynamic>> getBudgetSummary({
+    String? month,
+  }) async {
     try {
       final categories = await getBudgetCategories(month: month);
 
@@ -398,10 +427,12 @@ class BudgetService extends ChangeNotifier {
   // ===== PHASE 2: BUDGET INTELLIGENT & RECOMMANDATIONS =====
 
   /// Calculer automatiquement le budget recommandé basé sur le profil foyer
-  static Future<Map<String, double>> calculateRecommendedBudget(int idFoyer) async {
+  static Future<Map<String, double>> calculateRecommendedBudget(
+    int idFoyer,
+  ) async {
     try {
       final db = await DatabaseService().database;
-      
+
       // Récupérer les infos du foyer
       final foyerResult = await db.query(
         'foyer',
@@ -409,34 +440,52 @@ class BudgetService extends ChangeNotifier {
         whereArgs: [idFoyer],
         limit: 1,
       );
-      
+
       if (foyerResult.isEmpty) {
         throw Exception('Foyer non trouvé');
       }
-      
+
       final foyer = foyerResult.first;
       final nbPersonnes = foyer['nb_personnes'] as int;
       final nbPieces = foyer['nb_pieces'] as int;
       final typeLogement = foyer['type_logement'] as String;
-      
+
       // Calculs basés sur les prix moyens FCFA et profil foyer
       final baseHygiene = await PriceService.getAverageCategoryPrice('Hygiène');
-      final baseNettoyage = await PriceService.getAverageCategoryPrice('Nettoyage');
+      final baseNettoyage = await PriceService.getAverageCategoryPrice(
+        'Nettoyage',
+      );
       final baseCuisine = await PriceService.getAverageCategoryPrice('Cuisine');
       final baseDivers = await PriceService.getAverageCategoryPrice('Divers');
-      
+
       // Facteurs multiplicateurs selon profil
-      double facteurPersonnes = 1.0 + (nbPersonnes - 1) * 0.3; // +30% par personne supplémentaire
-      double facteurPieces = 1.0 + (nbPieces - 1) * 0.15; // +15% par pièce supplémentaire
-      double facteurLogement = typeLogement == 'maison' ? 1.2 : 1.0; // +20% pour maison vs appartement
-      
+      double facteurPersonnes =
+          1.0 + (nbPersonnes - 1) * 0.3; // +30% par personne supplémentaire
+      double facteurPieces =
+          1.0 + (nbPieces - 1) * 0.15; // +15% par pièce supplémentaire
+      double facteurLogement = typeLogement == 'maison'
+          ? 1.2
+          : 1.0; // +20% pour maison vs appartement
+
       final facteurTotal = facteurPersonnes * facteurPieces * facteurLogement;
-      
+
       return {
-        'Hygiène': (baseHygiene * 15 * facteurPersonnes).clamp(80.0, 300.0), // ~15 produits/mois
-        'Nettoyage': (baseNettoyage * 10 * facteurPieces).clamp(60.0, 200.0), // ~10 produits/mois
-        'Cuisine': (baseCuisine * 12 * facteurPersonnes).clamp(70.0, 250.0), // ~12 produits/mois
-        'Divers': (baseDivers * 8 * facteurTotal).clamp(40.0, 150.0), // ~8 produits/mois
+        'Hygiène': (baseHygiene * 15 * facteurPersonnes).clamp(
+          80.0,
+          300.0,
+        ), // ~15 produits/mois
+        'Nettoyage': (baseNettoyage * 10 * facteurPieces).clamp(
+          60.0,
+          200.0,
+        ), // ~10 produits/mois
+        'Cuisine': (baseCuisine * 12 * facteurPersonnes).clamp(
+          70.0,
+          250.0,
+        ), // ~12 produits/mois
+        'Divers': (baseDivers * 8 * facteurTotal).clamp(
+          40.0,
+          150.0,
+        ), // ~8 produits/mois
       };
     } catch (e, stackTrace) {
       await ErrorLoggerService.logError(
@@ -457,24 +506,35 @@ class BudgetService extends ChangeNotifier {
   }
 
   /// Générer des conseils d'économies contextualisés
-  static Future<List<Map<String, dynamic>>> generateSavingsTips(int idFoyer, {String? month}) async {
+  static Future<List<Map<String, dynamic>>> generateSavingsTips(
+    int idFoyer, {
+    String? month,
+  }) async {
     try {
       final targetMonth = month ?? getCurrentMonth();
       final categories = await getBudgetCategories(month: targetMonth);
       final tips = <Map<String, dynamic>>[];
-      
+
       for (final category in categories) {
-        if (category.spendingPercentage > 0.8) { // Plus de 80% du budget utilisé
-          tips.addAll(await _getCategorySpecificTips(category.name, category.spendingPercentage));
+        if (category.spendingPercentage > 0.8) {
+          // Plus de 80% du budget utilisé
+          tips.addAll(
+            await _getCategorySpecificTips(
+              category.name,
+              category.spendingPercentage,
+            ),
+          );
         }
       }
-      
+
       // Conseils généraux basés sur les habitudes
       final generalTips = await _getGeneralSavingsTips(idFoyer, targetMonth);
       tips.addAll(generalTips);
-      
+
       // Limiter à 5 conseils max, triés par priorité
-      tips.sort((a, b) => (b['priority'] as int).compareTo(a['priority'] as int));
+      tips.sort(
+        (a, b) => (b['priority'] as int).compareTo(a['priority'] as int),
+      );
       return tips.take(5).toList();
     } catch (e, stackTrace) {
       await ErrorLoggerService.logError(
@@ -489,15 +549,19 @@ class BudgetService extends ChangeNotifier {
   }
 
   /// Conseils spécifiques par catégorie
-  static Future<List<Map<String, dynamic>>> _getCategorySpecificTips(String categoryName, double spendingPercentage) async {
+  static Future<List<Map<String, dynamic>>> _getCategorySpecificTips(
+    String categoryName,
+    double spendingPercentage,
+  ) async {
     final tips = <Map<String, dynamic>>[];
     final urgency = spendingPercentage > 1.0 ? 'high' : 'medium';
-    
+
     switch (categoryName.toLowerCase()) {
       case 'hygiène':
         tips.add({
           'title': 'Privilégiez les formats familiaux',
-          'description': 'Les grands conditionnements (shampoing 1L, savon pack) coûtent moins cher au litre.',
+          'description':
+              'Les grands conditionnements (shampoing 1L, savon pack) coûtent moins cher au litre.',
           'category': categoryName,
           'priority': urgency == 'high' ? 5 : 3,
           'urgency': urgency,
@@ -506,7 +570,8 @@ class BudgetService extends ChangeNotifier {
         if (spendingPercentage > 1.0) {
           tips.add({
             'title': 'Utilisez le savon de Marseille',
-            'description': 'Remplacez gel douche et lessive par du savon de Marseille (800 FCFA vs 2200 FCFA).',
+            'description':
+                'Remplacez gel douche et lessive par du savon de Marseille (800 FCFA vs 2200 FCFA).',
             'category': categoryName,
             'priority': 5,
             'urgency': 'high',
@@ -514,33 +579,36 @@ class BudgetService extends ChangeNotifier {
           });
         }
         break;
-        
+
       case 'nettoyage':
         tips.add({
           'title': 'Fabriquez vos produits naturels',
-          'description': 'Vinaigre blanc + bicarbonate remplacent 80% des nettoyants chimiques.',
+          'description':
+              'Vinaigre blanc + bicarbonate remplacent 80% des nettoyants chimiques.',
           'category': categoryName,
           'priority': urgency == 'high' ? 4 : 2,
           'urgency': urgency,
           'potentialSaving': '50-60%',
         });
         break;
-        
+
       case 'cuisine':
         tips.add({
           'title': 'Achetez en gros au marché',
-          'description': 'Riz, huile, farine : 20-30% moins cher en sacs de 5kg+ au marché central.',
+          'description':
+              'Riz, huile, farine : 20-30% moins cher en sacs de 5kg+ au marché central.',
           'category': categoryName,
           'priority': urgency == 'high' ? 4 : 3,
           'urgency': urgency,
           'potentialSaving': '20-30%',
         });
         break;
-        
+
       case 'divers':
         tips.add({
           'title': 'Planifiez vos achats',
-          'description': 'Une liste de courses évite les achats impulsifs (+25% en moyenne).',
+          'description':
+              'Une liste de courses évite les achats impulsifs (+25% en moyenne).',
           'category': categoryName,
           'priority': 2,
           'urgency': 'low',
@@ -548,19 +616,23 @@ class BudgetService extends ChangeNotifier {
         });
         break;
     }
-    
+
     return tips;
   }
 
   /// Conseils généraux basés sur l'historique
-  static Future<List<Map<String, dynamic>>> _getGeneralSavingsTips(int idFoyer, String month) async {
+  static Future<List<Map<String, dynamic>>> _getGeneralSavingsTips(
+    int idFoyer,
+    String month,
+  ) async {
     final tips = <Map<String, dynamic>>[];
 
     try {
       final db = await DatabaseService().database;
-      
+
       // Analyser les achats fréquents
-      final frequentItems = await db.rawQuery('''
+      final frequentItems = await db.rawQuery(
+        '''
         SELECT nom, categorie, COUNT(*) as frequency, AVG(prix_unitaire) as avg_price
         FROM objet 
         WHERE id_foyer = ? AND date_achat >= date('now', '-3 months')
@@ -568,31 +640,41 @@ class BudgetService extends ChangeNotifier {
         HAVING frequency > 2
         ORDER BY frequency DESC
         LIMIT 3
-      ''', [idFoyer]);
-      
+      ''',
+        [idFoyer],
+      );
+
       for (final item in frequentItems) {
         final productName = item['nom'] as String;
         final avgPrice = (item['avg_price'] as double?) ?? 0.0;
-        final marketPrice = await PriceService.estimateObjectPrice(productName, item['categorie'] as String);
-        
-        if (avgPrice > marketPrice * 1.2) { // 20% plus cher que le marché
+        final marketPrice = await PriceService.estimateObjectPrice(
+          productName,
+          item['categorie'] as String,
+        );
+
+        if (avgPrice > marketPrice * 1.2) {
+          // 20% plus cher que le marché
           tips.add({
             'title': 'Optimisez vos achats de $productName',
-            'description': 'Vous payez ${avgPrice.toStringAsFixed(1)}€ vs ${marketPrice.toStringAsFixed(1)}€ en moyenne.',
+            'description':
+                'Vous payez ${avgPrice.toStringAsFixed(1)}€ vs ${marketPrice.toStringAsFixed(1)}€ en moyenne.',
             'category': 'Général',
             'priority': 3,
             'urgency': 'medium',
-            'potentialSaving': '${((avgPrice - marketPrice) / avgPrice * 100).round()}%',
+            'potentialSaving':
+                '${((avgPrice - marketPrice) / avgPrice * 100).round()}%',
           });
         }
       }
-      
+
       // Conseil saisonnier
       final now = DateTime.now();
-      if (now.month >= 6 && now.month <= 8) { // Saison des pluies
+      if (now.month >= 6 && now.month <= 8) {
+        // Saison des pluies
         tips.add({
           'title': 'Saison des pluies : stockez malin',
-          'description': 'Profitez des prix bas sur riz, huile et conserves avant la hausse de fin d\'année.',
+          'description':
+              'Profitez des prix bas sur riz, huile et conserves avant la hausse de fin d\'année.',
           'category': 'Saisonnier',
           'priority': 2,
           'urgency': 'low',
@@ -602,23 +684,28 @@ class BudgetService extends ChangeNotifier {
     } catch (e) {
       // Ignorer les erreurs pour les conseils généraux
     }
-    
+
     return tips;
   }
 
   /// Obtenir l'historique des dépenses avec tendances
-  static Future<Map<String, dynamic>> getSpendingHistory(int idFoyer, {int monthsBack = 6}) async {
+  static Future<Map<String, dynamic>> getSpendingHistory(
+    int idFoyer, {
+    int monthsBack = 6,
+  }) async {
     try {
       final db = await DatabaseService().database;
       final now = DateTime.now();
       final history = <Map<String, dynamic>>[];
-      
+
       for (int i = 0; i < monthsBack; i++) {
         final targetDate = DateTime(now.year, now.month - i, 1);
-        final month = '${targetDate.year}-${targetDate.month.toString().padLeft(2, '0')}';
-        
+        final month =
+            '${targetDate.year}-${targetDate.month.toString().padLeft(2, '0')}';
+
         // Dépenses par catégorie pour ce mois
-        final categorySpending = await db.rawQuery('''
+        final categorySpending = await db.rawQuery(
+          '''
           SELECT categorie, SUM(prix_unitaire) as total_spent, COUNT(*) as item_count
           FROM objet 
           WHERE id_foyer = ? 
@@ -626,28 +713,40 @@ class BudgetService extends ChangeNotifier {
           AND date_achat < ?
           AND prix_unitaire IS NOT NULL
           GROUP BY categorie
-        ''', [
-          idFoyer,
-          targetDate.toIso8601String(),
-          DateTime(targetDate.year, targetDate.month + 1, 1).toIso8601String(),
-        ]);
-        
+        ''',
+          [
+            idFoyer,
+            targetDate.toIso8601String(),
+            DateTime(
+              targetDate.year,
+              targetDate.month + 1,
+              1,
+            ).toIso8601String(),
+          ],
+        );
+
         final monthData = {
           'month': month,
           'year': targetDate.year,
           'monthNum': targetDate.month,
           'monthName': _getMonthName(targetDate.month),
           'categories': categorySpending,
-          'totalSpent': categorySpending.fold<double>(0.0, (sum, cat) => sum + ((cat['total_spent'] as double?) ?? 0.0)),
-          'totalItems': categorySpending.fold<int>(0, (sum, cat) => sum + ((cat['item_count'] as int?) ?? 0)),
+          'totalSpent': categorySpending.fold<double>(
+            0.0,
+            (sum, cat) => sum + ((cat['total_spent'] as double?) ?? 0.0),
+          ),
+          'totalItems': categorySpending.fold<int>(
+            0,
+            (sum, cat) => sum + ((cat['item_count'] as int?) ?? 0),
+          ),
         };
-        
+
         history.add(monthData);
       }
-      
+
       // Calculer les tendances
       final trends = _calculateSpendingTrends(history);
-      
+
       return {
         'history': history.reversed.toList(), // Ordre chronologique
         'trends': trends,
@@ -661,28 +760,43 @@ class BudgetService extends ChangeNotifier {
         stackTrace: stackTrace,
         severity: ErrorSeverity.low,
       );
-      return {
-        'history': [],
-        'trends': {},
-        'summary': {},
-      };
+      return {'history': [], 'trends': {}, 'summary': {}};
     }
   }
 
   /// Calculer les tendances de dépenses
-  static Map<String, dynamic> _calculateSpendingTrends(List<Map<String, dynamic>> history) {
+  static Map<String, dynamic> _calculateSpendingTrends(
+    List<Map<String, dynamic>> history,
+  ) {
     if (history.length < 2) return {};
-    
+
     final recent = history.take(3).toList(); // 3 derniers mois
     final older = history.skip(3).take(3).toList(); // 3 mois précédents
-    
-    final recentAvg = recent.fold<double>(0.0, (sum, month) => sum + (month['totalSpent'] as double)) / recent.length;
-    final olderAvg = older.isNotEmpty ? older.fold<double>(0.0, (sum, month) => sum + (month['totalSpent'] as double)) / older.length : recentAvg;
-    
-    final trendPercentage = olderAvg > 0 ? ((recentAvg - olderAvg) / olderAvg * 100) : 0.0;
-    
+
+    final recentAvg =
+        recent.fold<double>(
+          0.0,
+          (sum, month) => sum + (month['totalSpent'] as double),
+        ) /
+        recent.length;
+    final olderAvg = older.isNotEmpty
+        ? older.fold<double>(
+                0.0,
+                (sum, month) => sum + (month['totalSpent'] as double),
+              ) /
+              older.length
+        : recentAvg;
+
+    final trendPercentage = olderAvg > 0
+        ? ((recentAvg - olderAvg) / olderAvg * 100)
+        : 0.0;
+
     return {
-      'direction': trendPercentage > 5 ? 'increasing' : trendPercentage < -5 ? 'decreasing' : 'stable',
+      'direction': trendPercentage > 5
+          ? 'increasing'
+          : trendPercentage < -5
+          ? 'decreasing'
+          : 'stable',
       'percentage': trendPercentage.abs(),
       'recentAverage': recentAvg,
       'previousAverage': olderAvg,
@@ -690,16 +804,24 @@ class BudgetService extends ChangeNotifier {
   }
 
   /// Générer un résumé des dépenses
-  static Map<String, dynamic> _generateSpendingSummary(List<Map<String, dynamic>> history) {
+  static Map<String, dynamic> _generateSpendingSummary(
+    List<Map<String, dynamic>> history,
+  ) {
     if (history.isEmpty) return {};
-    
-    final totalSpent = history.fold<double>(0.0, (sum, month) => sum + (month['totalSpent'] as double));
+
+    final totalSpent = history.fold<double>(
+      0.0,
+      (sum, month) => sum + (month['totalSpent'] as double),
+    );
     final avgMonthly = totalSpent / history.length;
-    
+
     // Trouver le mois le plus cher et le moins cher
     final sortedBySpending = List<Map<String, dynamic>>.from(history)
-      ..sort((a, b) => (b['totalSpent'] as double).compareTo(a['totalSpent'] as double));
-    
+      ..sort(
+        (a, b) =>
+            (b['totalSpent'] as double).compareTo(a['totalSpent'] as double),
+      );
+
     return {
       'totalSpent': totalSpent,
       'averageMonthly': avgMonthly,
@@ -710,17 +832,20 @@ class BudgetService extends ChangeNotifier {
   }
 
   /// Initialiser les budgets recommandés pour un nouveau foyer
-  static Future<void> initializeRecommendedBudgets(int idFoyer, {String? month}) async {
+  static Future<void> initializeRecommendedBudgets(
+    int idFoyer, {
+    String? month,
+  }) async {
     try {
       final targetMonth = month ?? getCurrentMonth();
-      
+
       // Vérifier si des catégories existent déjà
       final existing = await getBudgetCategories(month: targetMonth);
       if (existing.isNotEmpty) return;
-      
+
       // Calculer les budgets recommandés
       final recommendedBudgets = await calculateRecommendedBudget(idFoyer);
-      
+
       // Créer les catégories avec budgets intelligents
       for (final entry in recommendedBudgets.entries) {
         final category = BudgetCategory(

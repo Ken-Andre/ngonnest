@@ -105,7 +105,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       final budget = double.tryParse(
         _budgetController.text.replaceAll(',', '.'),
       );
-      final nbPieces = int.tryParse(_roomsController.text) ?? 0;
+      // final nbPieces = int.tryParse(_roomsController.text) ?? 0;
 
       final foyer = Foyer(
         nbPersonnes: nbPersonnes,
@@ -114,7 +114,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         langue: _selectedLanguage,
         budgetMensuelEstime: budget,
       );
-
 
       final id = await HouseholdService.saveFoyer(foyer);
       if (!mounted) return;
