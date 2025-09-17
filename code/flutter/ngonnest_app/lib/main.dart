@@ -1,21 +1,26 @@
 import 'dart:io' show Platform;
 import 'dart:isolate';
 
-// import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:ngonnest_app/services/ab_testing_service.dart';
 import 'package:ngonnest_app/services/analytics_debug_helper.dart';
 import 'package:ngonnest_app/services/analytics_service.dart';
 import 'package:ngonnest_app/services/console_logger.dart';
+import 'package:ngonnest_app/services/dynamic_content_service.dart';
 import 'package:ngonnest_app/services/error_logger_service.dart';
+import 'package:ngonnest_app/services/feature_flag_service.dart';
+import 'package:ngonnest_app/services/remote_config_service.dart';
+import 'package:ngonnest_app/services/service_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart'; // Import for FFI
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:workmanager/workmanager.dart';
 
 import 'l10n/app_localizations.dart';
-import 'models/objet.dart'; // Added import for Objet
+import 'models/objet.dart';
 import 'providers/foyer_provider.dart';
 import 'providers/locale_provider.dart';
 import 'screens/add_product_screen.dart';
@@ -27,17 +32,17 @@ import 'screens/inventory_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/preferences_screen.dart';
 import 'screens/settings_screen.dart';
-import 'services/background_task_service.dart'; // Import BackgroundTaskService
+import 'services/background_task_service.dart' show callbackDispatcher;
 import 'services/budget_service.dart';
-import 'services/connectivity_service.dart'; // Import ConnectivityService
-import 'services/database_service.dart'; // Import DatabaseService
+import 'services/connectivity_service.dart';
+import 'services/database_service.dart';
 import 'services/household_service.dart';
 import 'services/notification_service.dart';
 import 'services/price_service.dart';
 import 'services/settings_service.dart';
 import 'theme/app_theme.dart';
-import 'theme/theme_mode_notifier.dart'; // Import the new file
-import 'widgets/connectivity_banner.dart'; // Import ConnectivityBanner
+import 'theme/theme_mode_notifier.dart';
+import 'widgets/connectivity_banner.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -45,8 +50,26 @@ void main() async {
   // Initialize Firebase (only on mobile platforms)
   if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
     try {
+      // Initialize Firebase
       await Firebase.initializeApp();
+      
+      // Initialize Remote Config with debug settings in development
+      if (kDebugMode) {
+        await FirebaseRemoteConfig.instance.setConfigSettings(RemoteConfigSettings(
+          fetchTimeout: const Duration(minutes: 1),
+          minimumFetchInterval: Duration.zero,
+        ));
+      }
+      
+      // Initialize services
       await AnalyticsService().initialize();
+      
+      // Pre-fetch Remote Config values
+      try {
+        await FirebaseRemoteConfig.instance.fetchAndActivate();
+      } catch (e) {
+        debugPrint('Error pre-fetching Remote Config: $e');
+      }
 
       // Run debug test in development
       if (kDebugMode) {
@@ -159,25 +182,62 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(
-          create: (context) => ThemeModeNotifier(initialThemeMode),
-        ),
-        ChangeNotifierProvider<LocaleProvider>.value(value: localeProvider),
-        ChangeNotifierProvider<FoyerProvider>.value(value: foyerProvider),
-        Provider<DatabaseService>(
-          create: (context) => DatabaseService(),
-        ), // Provide DatabaseService
-        Provider<AnalyticsService>(
-          create: (context) => AnalyticsService(),
-        ), // Provide AnalyticsService
+        ChangeNotifierProvider(create: (_) => ThemeModeNotifier(initialThemeMode)),
+        ChangeNotifierProvider(create: (_) => LocaleProvider()..initialize()),
+        ChangeNotifierProvider(create: (_) => FoyerProvider()..initialize()),
+        Provider<DatabaseService>(create: (_) => DatabaseService()),
+        Provider<AnalyticsService>(create: (_) => AnalyticsService()),
         ChangeNotifierProvider<ConnectivityService>(
-          create: (context) => ConnectivityService(),
-        ), // Provide ConnectivityService
-        ChangeNotifierProvider<FoyerProvider>(
-          create: (context) => FoyerProvider()..initialize(),
+          create: (_) => ConnectivityService(),
         ),
       ],
-      child: const MyApp(),
+      child: Consumer<LocaleProvider>(
+        builder: (context, localeProvider, _) {
+          // Initialize services that depend on context
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            // Initialize services here if needed
+          });
+
+          return MaterialApp(
+            navigatorObservers: [
+              if (AnalyticsService().observer != null)
+                AnalyticsService().observer!,
+            ],
+            title: 'NgonNest',
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: ThemeModeNotifier(initialThemeMode).themeMode,
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: const [
+              Locale('en', ''), // English
+              Locale('fr', ''), // French
+              Locale('es', ''), // Spanish
+            ],
+            locale: localeProvider.locale,
+            home: const SplashScreen(),
+            routes: {
+              '/dashboard': (context) => const DashboardScreen(),
+              '/inventory': (context) => const InventoryScreen(),
+              '/add-product': (context) => const AddProductScreen(),
+              '/edit-product': (context) {
+                final objet = ModalRoute.of(context)?.settings.arguments as Objet?;
+                return objet != null ? EditProductScreen(objet: objet) : const DashboardScreen();
+              },
+              '/budget': (context) => const BudgetScreen(),
+              '/settings': (context) => const SettingsScreen(),
+              '/preferences': (context) => const PreferencesScreen(),
+              '/developer': (context) => const DeveloperConsoleScreen(),
+              '/onboarding': (context) => const OnboardingScreen(),
+            },
+            debugShowCheckedModeBanner: false,
+          );
+        },
+      ),
     ),
   );
 }

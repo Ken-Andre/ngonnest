@@ -1541,6 +1541,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } catch (e, stackTrace) {
       print('Deletion Error: $e');
       print('StackTrace: $stackTrace');
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Erreur lors de la suppression : $e'),
