@@ -34,8 +34,11 @@ class ProductTemplate {
 
     // Utilise les guidelines spécifiques par taille de famille
     final familyKey = '${familySize}_persons';
-    if (commonQuantities?.containsKey(familyKey) ?? false) {
-      return commonQuantities![familyKey]!.toDouble();
+    if (commonQuantities?.containsKey(familyKey) == true) {
+      final quantity = commonQuantities![familyKey];
+      if (quantity != null) {
+        return quantity.toDouble();
+      }
     }
 
     // Calcul basé sur les guidelines existants (famille de 4 par défaut)
@@ -437,37 +440,45 @@ class ProductPresets {
       'icon': '🏠',
       'popularity': 85,
       'products': [
-        // Électroménagers et meubles
-        {
-          'name': 'Téléviseur',
-          'unit': 'pièces',
-          'defaultFrequency': 1825, // ~5 ans
-          'popularity': 95,
-          'icon': '📺',
-          'quantityGuidelines': {'family_4': 1},
-        },
-        {
-          'name': 'Ventilateur',
-          'unit': 'pièces',
-          'defaultFrequency': 1825, // ~5 ans
-          'popularity': 90,
-          'icon': '💨',
-          'quantityGuidelines': {'family_4': 1},
-        },
-        {
-          'name': 'Climatiseur',
-          'unit': 'pièces',
-          'defaultFrequency': 2555, // ~7 ans
-          'popularity': 80,
-          'icon': '❄️',
-          'quantityGuidelines': {'family_4': 1},
-        },
+        // ÉLECTROMÉNAGER GROS
         {
           'name': 'Réfrigérateur',
           'unit': 'pièces',
           'defaultFrequency': 2555, // ~7 ans
-          'popularity': 90,
+          'popularity': 95,
           'icon': '🧊',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Congélateur',
+          'unit': 'pièces',
+          'defaultFrequency': 2555, // ~7 ans
+          'popularity': 85,
+          'icon': '🧊',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Machine à laver',
+          'unit': 'pièces',
+          'defaultFrequency': 2555, // ~7 ans
+          'popularity': 90,
+          'icon': '🧺',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Sèche-linge',
+          'unit': 'pièces',
+          'defaultFrequency': 1825, // ~5 ans
+          'popularity': 80,
+          'icon': '👕',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Lave-vaisselle',
+          'unit': 'pièces',
+          'defaultFrequency': 1825, // ~5 ans
+          'popularity': 75,
+          'icon': '🍽️',
           'quantityGuidelines': {'family_4': 1},
         },
         {
@@ -479,12 +490,54 @@ class ProductPresets {
           'quantityGuidelines': {'family_4': 1},
         },
         {
-          'name': 'Machine à laver',
+          'name': 'Four',
+          'unit': 'pièces',
+          'defaultFrequency': 1825, // ~5 ans
+          'popularity': 80,
+          'icon': '🔥',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Micro-ondes',
+          'unit': 'pièces',
+          'defaultFrequency': 1095, // ~3 ans
+          'popularity': 85,
+          'icon': '🍽️',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Aspirateur',
+          'unit': 'pièces',
+          'defaultFrequency': 1460, // ~4 ans
+          'popularity': 90,
+          'icon': '🧹',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Robot aspirateur',
+          'unit': 'pièces',
+          'defaultFrequency': 730, // ~2 ans
+          'popularity': 70,
+          'icon': '🤖',
+          'quantityGuidelines': {'family_4': 1},
+        },
+
+        // CLIMATISATION & CHAUFFAGE
+        {
+          'name': 'Climatiseur',
           'unit': 'pièces',
           'defaultFrequency': 2555, // ~7 ans
-          'popularity': 85,
-          'icon': '🧺',
+          'popularity': 80,
+          'icon': '❄️',
           'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Ventilateur',
+          'unit': 'pièces',
+          'defaultFrequency': 1825, // ~5 ans
+          'popularity': 90,
+          'icon': '💨',
+          'quantityGuidelines': {'family_4': 2},
         },
         {
           'name': 'Chauffage électrique',
@@ -494,43 +547,202 @@ class ProductPresets {
           'icon': '🔥',
           'quantityGuidelines': {'family_4': 1},
         },
-        // Meubles
+        {
+          'name': 'Radiateur électrique',
+          'unit': 'pièces',
+          'defaultFrequency': 1460, // ~4 ans
+          'popularity': 75,
+          'icon': '🔥',
+          'quantityGuidelines': {'family_4': 2},
+        },
+
+        // AUDIOVISUEL & INFORMATIQUE
+        {
+          'name': 'Téléviseur',
+          'unit': 'pièces',
+          'defaultFrequency': 1825, // ~5 ans
+          'popularity': 95,
+          'icon': '📺',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Home cinéma',
+          'unit': 'pièces',
+          'defaultFrequency': 2555, // ~7 ans
+          'popularity': 65,
+          'icon': '🎬',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Ordinateur portable',
+          'unit': 'pièces',
+          'defaultFrequency': 1460, // ~4 ans
+          'popularity': 90,
+          'icon': '💻',
+          'quantityGuidelines': {'family_4': 2},
+        },
+        {
+          'name': 'Ordinateur fixe',
+          'unit': 'pièces',
+          'defaultFrequency': 1825, // ~5 ans
+          'popularity': 70,
+          'icon': '🖥️',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Imprimante',
+          'unit': 'pièces',
+          'defaultFrequency': 1095, // ~3 ans
+          'popularity': 80,
+          'icon': '🖨️',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Tablette',
+          'unit': 'pièces',
+          'defaultFrequency': 1095, // ~3 ans
+          'popularity': 85,
+          'icon': '📱',
+          'quantityGuidelines': {'family_4': 2},
+        },
+        {
+          'name': 'Smartphone',
+          'unit': 'pièces',
+          'defaultFrequency': 730, // ~2 ans
+          'popularity': 95,
+          'icon': '📱',
+          'quantityGuidelines': {'family_4': 4},
+        },
+        {
+          'name': 'Smart TV',
+          'unit': 'pièces',
+          'defaultFrequency': 1460, // ~4 ans
+          'popularity': 85,
+          'icon': '📺',
+          'quantityGuidelines': {'family_4': 1},
+        },
+
+        // PETITS ÉLECTROMÉNAGERS
+        {
+          'name': 'Cafetière',
+          'unit': 'pièces',
+          'defaultFrequency': 1095, // ~3 ans
+          'popularity': 85,
+          'icon': '☕',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Bouilloire électrique',
+          'unit': 'pièces',
+          'defaultFrequency': 1825, // ~5 ans
+          'popularity': 80,
+          'icon': '☕',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Grille-pain',
+          'unit': 'pièces',
+          'defaultFrequency': 1460, // ~4 ans
+          'popularity': 75,
+          'icon': '🍞',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Blender',
+          'unit': 'pièces',
+          'defaultFrequency': 1095, // ~3 ans
+          'popularity': 70,
+          'icon': '🥤',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Robot cuisine',
+          'unit': 'pièces',
+          'defaultFrequency': 1825, // ~5 ans
+          'popularity': 65,
+          'icon': '🤖',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Fer à repasser',
+          'unit': 'pièces',
+          'defaultFrequency': 1460, // ~4 ans
+          'popularity': 85,
+          'icon': '👕',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Aspirateur balai',
+          'unit': 'pièces',
+          'defaultFrequency': 1095, // ~3 ans
+          'popularity': 80,
+          'icon': '🧹',
+          'quantityGuidelines': {'family_4': 1},
+        },
+
+        // MEUBLES SALON
         {
           'name': 'Canapé salon',
           'unit': 'pièces',
-          'defaultFrequency': 2555, // ~7 ans
-          'popularity': 85,
+          'defaultFrequency': 3650, // ~10 ans
+          'popularity': 90,
           'icon': '🛋️',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Fauteuil',
+          'unit': 'pièces',
+          'defaultFrequency': 2555, // ~7 ans
+          'popularity': 75,
+          'icon': '🪑',
+          'quantityGuidelines': {'family_4': 2},
+        },
+        {
+          'name': 'Table basse',
+          'unit': 'pièces',
+          'defaultFrequency': 2555, // ~7 ans
+          'popularity': 80,
+          'icon': '🪑',
           'quantityGuidelines': {'family_4': 1},
         },
         {
           'name': 'Meuble TV',
           'unit': 'pièces',
-          'defaultFrequency': 1825, // ~5 ans
-          'popularity': 80,
+          'defaultFrequency': 2555, // ~7 ans
+          'popularity': 85,
           'icon': '📺',
           'quantityGuidelines': {'family_4': 1},
         },
         {
-          'name': 'Table salle à manger',
+          'name': 'Étagère',
           'unit': 'pièces',
-          'defaultFrequency': 2555, // ~7 ans
-          'popularity': 80,
-          'icon': '🍽️',
+          'defaultFrequency': 3650, // ~10 ans
+          'popularity': 70,
+          'icon': '📚',
+          'quantityGuidelines': {'family_4': 2},
+        },
+        {
+          'name': 'Bibliothèque',
+          'unit': 'pièces',
+          'defaultFrequency': 3650, // ~10 ans
+          'popularity': 75,
+          'icon': '📚',
+          'quantityGuidelines': {'family_4': 1},
+        },
+
+        // MEUBLES CHAMBRE
+        {
+          'name': 'Lit complet (matelas + sommier)',
+          'unit': 'pièces',
+          'defaultFrequency': 3650, // ~10 ans
+          'popularity': 95,
+          'icon': '🛏️',
           'quantityGuidelines': {'family_4': 1},
         },
         {
-          'name': 'Chaises',
+          'name': 'Matelas',
           'unit': 'pièces',
           'defaultFrequency': 1825, // ~5 ans
-          'popularity': 85,
-          'icon': '🪑',
-          'quantityGuidelines': {'family_4': 4},
-        },
-        {
-          'name': 'Lit complet',
-          'unit': 'pièces',
-          'defaultFrequency': 3650, // ~10 ans
           'popularity': 90,
           'icon': '🛏️',
           'quantityGuidelines': {'family_4': 1},
@@ -538,35 +750,216 @@ class ProductPresets {
         {
           'name': 'Armoire',
           'unit': 'pièces',
-          'defaultFrequency': 2555, // ~7 ans
-          'popularity': 85,
+          'defaultFrequency': 3650, // ~10 ans
+          'popularity': 90,
           'icon': '🗂️',
           'quantityGuidelines': {'family_4': 1},
         },
         {
-          'name': 'Cuisine complète',
+          'name': 'Commode',
           'unit': 'pièces',
-          'defaultFrequency': 3650, // ~10 ans
-          'popularity': 80,
-          'icon': '🍳',
+          'defaultFrequency': 2555, // ~7 ans
+          'popularity': 75,
+          'icon': '🗂️',
           'quantityGuidelines': {'family_4': 1},
         },
-        // Électronique petite
         {
-          'name': 'Ampoules',
-          'unit': 'pack',
-          'defaultFrequency': 730, // ~2 ans
-          'popularity': 90,
-          'icon': '💡',
+          'name': 'Table de chevet',
+          'unit': 'pièces',
+          'defaultFrequency': 2555, // ~7 ans
+          'popularity': 80,
+          'icon': '🛏️',
           'quantityGuidelines': {'family_4': 2},
         },
         {
-          'name': 'Piles/Batteries',
+          'name': 'Coiffeuse',
+          'unit': 'pièces',
+          'defaultFrequency': 2555, // ~7 ans
+          'popularity': 60,
+          'icon': '🪞',
+          'quantityGuidelines': {'family_4': 1},
+        },
+
+        // MEUBLES SALLE À MANGER
+        {
+          'name': 'Table salle à manger',
+          'unit': 'pièces',
+          'defaultFrequency': 3650, // ~10 ans
+          'popularity': 85,
+          'icon': '🍽️',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Chaises salle à manger',
+          'unit': 'pièces',
+          'defaultFrequency': 2555, // ~7 ans
+          'popularity': 90,
+          'icon': '🪑',
+          'quantityGuidelines': {'family_4': 4},
+        },
+        {
+          'name': 'Buffet',
+          'unit': 'pièces',
+          'defaultFrequency': 3650, // ~10 ans
+          'popularity': 70,
+          'icon': '🗂️',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Vaisselier',
+          'unit': 'pièces',
+          'defaultFrequency': 3650, // ~10 ans
+          'popularity': 65,
+          'icon': '🍽️',
+          'quantityGuidelines': {'family_4': 1},
+        },
+
+        // CUISINE ÉQUIPÉE
+        {
+          'name': 'Cuisine complète',
+          'unit': 'pièces',
+          'defaultFrequency': 3650, // ~10 ans
+          'popularity': 85,
+          'icon': '🍳',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Électroménager cuisine intégré',
+          'unit': 'pièces',
+          'defaultFrequency': 1825, // ~5 ans
+          'popularity': 75,
+          'icon': '🍳',
+          'quantityGuidelines': {'family_4': 1},
+        },
+
+        // DÉCORATION & AMEUBLEMENT
+        {
+          'name': 'Tapis salon',
+          'unit': 'pièces',
+          'defaultFrequency': 1825, // ~5 ans
+          'popularity': 75,
+          'icon': '🪑',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Rideaux',
+          'unit': 'pièces',
+          'defaultFrequency': 1460, // ~4 ans
+          'popularity': 70,
+          'icon': '🪟',
+          'quantityGuidelines': {'family_4': 4},
+        },
+        {
+          'name': 'Lampes',
+          'unit': 'pièces',
+          'defaultFrequency': 1095, // ~3 ans
+          'popularity': 80,
+          'icon': '💡',
+          'quantityGuidelines': {'family_4': 3},
+        },
+        {
+          'name': 'Tableaux/Décorations murales',
+          'unit': 'pièces',
+          'defaultFrequency': 2555, // ~7 ans
+          'popularity': 65,
+          'icon': '🖼️',
+          'quantityGuidelines': {'family_4': 5},
+        },
+
+        // JARDIN & EXTÉRIEUR
+        {
+          'name': 'Jardin mobilier',
+          'unit': 'ensembles',
+          'defaultFrequency': 2555, // ~7 ans
+          'popularity': 60,
+          'icon': '🏡',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Barbecue',
+          'unit': 'pièces',
+          'defaultFrequency': 1460, // ~4 ans
+          'popularity': 70,
+          'icon': '🔥',
+          'quantityGuidelines': {'family_4': 1},
+        },
+
+        // CONSOMMABLES DURABLES
+        {
+          'name': 'Ampoules LED',
           'unit': 'pack',
-          'defaultFrequency': 365, // ~1 an
+          'defaultFrequency': 1460, // ~4 ans
+          'popularity': 90,
+          'icon': '💡',
+          'quantityGuidelines': {'family_4': 4},
+        },
+        {
+          'name': 'Piles rechargeables',
+          'unit': 'pack',
+          'defaultFrequency': 1095, // ~3 ans
           'popularity': 80,
           'icon': '🔋',
+          'quantityGuidelines': {'family_4': 2},
+        },
+        {
+          'name': 'Batteries diverses',
+          'unit': 'pack',
+          'defaultFrequency': 730, // ~2 ans
+          'popularity': 85,
+          'icon': '🔋',
           'quantityGuidelines': {'family_4': 3},
+        },
+
+        // OBJETS CONNECTÉS
+        {
+          'name': 'Enceinte connectée',
+          'unit': 'pièces',
+          'defaultFrequency': 1095, // ~3 ans
+          'popularity': 75,
+          'icon': '🔊',
+          'quantityGuidelines': {'family_4': 2},
+        },
+        {
+          'name': 'Caméra surveillance',
+          'unit': 'pièces',
+          'defaultFrequency': 1460, // ~4 ans
+          'popularity': 65,
+          'icon': '📹',
+          'quantityGuidelines': {'family_4': 4},
+        },
+        {
+          'name': 'Thermostat connecté',
+          'unit': 'pièces',
+          'defaultFrequency': 2555, // ~7 ans
+          'popularity': 60,
+          'icon': '🌡️',
+          'quantityGuidelines': {'family_4': 1},
+        },
+        {
+          'name': 'Prise connectée',
+          'unit': 'pack',
+          'defaultFrequency': 1825, // ~5 ans
+          'popularity': 70,
+          'icon': '🔌',
+          'quantityGuidelines': {'family_4': 6},
+        },
+
+        // SPORT & LOISIRS
+        {
+          'name': 'Vélo adulte',
+          'unit': 'pièces',
+          'defaultFrequency': 3650, // ~10 ans
+          'popularity': 75,
+          'icon': '🚴',
+          'quantityGuidelines': {'family_4': 2},
+        },
+        {
+          'name': 'Trottinette électrique',
+          'unit': 'pièces',
+          'defaultFrequency': 1460, // ~4 ans
+          'popularity': 60,
+          'icon': '🛴',
+          'quantityGuidelines': {'family_4': 1},
         },
       ],
     },

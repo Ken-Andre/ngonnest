@@ -14,6 +14,7 @@ class SmartProductSearch extends StatefulWidget {
   final InputDecoration? decoration;
   final TextEditingController?
   controller; // Controller externe pour persistance
+  final bool? isConsumable; // Filtre par type de produit
 
   const SmartProductSearch({
     super.key,
@@ -25,6 +26,7 @@ class SmartProductSearch extends StatefulWidget {
     this.enabled = true,
     this.decoration,
     this.controller,
+    this.isConsumable,
   });
 
   @override
@@ -39,6 +41,17 @@ class _SmartProductSearchState extends State<SmartProductSearch> {
   List<ProductTemplate> _suggestions = [];
   bool _showSuggestions = false;
   bool _isInternalController = false;
+
+  /// Détermine si un produit est consommable ou durable basé sur sa catégorie
+  bool _isProductType(String category, bool isConsumable) {
+    if (isConsumable) {
+      // Catégories consommables
+      return ['hygiene', 'menage', 'nourriture', 'bureau', 'maintenance', 'securite', 'evenementiel', 'autre'].contains(category);
+    } else {
+      // Catégorie durables
+      return category == 'durables';
+    }
+  }
 
   @override
   void initState() {
@@ -78,11 +91,16 @@ class _SmartProductSearchState extends State<SmartProductSearch> {
     if (query.isEmpty) {
       // Retourner les produits populaires quand pas de recherche
       try {
+        // Pour les durables, utiliser toujours la catégorie 'durables' générale
+        final popularCategory = widget.isConsumable == false && widget.category != 'durables'
+            ? 'durables'
+            : widget.category;
+
         final popular = await _intelligenceService.getPopularProductsByCategory(
-          widget.category,
+          popularCategory,
         );
         print(
-          'DEBUG: Popular products for ${widget.category}: ${popular.length} items',
+          'DEBUG: Popular products for ${widget.category} (searched in $popularCategory): ${popular.length} items',
         );
         return popular;
       } catch (e) {
@@ -93,14 +111,24 @@ class _SmartProductSearchState extends State<SmartProductSearch> {
 
     // Recherche dans tous les produits de la catégorie actuelle d'abord
     try {
+      // Pour les durables, utiliser toujours la catégorie 'durables' générale
+      final searchCategory = widget.isConsumable == false && widget.category != 'durables'
+          ? 'durables'
+          : widget.category;
+
       final products = await _intelligenceService.getProductsByCategory(
-        widget.category,
+        searchCategory,
       );
       print(
-        'DEBUG: All products for ${widget.category}: ${products.length} items',
+        'DEBUG: All products for ${widget.category} (searched in $searchCategory): ${products.length} items',
       );
 
-      final filtered = products
+      // Filtrer par type (consommable/durable) si spécifié
+      final filteredByType = widget.isConsumable != null
+          ? products.where((product) => _isProductType(product.category, widget.isConsumable!)).toList()
+          : products;
+
+      final filtered = filteredByType
           .where(
             (product) =>
                 product.name.toLowerCase().contains(query.toLowerCase()),
@@ -108,33 +136,39 @@ class _SmartProductSearchState extends State<SmartProductSearch> {
           .toList();
 
       print(
-        'DEBUG: Filtered products for query "$query" in ${widget.category}: ${filtered.length} items',
+        'DEBUG: Filtered products for query "$query" in ${widget.category}: ${filtered.length} items (isConsumable: ${widget.isConsumable})',
       );
 
-      // Si aucun résultat dans la catégorie actuelle, chercher dans TOUTES les catégories
+      // Si aucun résultat dans la catégorie actuelle, chercher dans TOUTES les catégories du même type
       if (filtered.isEmpty) {
         print(
-          'DEBUG: No results in ${widget.category}, searching in ALL categories...',
+          'DEBUG: No results in ${widget.category}, searching in other categories of same type...',
         );
 
-        // Récupérer toutes les catégories et chercher dans chacune
+        // Récupérer toutes les catégories et chercher dans celles du même type
         final allCategories = _intelligenceService.getAllCategories();
         List<ProductTemplate> allResults = [];
 
         for (final category in allCategories) {
           final categoryId = category['id'] as String;
           if (categoryId != widget.category) {
-            // Éviter de rechercher à nouveau dans la catégorie actuelle
-            final categoryResults = await _intelligenceService.searchProducts(
-              query,
-              categoryId,
-            );
-            allResults.addAll(categoryResults);
+            // Vérifier si cette catégorie correspond au type demandé
+            final isCorrectType = widget.isConsumable == null ||
+                _isProductType(categoryId, widget.isConsumable!);
+
+            if (isCorrectType) {
+              final categoryResults = await _intelligenceService.searchProducts(
+                query,
+                categoryId,
+                isConsumable: widget.isConsumable,
+              );
+              allResults.addAll(categoryResults);
+            }
           }
         }
 
         print(
-          'DEBUG: Found ${allResults.length} results across all categories',
+          'DEBUG: Found ${allResults.length} results across matching categories',
         );
 
         // Tri par popularité et pertinence
