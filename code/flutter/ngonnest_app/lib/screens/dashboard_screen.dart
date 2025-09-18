@@ -16,6 +16,7 @@ import '../theme/app_theme.dart';
 import '../theme/theme_mode_notifier.dart';
 import '../widgets/connectivity_banner.dart';
 import '../widgets/main_navigation_wrapper.dart';
+import '../widgets/premium_banner.dart';
 import '../widgets/sync_banner.dart';
 import 'add_product_screen.dart';
 
@@ -338,6 +339,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     _buildAlertsSection(),
                     const SizedBox(height: 24),
                   ],
+
+                  // Premium Banner (Remote Config controlled)
+                  const PremiumBanner(),
 
                   // Quick actions
                   _buildQuickActionsSection(),

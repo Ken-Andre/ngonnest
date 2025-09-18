@@ -22,7 +22,7 @@ web/
 *.zip
 *.png
 *.sql
-
+*.xml
 
 # Bot Telegram / backend
 node_modules/

@@ -19,6 +19,8 @@ import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:workmanager/workmanager.dart';
 
+import 'firebase_options.dart';
+
 import 'l10n/app_localizations.dart';
 import 'models/objet.dart';
 import 'providers/foyer_provider.dart';
@@ -50,26 +52,13 @@ void main() async {
   // Initialize Firebase (only on mobile platforms)
   if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
     try {
-      // Initialize Firebase
-      await Firebase.initializeApp();
-      
-      // Initialize Remote Config with debug settings in development
-      if (kDebugMode) {
-        await FirebaseRemoteConfig.instance.setConfigSettings(RemoteConfigSettings(
-          fetchTimeout: const Duration(minutes: 1),
-          minimumFetchInterval: Duration.zero,
-        ));
-      }
-      
+      // Initialize Firebase with proper options
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+
       // Initialize services
       await AnalyticsService().initialize();
-      
-      // Pre-fetch Remote Config values
-      try {
-        await FirebaseRemoteConfig.instance.fetchAndActivate();
-      } catch (e) {
-        debugPrint('Error pre-fetching Remote Config: $e');
-      }
 
       // Run debug test in development
       if (kDebugMode) {
@@ -189,6 +178,21 @@ void main() async {
         Provider<AnalyticsService>(create: (_) => AnalyticsService()),
         ChangeNotifierProvider<ConnectivityService>(
           create: (_) => ConnectivityService(),
+        ),
+        // Firebase Remote Config Services
+        // TODO: Initialize services asynchronously to avoid blocking app startup
+        // TODO: Add error handling for service initialization failures
+        Provider<RemoteConfigService>(
+          create: (_) => RemoteConfigService()..initialize(),
+        ),
+        Provider<FeatureFlagService>(
+          create: (_) => FeatureFlagService(),
+        ),
+        Provider<ABTestingService>(
+          create: (_) => ABTestingService(),
+        ),
+        Provider<DynamicContentService>(
+          create: (_) => DynamicContentService(),
         ),
       ],
       child: Consumer<LocaleProvider>(

@@ -1,0 +1,23 @@
+{
+    "flutter": {
+        "platforms": {
+            "android": {
+                "default": {
+                    "projectId": "ngonnest-analytics",
+                    "appId": "1:323254445931:android:706bd1ffba4cd9e0260e2e",
+                    "fileOutput": "android/app/google-services.json"
+                }
+            },
+            "dart": {
+                "lib/firebase_options.dart": {
+                    "projectId": "ngonnest-analytics",
+                    "configurations": {
+                        "android": "1:323254445931:android:706bd1ffba4cd9e0260e2e",
+                        "ios": "1:323254445931:ios:8ec56daeef37bd97260e2e",
+                        "web": "1:323254445931:web:d556d91661c0ad0f260e2e"
+                    }
+                }
+            }
+        }
+    }
+}
