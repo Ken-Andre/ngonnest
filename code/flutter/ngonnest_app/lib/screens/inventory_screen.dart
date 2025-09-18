@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/objet.dart';
 import '../repository/inventory_repository.dart';
+import '../services/analytics_service.dart';
 import '../services/database_service.dart';
 import '../services/navigation_service.dart';
 import '../widgets/main_navigation_wrapper.dart';
@@ -34,18 +35,44 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(() {
-      // Réinitialiser les filtres quand on change d'onglet
+      // Track tab switching
       if (_tabController.indexIsChanging) {
+        final tabName = _tabController.index == 0 ? 'consommables' : 'durables';
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            context.read<AnalyticsService>().logEvent(
+              'inventory_tab_switched',
+              parameters: {
+                'tab_name': tabName,
+                'from_tab': _tabController.previousIndex == 0 ? 'consommables' : 'durables',
+              },
+            );
+          }
+        });
+
+        // Réinitialiser les filtres quand on change d'onglet
         setState(() {
           _filterState = const InventoryFilterState();
         });
         _applySearchAndFilters();
       }
     });
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _databaseService = context.read<DatabaseService>();
       _inventoryRepository = InventoryRepository(_databaseService);
       _loadInventory();
+
+      // Track screen view
+      if (mounted) {
+        context.read<AnalyticsService>().logEvent(
+          'screen_view',
+          parameters: {
+            'screen_name': 'inventory',
+            'timestamp': DateTime.now().millisecondsSinceEpoch.toString(),
+          },
+        );
+      }
     });
   }
 
@@ -196,6 +223,22 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
   }
 
   void _onSearchChanged(String query) {
+    // Track search analytics
+    if (query.isNotEmpty && query != _searchQuery) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          context.read<AnalyticsService>().logEvent(
+            'inventory_search',
+            parameters: {
+              'search_query': query,
+              'current_tab': _tabController.index == 0 ? 'consommables' : 'durables',
+              'timestamp': DateTime.now().millisecondsSinceEpoch.toString(),
+            },
+          );
+        }
+      });
+    }
+
     setState(() {
       _searchQuery = query;
     });
@@ -323,7 +366,21 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
             ),
           ),
           floatingActionButton: FloatingActionButton(
-            onPressed: () => _showAddItemDialog(context),
+            onPressed: () {
+              // Track add item button click
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  context.read<AnalyticsService>().logEvent(
+                    'inventory_add_button_clicked',
+                    parameters: {
+                      'current_tab': _tabController.index == 0 ? 'consommables' : 'durables',
+                      'timestamp': DateTime.now().millisecondsSinceEpoch.toString(),
+                    },
+                  );
+                }
+              });
+              _showAddItemDialog(context);
+            },
             backgroundColor: Theme.of(context).primaryColor,
             foregroundColor: Colors.white,
             child: const Icon(Icons.add),
@@ -565,7 +622,23 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
             ),
           ],
         ),
-        onTap: () => _showObjetDetails(objet),
+        onTap: () {
+          // Track item view
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              context.read<AnalyticsService>().logEvent(
+                'inventory_item_view',
+                parameters: {
+                  'item_name': objet.nom,
+                  'item_type': objet.type == TypeObjet.consommable ? 'consommable' : 'durable',
+                  'item_category': objet.categorie,
+                  'timestamp': DateTime.now().millisecondsSinceEpoch.toString(),
+                },
+              );
+            }
+          });
+          _showObjetDetails(objet);
+        },
       ),
     );
   }
@@ -758,6 +831,22 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
   }
 
   void _handleMenuAction(String action, Objet objet) {
+    // Track menu action
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<AnalyticsService>().logEvent(
+          'inventory_menu_action',
+          parameters: {
+            'action': action,
+            'item_name': objet.nom,
+            'item_type': objet.type == TypeObjet.consommable ? 'consommable' : 'durable',
+            'item_category': objet.categorie,
+            'timestamp': DateTime.now().millisecondsSinceEpoch.toString(),
+          },
+        );
+      }
+    });
+
     switch (action) {
       case 'edit':
         Navigator.pushNamed(context, '/edit-objet', arguments: objet);

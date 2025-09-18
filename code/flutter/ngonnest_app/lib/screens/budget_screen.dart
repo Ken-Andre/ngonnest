@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import '../widgets/main_navigation_wrapper.dart';
 import '../services/navigation_service.dart';
 import '../services/budget_service.dart';
+import '../services/analytics_service.dart';
 import '../models/budget_category.dart';
 import '../widgets/budget_category_card.dart';
 import '../widgets/budget_category_dialog.dart';
@@ -26,6 +27,20 @@ class _BudgetScreenState extends State<BudgetScreen> {
   @override
   void initState() {
     super.initState();
+
+    // Track screen view
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<AnalyticsService>().logEvent(
+          'screen_view',
+          parameters: {
+            'screen_name': 'budget',
+            'timestamp': DateTime.now().millisecondsSinceEpoch.toString(),
+          },
+        );
+      }
+    });
+
     _loadBudgetData();
   }
 
@@ -270,6 +285,18 @@ class _BudgetScreenState extends State<BudgetScreen> {
                       // Conseils button
                       ElevatedButton.icon(
                         onPressed: () {
+                          // Track savings tips button click
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (mounted) {
+                              context.read<AnalyticsService>().logEvent(
+                                'budget_savings_tips_clicked',
+                                parameters: {
+                                  'timestamp': DateTime.now().millisecondsSinceEpoch.toString(),
+                                },
+                              );
+                            }
+                          });
+
                           Navigator.of(context).push(
                             MaterialPageRoute(
                               builder: (context) => const SavingsTipsScreen(),
@@ -300,7 +327,21 @@ class _BudgetScreenState extends State<BudgetScreen> {
                       const SizedBox(width: 8),
                       // Add category button
                       ElevatedButton.icon(
-                        onPressed: () => _showCategoryDialog(),
+                        onPressed: () {
+                          // Track add category button click
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (mounted) {
+                              context.read<AnalyticsService>().logEvent(
+                                'budget_add_category_clicked',
+                                parameters: {
+                                  'timestamp': DateTime.now().millisecondsSinceEpoch.toString(),
+                                },
+                              );
+                            }
+                          });
+
+                          _showCategoryDialog();
+                        },
                         icon: const Icon(CupertinoIcons.add, size: 16),
                         label: const Text(
                           'Ajouter',

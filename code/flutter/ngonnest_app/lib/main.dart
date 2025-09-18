@@ -232,6 +232,20 @@ void main() async {
                 final objet = ModalRoute.of(context)?.settings.arguments as Objet?;
                 return objet != null ? EditProductScreen(objet: objet) : const DashboardScreen();
               },
+              '/edit-objet': (context) {
+                final objet = ModalRoute.of(context)?.settings.arguments as Objet?;
+                if (objet == null) {
+                  ErrorLoggerService.logError(
+                    component: 'MainRouter',
+                    operation: 'navigateToEditObjet',
+                    error: 'Attempted to navigate to /edit-objet with null Objet argument.',
+                    severity: ErrorSeverity.medium,
+                    stackTrace: StackTrace.current,
+                  );
+                  return const InventoryScreen();
+                }
+                return EditProductScreen(objet: objet);
+              },
               '/budget': (context) => const BudgetScreen(),
               '/settings': (context) => const SettingsScreen(),
               '/preferences': (context) => const PreferencesScreen(),
