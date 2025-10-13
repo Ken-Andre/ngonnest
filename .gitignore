@@ -8,12 +8,12 @@ build/
 .metadata
 
 # Flutter platform folders
-android/
-ios/
+# android/
+# ios/
 linux/
 macos/
 windows/
-web/
+# web/
 
 # Generated files
 *.iml
@@ -22,7 +22,6 @@ web/
 *.zip
 *.png
 *.sql
-*.xml
 
 # Bot Telegram / backend
 node_modules/

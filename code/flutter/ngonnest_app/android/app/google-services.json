@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "323254445931",
+    "project_id": "ngonnest-analytics",
+    "storage_bucket": "ngonnest-analytics.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:323254445931:android:706bd1ffba4cd9e0260e2e",
+        "android_client_info": {
+          "package_name": "com.ngonnest.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCY5SeA8VXMmVqAWpEkigo2hnvBBBYJJco"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
