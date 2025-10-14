@@ -1,6 +1,7 @@
 import 'package:calendar_events/calendar_events.dart';
 import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'error_logger_service.dart';
 /// Service for synchronizing calendar events with device calendar
 /// Handles permissions and event creation for reminders and alerts
 /// 
@@ -25,25 +26,43 @@ class CalendarSyncService {
   final CalendarEvents _calendarEvents = CalendarEvents();
 
   Future<bool> _requestPermissions() async {
-    if (kIsWeb) {
+    try {
+      // Web: non supporté → fail gracieux
+      if (kIsWeb) {
+        return false;
+      }
+
+      switch (defaultTargetPlatform) {
+        case TargetPlatform.iOS:
+          final result = await _calendarEvents.requestPermission();
+          final permission = CalendarPermission.fromInt(result);
+          return permission == CalendarPermission.allowed;
+
+        case TargetPlatform.android:
+          // Android: READ/WRITE_CALENDAR via permission_handler
+          final status = await Permission.calendar.status;
+          if (status.isGranted) return true;
+          final requested = await Permission.calendar.request();
+          return requested.isGranted;
+
+        default:
+          // Desktop & autres plateformes: considérer non supporté pour MVP
           return false;
+      }
+    } catch (e, stackTrace) {
+      await ErrorLoggerService.logError(
+        component: 'CalendarSyncService',
+        operation: '_requestPermissions',
+        error: e,
+        stackTrace: stackTrace,
+        severity: ErrorSeverity.low,
+        metadata: {
+          'platform': defaultTargetPlatform.toString(),
+          'isWeb': kIsWeb,
+        },
+      );
+      return false;
     }
-
-    if (defaultTargetPlatform == TargetPlatform.iOS) {
-      final result = await _calendarEvents.requestPermission();
-      final permission = CalendarPermission.fromInt(result);
-      return permission == CalendarPermission.allowed;
-    }
-
-    final status = await Permission.calendar.status;
-    if (status.isGranted) {
-      return true;
-    }
-    else{
-      return (await Permission.calendar.request()).isGranted;
-    }  
-    // Unsupported platforms (desktop, etc.)
-    return false;
   }
 
   Future<void> addEvent({
@@ -54,10 +73,32 @@ class CalendarSyncService {
   }) async {
     try {
       final hasPermission = await _requestPermissions();
-      if (!hasPermission) return;
+      if (!hasPermission) {
+        await ErrorLoggerService.logError(
+          component: 'CalendarSyncService',
+          operation: 'addEvent',
+          error: 'Calendar permission not granted or unsupported platform',
+          stackTrace: StackTrace.current,
+          severity: ErrorSeverity.low,
+          metadata: {
+            'title': title,
+            'start': start.toIso8601String(),
+            'platform': defaultTargetPlatform.toString(),
+            'isWeb': kIsWeb,
+          },
+        );
+        return;
+      }
 
       final accounts = await _calendarEvents.getCalendarAccounts();
       if (accounts == null || accounts.isEmpty) {
+        await ErrorLoggerService.logError(
+          component: 'CalendarSyncService',
+          operation: 'addEvent',
+          error: 'No calendar accounts available',
+          stackTrace: StackTrace.current,
+          severity: ErrorSeverity.low,
+        );
         return;
       }
 
@@ -76,8 +117,18 @@ class CalendarSyncService {
       );
 
       await _calendarEvents.addEvent(event);
-    } catch (e) {
-      debugPrint('Failed to add calendar event: $e');
+    } catch (e, stackTrace) {
+      await ErrorLoggerService.logError(
+        component: 'CalendarSyncService',
+        operation: 'addEvent',
+        error: e,
+        stackTrace: stackTrace,
+        severity: ErrorSeverity.medium,
+        metadata: {
+          'title': title,
+          'start': start.toIso8601String(),
+        },
+      );
       rethrow;
     }
   }
