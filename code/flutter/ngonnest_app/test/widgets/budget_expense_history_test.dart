@@ -3,10 +3,18 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:ngonnest_app/widgets/budget_expense_history.dart';
 import 'package:ngonnest_app/models/budget_category.dart';
+import 'package:ngonnest_app/services/database_service.dart';
+import 'package:mockito/mockito.dart';
+import 'package:mockito/annotations.dart';
+
+// Generate mocks for Mockito
+@GenerateMocks([DatabaseService])
+import 'budget_expense_history_test.mocks.dart';
 
 void main() {
   group('BudgetExpenseHistory', () {
     late BudgetCategory testCategory;
+    late MockDatabaseService mockDatabaseService;
 
     setUpAll(() {
       // Initialize sqflite for testing
@@ -15,6 +23,7 @@ void main() {
     });
 
     setUp(() {
+      mockDatabaseService = MockDatabaseService();
       testCategory = BudgetCategory(
         id: 1,
         name: 'Test Category',
@@ -26,7 +35,9 @@ void main() {
 
     Widget createTestWidget(BudgetCategory category, int idFoyer) {
       return MaterialApp(
-        home: BudgetExpenseHistory(category: category, idFoyer: idFoyer),
+        home: Scaffold(
+          body: BudgetExpenseHistory(category: category, idFoyer: idFoyer),
+        ),
       );
     }
 
@@ -34,7 +45,7 @@ void main() {
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(createTestWidget(testCategory, 1));
-      await tester.pump(); // Allow initial build
+      await tester.pumpAndSettle(); // Allow initial build
 
       expect(find.text('Historique - Test Category'), findsOneWidget);
     });

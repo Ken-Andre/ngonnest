@@ -701,6 +701,22 @@ class DatabaseService {
       ); // Changed to low
     }
   }
+
+  /// Clears all data from the database tables
+  Future<void> clearAllData() async {
+    return _executeDbOperation((db) async {
+      // Get all table names
+      final tables = await db.rawQuery(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'android_metadata'",
+      );
+      
+      // Clear each table
+      for (var table in tables) {
+        final tableName = table['name'] as String;
+        await db.delete(tableName);
+      }
+    }, ErrorContext.debugOperation);
+  }
 }
 
 enum ErrorContext {

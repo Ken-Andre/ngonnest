@@ -55,7 +55,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
   final _packagingSizeController = TextEditingController();
   final _commentairesController =
       TextEditingController(); // Commentaires pour durables
-  String _selectedCategory = 'hygiene'; // Match database naming (no accents)
+  String _selectedCategory = 'hygiène'; // Première catégorie par défaut
   String _selectedDurableCategory = ''; // Catégorie durable sélectionnée
   String _selectedUnit = 'pièces'; // Unité sélectionnée
   DateTime? _expiryDate;
@@ -78,7 +78,11 @@ class _AddProductScreenState extends State<AddProductScreen> {
     {'id': 'hygiène', 'name': 'Hygiène', 'icon': '🧴', 'color': '#22C55E'},
     {'id': 'nettoyage', 'name': 'Nettoyage', 'icon': '🧹', 'color': '#3B82F6'},
     {'id': 'cuisine', 'name': 'Cuisine', 'icon': '🍳', 'color': '#F59E0B'},
-    {'id': 'durables', 'name': 'Durables', 'icon': '📺', 'color': '#8B5CF6'},
+    {'id': 'bureau', 'name': 'Bureau', 'icon': '📋', 'color': '#8B5CF6'},
+    {'id': 'maintenance', 'name': 'Maintenance', 'icon': '🔧', 'color': '#EF4444'},
+    {'id': 'sécurité', 'name': 'Sécurité', 'icon': '🛡️', 'color': '#F97316'},
+    {'id': 'événementiel', 'name': 'Événementiel', 'icon': '🎉', 'color': '#EC4899'},
+    {'id': 'autre', 'name': 'Autre', 'icon': '📦', 'color': '#6B7280'},
   ];
 
   @override
@@ -632,40 +636,18 @@ class _AddProductScreenState extends State<AddProductScreen> {
                         border: InputBorder.none,
                         contentPadding: EdgeInsets.zero,
                       ),
-                      items: const [
-                        DropdownMenuItem(
-                          value: 'hygiene',
-                          child: Text('🧴 Hygiène'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'menage',
-                          child: Text('🧹 Ménage & Entretien'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'nourriture',
-                          child: Text('🍳 Nourriture & Boissons'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'bureau',
-                          child: Text('📋 Fournitures Bureau'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'maintenance',
-                          child: Text('🔧 Maintenance & Réparation'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'securite',
-                          child: Text('🛡️ Sécurité & Protection'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'evenementiel',
-                          child: Text('🎉 Événementiel'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'autre',
-                          child: Text('📦 Autre'),
-                        ),
-                      ],
+                      items: _categories.map((category) {
+                        return DropdownMenuItem<String>(
+                          value: category['id']!,
+                          child: Row(
+                            children: [
+                              Text(category['icon']!, style: const TextStyle(fontSize: 16)),
+                              const SizedBox(width: 8),
+                              Text(category['name']!),
+                            ],
+                          ),
+                        );
+                      }).toList(),
                       onChanged: _isLoading
                           ? null
                           : (value) {

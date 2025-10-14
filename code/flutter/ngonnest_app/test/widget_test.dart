@@ -42,7 +42,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verify that the app loads without crashing
-    // Look for the splash screen or main content
+    // Look for MaterialApp which is inside MyApp
     expect(find.byType(MaterialApp), findsOneWidget);
   });
 }
