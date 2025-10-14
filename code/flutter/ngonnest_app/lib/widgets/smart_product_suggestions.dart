@@ -8,7 +8,7 @@ import '../theme/app_theme.dart'; // AppTheme is still needed for _PriorityConfi
 /// Widget intelligent d'affichage des suggestions de produits
 /// Intègre le ProductSuggestionService pour proposer des produits pertinents
 class SmartProductSuggestions extends StatefulWidget {
-  final String foyerId;
+  final int foyerId;
   final String? category;
   final String? room;
   final Function(ProductSuggestion) onSuggestionSelected;
@@ -416,7 +416,7 @@ class _ConfidenceIndicator extends StatelessWidget {
 
 /// Widget de recherche de suggestions
 class SmartSuggestionSearch extends StatefulWidget {
-  final String foyerId;
+  final int foyerId;
   final String? category;
   final Function(ProductSuggestion) onSuggestionSelected;
   final String hintText;
