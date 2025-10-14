@@ -15,8 +15,10 @@ class FoyerProvider extends ChangeNotifier {
   }
 
   void setFoyer(Foyer foyer) {
-    _foyer = foyer;
-    notifyListeners();
+    if (_foyer?.id != foyer.id || _foyer != foyer) {
+      _foyer = foyer;
+      notifyListeners();
+    }
   }
 
   void clear() {

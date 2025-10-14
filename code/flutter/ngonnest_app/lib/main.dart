@@ -172,34 +172,40 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeModeNotifier(initialThemeMode)),
-        ChangeNotifierProvider(create: (_) => LocaleProvider()..initialize()),
-        ChangeNotifierProvider(create: (_) => FoyerProvider()..initialize()),
+        ChangeNotifierProvider.value(value: localeProvider),
+        ChangeNotifierProvider.value(value: foyerProvider),
         Provider<DatabaseService>(create: (_) => DatabaseService()),
         Provider<AnalyticsService>(create: (_) => AnalyticsService()),
         ChangeNotifierProvider<ConnectivityService>(
           create: (_) => ConnectivityService(),
         ),
-        // Firebase Remote Config Services
-        // TODO: Initialize services asynchronously to avoid blocking app startup
-        // TODO: Add error handling for service initialization failures
+        // Firebase Remote Config Services - Lazy initialization
         Provider<RemoteConfigService>(
-          create: (_) => RemoteConfigService()..initialize(),
+          create: (_) => RemoteConfigService(),
+          lazy: true,
         ),
-        Provider<FeatureFlagService>(
-          create: (_) => FeatureFlagService(),
+        ProxyProvider<RemoteConfigService, FeatureFlagService>(
+          update: (_, remoteConfig, __) => FeatureFlagService(),
+          lazy: true,
         ),
-        Provider<ABTestingService>(
-          create: (_) => ABTestingService(),
+        ProxyProvider<RemoteConfigService, ABTestingService>(
+          update: (_, remoteConfig, __) => ABTestingService(),
+          lazy: true,
         ),
-        Provider<DynamicContentService>(
-          create: (_) => DynamicContentService(),
+        ProxyProvider<RemoteConfigService, DynamicContentService>(
+          update: (_, remoteConfig, __) => DynamicContentService(),
+          lazy: true,
         ),
       ],
-      child: Consumer<LocaleProvider>(
-        builder: (context, localeProvider, _) {
-          // Initialize services that depend on context
+      child: Consumer2<ThemeModeNotifier, LocaleProvider>(
+        builder: (context, themeModeNotifier, localeProvider, _) {
+          // Initialize RemoteConfig asynchronously after first frame
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            // Initialize services here if needed
+            if (context.mounted) {
+              context.read<RemoteConfigService>().initialize().catchError((e) {
+                if (kDebugMode) print('[Main] RemoteConfig init failed: $e');
+              });
+            }
           });
 
           return MaterialApp(
@@ -210,7 +216,7 @@ void main() async {
             title: 'NgonNest',
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
-            themeMode: ThemeModeNotifier(initialThemeMode).themeMode,
+            themeMode: themeModeNotifier.themeMode,
             localizationsDelegates: const [
               AppLocalizations.delegate,
               GlobalMaterialLocalizations.delegate,
@@ -260,97 +266,7 @@ void main() async {
   );
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final themeMode = context.watch<ThemeModeNotifier>().themeMode;
-    final locale = context.watch<LocaleProvider>().locale;
-    final analyticsService = context.read<AnalyticsService>();
-
-    return MaterialApp(
-      navigatorObservers: analyticsService.observer != null
-          ? [analyticsService.observer!]
-          : [],
-      title: 'NgonNest',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: themeMode,
-      locale: locale,
-      localizationsDelegates: const [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: LocaleProvider.supportedLocales,
-      home: const AppWithConnectivityOverlay(child: SplashScreen()),
-      routes: {
-        '/onboarding': (context) =>
-            const AppWithConnectivityOverlay(child: OnboardingScreen()),
-        '/preferences': (context) =>
-            const AppWithConnectivityOverlay(child: PreferencesScreen()),
-        '/dashboard': (context) =>
-            const AppWithConnectivityOverlay(child: DashboardScreen()),
-        '/add-product': (context) =>
-            const AppWithConnectivityOverlay(child: AddProductScreen()),
-        '/inventory': (context) =>
-            const AppWithConnectivityOverlay(child: InventoryScreen()),
-        '/budget': (context) =>
-            const AppWithConnectivityOverlay(child: BudgetScreen()),
-        '/settings': (context) =>
-            const AppWithConnectivityOverlay(child: SettingsScreen()),
-        '/developer-console': (context) =>
-            const AppWithConnectivityOverlay(child: DeveloperConsoleScreen()),
-        '/edit-objet': (context) {
-          final objet = ModalRoute.of(context)?.settings.arguments as Objet?;
-          if (objet == null) {
-            // Optionally, log an error or navigate to a default error screen
-            // For now, navigating back to inventory as a fallback
-            ErrorLoggerService.logError(
-              component: 'MyAppRouter',
-              operation: 'navigateToEditObjet',
-              error:
-                  'Attempted to navigate to /edit-objet with null Objet argument.',
-              severity: ErrorSeverity.medium,
-              stackTrace: StackTrace.current,
-            );
-            return const AppWithConnectivityOverlay(child: InventoryScreen());
-          }
-          return AppWithConnectivityOverlay(
-            child: EditProductScreen(objet: objet),
-          );
-        },
-      },
-    );
-  }
-}
-
-/// Wrapper widget qui affiche la bannière de connectivité en overlay sur tous les écrans
-class AppWithConnectivityOverlay extends StatelessWidget {
-  final Widget child;
-
-  const AppWithConnectivityOverlay({super.key, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        // L'écran principal
-        child,
-        // La bannière de connectivité en overlay
-        Positioned(
-          top: MediaQuery.of(context).padding.top + 8, // Respecter la safe area
-          left: 16,
-          right: 16,
-          child: const ConnectivityBanner(),
-        ),
-      ],
-    );
-  }
-}
+// Removed duplicate MyApp widget and AppWithConnectivityOverlay (unused)
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
