@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/objet.dart';
@@ -29,6 +31,7 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
   String _searchQuery = '';
   InventoryFilterState _filterState = const InventoryFilterState();
   bool _isFilterExpanded = false;
+  Timer? _debounce;
 
   @override
   void initState() {
@@ -79,6 +82,7 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
   @override
   void dispose() {
     _tabController.dispose();
+    _debounce?.cancel();
     super.dispose();
   }
 
@@ -153,37 +157,38 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
   }
 
   void _applySearchAndFilters() {
-    List<Objet> filteredConsommables = _consommables;
-    List<Objet> filteredDurables = _durables;
+    // Optimize: Use where() lazily and materialize only once
+    Iterable<Objet> filteredConsommables = _consommables;
+    Iterable<Objet> filteredDurables = _durables;
 
-    // Apply search filter
+    // Apply search filter (lazy evaluation)
     if (_searchQuery.isNotEmpty) {
       final query = _searchQuery.toLowerCase();
       filteredConsommables = filteredConsommables.where((objet) {
         return objet.nom.toLowerCase().contains(query) ||
             objet.categorie.toLowerCase().contains(query) ||
             (objet.room?.toLowerCase().contains(query) ?? false);
-      }).toList();
+      });
 
       filteredDurables = filteredDurables.where((objet) {
         return objet.nom.toLowerCase().contains(query) ||
             objet.categorie.toLowerCase().contains(query) ||
             (objet.room?.toLowerCase().contains(query) ?? false);
-      }).toList();
+      });
     }
 
-    // Apply category filter
+    // Apply category filter (lazy evaluation)
     if (_filterState.selectedRoom != null) {
       filteredConsommables = filteredConsommables.where((objet) {
         return objet.categorie == _filterState.selectedRoom;
-      }).toList();
+      });
 
       filteredDurables = filteredDurables.where((objet) {
         return objet.categorie == _filterState.selectedRoom;
-      }).toList();
+      });
     }
 
-    // Apply expiry filter (only for consumables)
+    // Apply expiry filter (only for consumables, lazy evaluation)
     if (_filterState.expiryFilter != ExpiryFilter.all) {
       final now = DateTime.now();
       filteredConsommables = filteredConsommables.where((objet) {
@@ -199,7 +204,7 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
           case ExpiryFilter.all:
             return true;
         }
-      }).toList();
+      });
     }
 
     // TODO-SC3: InventoryScreen - Enhanced Filtering (MEDIUM PRIORITY)
@@ -216,13 +221,17 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
     //     return (daysUntilExpiry >= 0 && daysUntilExpiry <= 3) || 
     //            (objet.quantiteRestante <= (objet.seuilAlerteQuantite ?? 0))
 
+    // Materialize lists only once at the end for better performance
     setState(() {
-      _filteredConsommables = filteredConsommables;
-      _filteredDurables = filteredDurables;
+      _filteredConsommables = filteredConsommables.toList();
+      _filteredDurables = filteredDurables.toList();
     });
   }
 
   void _onSearchChanged(String query) {
+    // Cancel previous timer
+    _debounce?.cancel();
+    
     // Track search analytics
     if (query.isNotEmpty && query != _searchQuery) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -242,7 +251,11 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
     setState(() {
       _searchQuery = query;
     });
-    _applySearchAndFilters();
+    
+    // Debounce search to avoid excessive filtering
+    _debounce = Timer(const Duration(milliseconds: 300), () {
+      _applySearchAndFilters();
+    });
   }
 
   void _onFilterChanged(InventoryFilterState newFilterState) {
@@ -267,14 +280,19 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
       final updatedObjet = objet.copyWith(quantiteRestante: newQuantity);
       await _inventoryRepository.updateObjet(updatedObjet);
 
-      // Update local lists
-      final index = _consommables.indexWhere((o) => o.id == objet.id);
-      if (index != -1) {
-        setState(() {
-          _consommables[index] = updatedObjet;
-        });
-        _applySearchAndFilters();
-      }
+      // Optimize: Update both lists in a single setState for better performance
+      setState(() {
+        final consIndex = _consommables.indexWhere((o) => o.id == objet.id);
+        if (consIndex != -1) {
+          _consommables[consIndex] = updatedObjet;
+        }
+        
+        // Also update filtered list directly to avoid full refiltering
+        final filtIndex = _filteredConsommables.indexWhere((o) => o.id == objet.id);
+        if (filtIndex != -1) {
+          _filteredConsommables[filtIndex] = updatedObjet;
+        }
+      });
     } catch (e) {
       rethrow; // Let the widget handle the error display
     }
