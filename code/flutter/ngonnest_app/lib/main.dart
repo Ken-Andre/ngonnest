@@ -142,10 +142,11 @@ void main() async {
     );
     ConsoleLogger.info('[Main] Workmanager initialized and task registered.');
   } else {
-    if (isTesting)
+    if (isTesting) {
       ConsoleLogger.info(
         '[Main] Workmanager initialization skipped (FLUTTER_TEST environment).',
       );
+    }
     if (kIsWeb)
       ConsoleLogger.info(
         '[Main] Workmanager initialization skipped (Web environment).',
@@ -171,9 +172,11 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => ThemeModeNotifier(initialThemeMode)),
-        ChangeNotifierProvider(create: (_) => LocaleProvider()..initialize()),
-        ChangeNotifierProvider(create: (_) => FoyerProvider()..initialize()),
+        ChangeNotifierProvider(
+          create: (_) => ThemeModeNotifier(initialThemeMode),
+        ),
+        ChangeNotifierProvider.value(value: localeProvider),
+        ChangeNotifierProvider.value(value: foyerProvider),
         Provider<DatabaseService>(create: (_) => DatabaseService()),
         Provider<AnalyticsService>(create: (_) => AnalyticsService()),
         ChangeNotifierProvider<ConnectivityService>(
@@ -183,23 +186,33 @@ void main() async {
         // TODO: Initialize services asynchronously to avoid blocking app startup
         // TODO: Add error handling for service initialization failures
         Provider<RemoteConfigService>(
-          create: (_) => RemoteConfigService()..initialize(),
+          create: (_) => RemoteConfigService(),
+          lazy: true,
         ),
-        Provider<FeatureFlagService>(
-          create: (_) => FeatureFlagService(),
+        ProxyProvider<RemoteConfigService, FeatureFlagService>(
+          update: (_, remoteConfig, __) => FeatureFlagService(),
+          lazy: true,
         ),
-        Provider<ABTestingService>(
-          create: (_) => ABTestingService(),
+        ProxyProvider<RemoteConfigService, ABTestingService>(
+          update: (_, remoteConfig, __) => ABTestingService(),
+          lazy: true,
         ),
-        Provider<DynamicContentService>(
-          create: (_) => DynamicContentService(),
+        ProxyProvider<RemoteConfigService, DynamicContentService>(
+          update: (_, remoteConfig, __) => DynamicContentService(),
+          lazy: true,
         ),
       ],
-      child: Consumer<LocaleProvider>(
-        builder: (context, localeProvider, _) {
+      child: Consumer2<ThemeModeNotifier, LocaleProvider>(
+        builder: (context, themeModeNotifier, localeProvider, _) {
           // Initialize services that depend on context
+          // Initialize RemoteConfig asynchronously after first frame
           WidgetsBinding.instance.addPostFrameCallback((_) {
             // Initialize services here if needed
+            if (context.mounted) {
+              context.read<RemoteConfigService>().initialize().catchError((e) {
+                if (kDebugMode) print('[Main] RemoteConfig init failed: $e');
+              });
+            }
           });
 
           return MaterialApp(
@@ -229,16 +242,21 @@ void main() async {
               '/inventory': (context) => const InventoryScreen(),
               '/add-product': (context) => const AddProductScreen(),
               '/edit-product': (context) {
-                final objet = ModalRoute.of(context)?.settings.arguments as Objet?;
-                return objet != null ? EditProductScreen(objet: objet) : const DashboardScreen();
+                final objet =
+                    ModalRoute.of(context)?.settings.arguments as Objet?;
+                return objet != null
+                    ? EditProductScreen(objet: objet)
+                    : const DashboardScreen();
               },
               '/edit-objet': (context) {
-                final objet = ModalRoute.of(context)?.settings.arguments as Objet?;
+                final objet =
+                    ModalRoute.of(context)?.settings.arguments as Objet?;
                 if (objet == null) {
                   ErrorLoggerService.logError(
                     component: 'MainRouter',
                     operation: 'navigateToEditObjet',
-                    error: 'Attempted to navigate to /edit-objet with null Objet argument.',
+                    error:
+                        'Attempted to navigate to /edit-objet with null Objet argument.',
                     severity: ErrorSeverity.medium,
                     stackTrace: StackTrace.current,
                   );

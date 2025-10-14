@@ -93,21 +93,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
     try {
       final foyer = await HouseholdService.getFoyer();
       if (foyer != null) {
-        final totalItems = await _inventoryRepository.getTotalCount(foyer.id!);
-        final expiringSoon = await _inventoryRepository.getExpiringSoonCount(
-          foyer.id!,
-        );
-        final alerts = await _databaseService.getAlerts(
-          idFoyer: foyer.id!,
-          unreadOnly: true,
-        );
+        // Batch all database calls in parallel for better performance
+        final results = await Future.wait([
+          _inventoryRepository.getTotalCount(foyer.id!),
+          _inventoryRepository.getExpiringSoonCount(foyer.id!),
+          _databaseService.getAlerts(idFoyer: foyer.id!, unreadOnly: true),
+        ]);
 
         setState(() {
           _foyerProfile = foyer;
-          _totalItems = totalItems;
-          _expiringSoon = expiringSoon;
-          _urgentAlerts = alerts.length;
-          _notifications = alerts;
+          _totalItems = results[0] as int;
+          _expiringSoon = results[1] as int;
+          _notifications = results[2] as List<Alert>;
+          _urgentAlerts = _notifications.length;
           _lastSyncTime =
               DateTime.now(); // Update sync time on successful data load
         });
@@ -115,7 +113,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         // Log succès du chargement du dashboard (debug uniquement)
         if (kDebugMode) {
           print(
-            '[Dashboard] Successfully loaded: ${foyer.id} - $totalItems items, $expiringSoon expiring',
+            '[Dashboard] Successfully loaded: ${foyer.id} - $_totalItems items, $_expiringSoon expiring',
           );
         }
       }
@@ -320,8 +318,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Quick stats
-                  _buildQuickStats(),
+                  // Quick stats (RepaintBoundary for performance)
+                  RepaintBoundary(child: _buildQuickStats()),
                   const SizedBox(height: 16),
 
                   // Sync banner
@@ -336,12 +334,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                   // Alerts section
                   if (_notifications.isNotEmpty) ...[
-                    _buildAlertsSection(),
+                    RepaintBoundary(child: _buildAlertsSection()),
                     const SizedBox(height: 24),
                   ],
 
                   // Premium Banner (Remote Config controlled)
-                  const PremiumBanner(),
+                  const RepaintBoundary(child: PremiumBanner()),
 
                   // Quick actions
                   _buildQuickActionsSection(),
@@ -1073,7 +1071,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _markNotificationAsRead(Alert notification) async {
     await _databaseService.markAlertAsRead(notification.id!);
-    _loadDashboardData(); // Refresh alerts after marking as read
+    // Only reload notifications instead of entire dashboard for better performance
+    try {
+      if (_foyerProfile?.id != null) {
+        final alerts = await _databaseService.getAlerts(
+          idFoyer: _foyerProfile!.id!,
+          unreadOnly: true,
+        );
+        setState(() {
+          _notifications = alerts;
+          _urgentAlerts = alerts.length;
+        });
+      }
+    } catch (e) {
+      // Fallback to full reload if partial update fails
+      _loadDashboardData();
+    }
   }
 
   Color _getNotificationColor(AlertUrgency urgency) {

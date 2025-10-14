@@ -688,12 +688,29 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Widget _buildBottomNavigation() {
-    final canProceed =
-        _currentStep == 0 && _selectedLanguage.isNotEmpty ||
-        _currentStep == 1 && _selectedHouseholdSize.isNotEmpty ||
-        _currentStep == 2 && _selectedHousingType.isNotEmpty ||
-        _currentStep == 3 && _budgetController.text.isNotEmpty ||
-        (_currentStep == 4 && _roomsController.text.isNotEmpty);
+    bool canProceed = false;
+    
+    switch (_currentStep) {
+      case 0:
+        canProceed = _selectedLanguage.isNotEmpty;
+        break;
+      case 1:
+        canProceed = _selectedHouseholdSize.isNotEmpty;
+        break;
+      case 2:
+        canProceed = _selectedHousingType.isNotEmpty;
+        break;
+      case 3:
+        // Allow proceeding if budget field is empty or contains a valid number
+        final budgetText = _budgetController.text.trim();
+        canProceed = budgetText.isEmpty || _isValidNumber(budgetText);
+        break;
+      case 4:
+        // Allow proceeding if rooms field is empty or contains a valid integer
+        final roomsText = _roomsController.text.trim();
+        canProceed = roomsText.isEmpty || _isValidInteger(roomsText);
+        break;
+    }
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -701,7 +718,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         width: double.infinity,
         child: CupertinoButton(
           padding: const EdgeInsets.symmetric(vertical: 16),
-          color: canProceed ? AppTheme.primaryGreen : AppTheme.neutralGrey,
+          color: canProceed && !_isLoading ? AppTheme.primaryGreen : AppTheme.neutralGrey,
           borderRadius: BorderRadius.circular(12),
           onPressed: canProceed && !_isLoading ? _nextStep : null,
           child: _isLoading
@@ -717,5 +734,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         ),
       ),
     );
+  }
+  
+  /// Helper method to check if a string represents a valid number
+  bool _isValidNumber(String value) {
+    final number = double.tryParse(value.replaceAll(',', '.'));
+    return number != null && number >= 0;
+  }
+  
+  /// Helper method to check if a string represents a valid integer
+  bool _isValidInteger(String value) {
+    final number = int.tryParse(value);
+    return number != null && number >= 0;
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:async';
 import '../models/objet.dart';
 import '../repository/inventory_repository.dart';
 import '../services/analytics_service.dart';
@@ -17,7 +18,8 @@ class InventoryScreen extends StatefulWidget {
   State<InventoryScreen> createState() => _InventoryScreenState();
 }
 
-class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProviderStateMixin {
+class _InventoryScreenState extends State<InventoryScreen>
+    with SingleTickerProviderStateMixin {
   late DatabaseService _databaseService;
   late InventoryRepository _inventoryRepository;
   late TabController _tabController;
@@ -29,6 +31,7 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
   String _searchQuery = '';
   InventoryFilterState _filterState = const InventoryFilterState();
   bool _isFilterExpanded = false;
+  Timer? _debounce;
 
   @override
   void initState() {
@@ -44,7 +47,9 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
               'inventory_tab_switched',
               parameters: {
                 'tab_name': tabName,
-                'from_tab': _tabController.previousIndex == 0 ? 'consommables' : 'durables',
+                'from_tab': _tabController.previousIndex == 0
+                    ? 'consommables'
+                    : 'durables',
               },
             );
           }
@@ -79,6 +84,7 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
   @override
   void dispose() {
     _tabController.dispose();
+    _debounce?.cancel();
     super.dispose();
   }
 
@@ -153,8 +159,9 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
   }
 
   void _applySearchAndFilters() {
-    List<Objet> filteredConsommables = _consommables;
-    List<Objet> filteredDurables = _durables;
+    // Optimize: Use where() lazily and materialize only once
+    Iterable<Objet> filteredConsommables = _consommables;
+    Iterable<Objet> filteredDurables = _durables;
 
     // Apply search filter
     if (_searchQuery.isNotEmpty) {
@@ -163,24 +170,24 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
         return objet.nom.toLowerCase().contains(query) ||
             objet.categorie.toLowerCase().contains(query) ||
             (objet.room?.toLowerCase().contains(query) ?? false);
-      }).toList();
+      });
 
       filteredDurables = filteredDurables.where((objet) {
         return objet.nom.toLowerCase().contains(query) ||
             objet.categorie.toLowerCase().contains(query) ||
             (objet.room?.toLowerCase().contains(query) ?? false);
-      }).toList();
+      });
     }
 
     // Apply category filter
     if (_filterState.selectedRoom != null) {
       filteredConsommables = filteredConsommables.where((objet) {
         return objet.categorie == _filterState.selectedRoom;
-      }).toList();
+      });
 
       filteredDurables = filteredDurables.where((objet) {
         return objet.categorie == _filterState.selectedRoom;
-      }).toList();
+      });
     }
 
     // Apply expiry filter (only for consumables)
@@ -213,12 +220,12 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
     // Impact: Users cannot quickly filter urgent inventory items
     // Required implementation:
     //   case ExpiryFilter.urgent:
-    //     return (daysUntilExpiry >= 0 && daysUntilExpiry <= 3) || 
+    //     return (daysUntilExpiry >= 0 && daysUntilExpiry <= 3) ||
     //            (objet.quantiteRestante <= (objet.seuilAlerteQuantite ?? 0))
 
     setState(() {
-      _filteredConsommables = filteredConsommables;
-      _filteredDurables = filteredDurables;
+      _filteredConsommables = filteredConsommables.toList();
+      _filteredDurables = filteredDurables.toList();
     });
   }
 
@@ -231,18 +238,25 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
             'inventory_search',
             parameters: {
               'search_query': query,
-              'current_tab': _tabController.index == 0 ? 'consommables' : 'durables',
+              'current_tab': _tabController.index == 0
+                  ? 'consommables'
+                  : 'durables',
               'timestamp': DateTime.now().millisecondsSinceEpoch.toString(),
             },
           );
         }
       });
+      // Cancel previous timer
+      _debounce?.cancel();
     }
 
     setState(() {
       _searchQuery = query;
     });
-    _applySearchAndFilters();
+    // Debounce search to avoid excessive filtering
+    _debounce = Timer(const Duration(milliseconds: 300), () {
+      _applySearchAndFilters();
+    });
   }
 
   void _onFilterChanged(InventoryFilterState newFilterState) {
@@ -337,7 +351,9 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
                           onFilterChanged: _onFilterChanged,
                           availableRooms: _getAvailableCategories(),
                           isExpanded: _isFilterExpanded,
-                          isConsumableTab: _tabController.index == 0, // 0 = Consommables, 1 = Durables
+                          isConsumableTab:
+                              _tabController.index ==
+                              0, // 0 = Consommables, 1 = Durables
                           onToggleExpanded: () {
                             setState(() {
                               _isFilterExpanded = !_isFilterExpanded;
@@ -347,9 +363,11 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
                         const SizedBox(height: 8),
                         // Hauteur fixe pour les tabs sur petits écrans, flexible sur grands écrans
                         SizedBox(
-                          height: _isFilterExpanded 
-                            ? constraints.maxHeight * 0.35  // Réduit quand filtres ouverts
-                            : constraints.maxHeight * 0.6, // Plus d'espace quand filtres fermés
+                          height: _isFilterExpanded
+                              ? constraints.maxHeight *
+                                    0.35 // Réduit quand filtres ouverts
+                              : constraints.maxHeight *
+                                    0.6, // Plus d'espace quand filtres fermés
                           child: TabBarView(
                             controller: _tabController,
                             children: [
@@ -373,8 +391,11 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
                   context.read<AnalyticsService>().logEvent(
                     'inventory_add_button_clicked',
                     parameters: {
-                      'current_tab': _tabController.index == 0 ? 'consommables' : 'durables',
-                      'timestamp': DateTime.now().millisecondsSinceEpoch.toString(),
+                      'current_tab': _tabController.index == 0
+                          ? 'consommables'
+                          : 'durables',
+                      'timestamp': DateTime.now().millisecondsSinceEpoch
+                          .toString(),
                     },
                   );
                 }
@@ -630,7 +651,9 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
                 'inventory_item_view',
                 parameters: {
                   'item_name': objet.nom,
-                  'item_type': objet.type == TypeObjet.consommable ? 'consommable' : 'durable',
+                  'item_type': objet.type == TypeObjet.consommable
+                      ? 'consommable'
+                      : 'durable',
                   'item_category': objet.categorie,
                   'timestamp': DateTime.now().millisecondsSinceEpoch.toString(),
                 },
@@ -839,7 +862,9 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
           parameters: {
             'action': action,
             'item_name': objet.nom,
-            'item_type': objet.type == TypeObjet.consommable ? 'consommable' : 'durable',
+            'item_type': objet.type == TypeObjet.consommable
+                ? 'consommable'
+                : 'durable',
             'item_category': objet.categorie,
             'timestamp': DateTime.now().millisecondsSinceEpoch.toString(),
           },
