@@ -92,6 +92,18 @@ class DatabaseService {
             );
           }
 
+          // Close existing database connection if it exists but is closed
+          if (_database != null && !_database!.isOpen) {
+            try {
+              await _database!.close();
+            } catch (e) {
+              if (kDebugMode) {
+                print('[DatabaseService] Error closing existing database: $e');
+              }
+            }
+            _database = null;
+          }
+
           _database = await initDatabase().timeout(_connectionTimeout);
           await _validateNewConnection(_database!);
 
@@ -151,7 +163,7 @@ class DatabaseService {
 
   Future<void> _validateNewConnection(Database db) async {
     try {
-      await db.rawQuery('SELECT 1');
+      await db.rawQuery('SELECT 1').timeout(const Duration(seconds: 5));
       if (kDebugMode) {
         print('[DatabaseService] New connection validated successfully');
       }
@@ -167,6 +179,14 @@ class DatabaseService {
         stackTrace: stackTrace,
         severity: ErrorSeverity.high,
       );
+      // Try to close the database to prevent resource leaks
+      try {
+        await db.close();
+      } catch (closeError) {
+        if (kDebugMode) {
+          print('[DatabaseService] Error closing database after failed validation: $closeError');
+        }
+      }
       throw Exception('New connection validation failed: $e');
     }
   }

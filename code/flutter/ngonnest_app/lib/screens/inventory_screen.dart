@@ -156,6 +156,15 @@ class _InventoryScreenState extends State<InventoryScreen>
     );
     // DatabaseService handles all reconnection logic internally
     // No need to close or reset anything manually
+    // But we can force a reinitialization by closing and nullifying the database reference
+    try {
+      final db = await _databaseService.database;
+      if (db.isOpen) {
+        await db.close();
+      }
+    } catch (e) {
+      print('[InventoryScreen] Error during database connection handling: $e');
+    }
   }
 
   void _applySearchAndFilters() {

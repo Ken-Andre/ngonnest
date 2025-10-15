@@ -1,12 +1,145 @@
-name: CI
-on: [push, pull_request]
+name: Flutter CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+# Add permissions for creating releases
+permissions:
+  contents: write  # Needed for creating releases and uploading assets
+
 jobs:
-  test:
+  # Job d'analyse et de vérification du code
+  analyze-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: subosito/flutter-action@v2
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
         with:
-          flutter-version: '3.x'
-      - run: flutter pub get
-      - run: flutter test
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.4'
+          cache: true
+          cache-key: |
+            flutter-:os:-:channel:-:version:-:arch:-:hash:
+
+      - name: Cache Flutter dependencies
+        uses: actions/cache@v4
+        with:
+            path: |
+              ~/.pub-cache
+              **/android/app/build/outputs/bundle/
+            key: flutter-deps-${{ hashFiles('**/pubspec.lock') }}
+            restore-keys: |
+              flutter-deps-
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze code
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings > /dev/null
+
+      - name: Check formatting
+        run: dart format --set-exit-if-changed .
+
+  # Job de build Android (parallèle, ne dépend plus de l'analyse)
+  build-android:
+    name: Build Android APK & Bundle
+    runs-on: ubuntu-22.04  # Plus rapide que ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.4'
+          cache: true
+          cache-key: |
+            flutter-:os:-:channel:-:version:-:arch:-:hash:
+      
+
+      - name: Cache Flutter dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            **/android/app/build/outputs/bundle/
+          key: flutter-deps-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            flutter-deps-
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Decode keystore
+        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/key.jks
+
+      - name: Create gradle.properties
+        run: |
+          echo "RELEASE_STORE_FILE=key.jks" >> android/gradle.properties
+          echo "RELEASE_STORE_PASSWORD=${{ secrets.KEYSTORE_PASSWORD }}" >> android/gradle.properties
+          echo "RELEASE_KEY_ALIAS=upload" >> android/gradle.properties
+          echo "RELEASE_KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}" >> android/gradle.properties
+
+      - name: Build APK
+        run: flutter build apk --release
+
+      - name: Build App Bundle
+        run: flutter build appbundle --release
+
+      - name: List build outputs (debug)
+        run: find build/app/outputs -type f -name "*.apk" -o -name "*.aab" | head -10
+
+      - name: Upload APK & AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-builds
+          path: |
+            build/app/outputs/flutter-apk/app-release.apk
+            build/app/outputs/bundle/release/app-release.aab
+          retention-days: 7  # Réduit de 30 à 7 jours pour économiser de l'espace
+
+  # Job de publication (attend les deux autres)
+  publish-release:
+    runs-on: ubuntu-22.04  # Plus rapide
+    needs: [analyze-test, build-android]  # Attend les deux jobs
+
+    steps:
+      - name: Download Android builds artifact
+        uses: actions/download-artifact@v4
+        with:
+          path: android-builds
+
+      - name: List downloaded artifacts (debug)
+        run: find android-builds -type f -name "*.apk" -o -name "*.aab" 2>/dev/null || echo "No APK/AAB files found"
+
+      - name: Verify artifacts exist before publishing
+        run: |
+          echo "Checking for APK file..."
+          ls -la android-builds/android-builds/flutter-apk/app-release.apk || echo "APK file not found at expected location"
+          echo "Checking for AAB file..."
+          ls -la android-builds/android-builds/bundle/release/app-release.aab || echo "AAB file not found at expected location"
+
+      - name: Create GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: v1.0.${{ github.run_number }}
+          artifacts: "android-builds/android-builds/flutter-apk/app-release.apk,android-builds/android-builds/bundle/release/app-release.aab"
+          token: ${{ secrets.GITHUB_TOKEN }}

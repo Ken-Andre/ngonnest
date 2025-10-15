@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sqflite/sqflite.dart';
 import 'database_service.dart'; // For ErrorContext if ever needed elsewhere, though not directly in logError calls now
 import 'connectivity_service.dart';
 import 'error_logger_service.dart';
@@ -29,6 +30,14 @@ class SyncService extends ChangeNotifier {
   // Configuration retry logic
   static const int _maxRetries = 3;
   static const Duration _baseRetryDelay = Duration(seconds: 2);
+  static const int _maxOperationRetries = 5;
+
+  // Statistiques de sync
+  int _pendingOperations = 0;
+  int _failedOperations = 0;
+
+  int get pendingOperations => _pendingOperations;
+  int get failedOperations => _failedOperations;
 
   // Getters pour l'état
   bool get isSyncing => _isSyncing;
@@ -77,7 +86,9 @@ class SyncService extends ChangeNotifier {
       await prefs.setBool('sync_enabled', _syncEnabled);
       await prefs.setBool('sync_user_consent', _userConsent);
 
-      ConsoleLogger.info('[SyncService] Sync enabled with user consent: $userConsent');
+      ConsoleLogger.info(
+        '[SyncService] Sync enabled with user consent: $userConsent',
+      );
 
       notifyListeners();
 
@@ -167,6 +178,8 @@ class SyncService extends ChangeNotifier {
 
     final success = await _performSync();
 
+    if (!context.mounted) return;
+
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -199,7 +212,9 @@ class SyncService extends ChangeNotifier {
 
     for (int attempt = 0; attempt < _maxRetries; attempt++) {
       try {
-        ConsoleLogger.info('[SyncService] Sync attempt ${attempt + 1}/$_maxRetries');
+        ConsoleLogger.info(
+          '[SyncService] Sync attempt ${attempt + 1}/$_maxRetries',
+        );
 
         await _syncData();
 
@@ -217,7 +232,12 @@ class SyncService extends ChangeNotifier {
 
         return true;
       } catch (e, stackTrace) {
-        ConsoleLogger.error('SyncService', 'performSyncAttempt', e, stackTrace: stackTrace);
+        ConsoleLogger.error(
+          'SyncService',
+          'performSyncAttempt',
+          e,
+          stackTrace: stackTrace,
+        );
 
         await ErrorLoggerService.logError(
           component: 'SyncService',
@@ -249,13 +269,147 @@ class SyncService extends ChangeNotifier {
     return false;
   }
 
-  /// Logique de synchronisation des données (placeholder)
+  /// Logique de synchronisation des données avec outbox
   Future<void> _syncData() async {
-    await Future.delayed(const Duration(seconds: 2));
+    final db = await _databaseService.database;
 
-    // Optionally simulate errors in debug using a feature flag in the future
+    // Récupérer toutes les opérations en attente (status = 'pending' ou 'failed' avec retry < max)
+    final operations = await db.query(
+      'sync_outbox',
+      where: 'status IN (?, ?) AND retry_count < ?',
+      whereArgs: ['pending', 'failed', _maxOperationRetries],
+      orderBy: 'created_at ASC',
+    );
 
-    ConsoleLogger.info('[SyncService] Data sync completed (simulated)');
+    _pendingOperations = operations.length;
+    notifyListeners();
+
+    if (operations.isEmpty) {
+      ConsoleLogger.info('[SyncService] No pending operations to sync');
+      return;
+    }
+
+    ConsoleLogger.info('[SyncService] Syncing ${operations.length} operations');
+
+    int successCount = 0;
+    int failCount = 0;
+
+    for (final op in operations) {
+      try {
+        await _syncOperation(op);
+        successCount++;
+      } catch (e, stackTrace) {
+        failCount++;
+        ConsoleLogger.error(
+          'SyncService',
+          'syncOperation',
+          e,
+          stackTrace: stackTrace,
+        );
+
+        await ErrorLoggerService.logError(
+          component: 'SyncService',
+          operation: 'syncOperation',
+          error: e,
+          stackTrace: stackTrace,
+          severity: ErrorSeverity.medium,
+          metadata: {
+            'operation_id': op['id'],
+            'operation_type': op['operation_type'],
+            'entity_type': op['entity_type'],
+            'retry_count': op['retry_count'],
+          },
+        );
+      }
+    }
+
+    _failedOperations = failCount;
+    _pendingOperations = await _getPendingOperationsCount();
+    notifyListeners();
+
+    ConsoleLogger.success(
+      '[SyncService] Sync completed: $successCount success, $failCount failed',
+    );
+  }
+
+  /// Synchronise une opération individuelle
+  Future<void> _syncOperation(Map<String, dynamic> operation) async {
+    final db = await _databaseService.database;
+    final opId = operation['id'] as int;
+
+    // Marquer comme "en cours de sync"
+    await db.update(
+      'sync_outbox',
+      {'status': 'syncing', 'last_retry_at': DateTime.now().toIso8601String()},
+      where: 'id = ?',
+      whereArgs: [opId],
+    );
+
+    try {
+      // TODO: Implémenter l'appel API réel ici
+      // Pour l'instant, on simule un appel API
+      await _mockApiCall(operation);
+
+      // Marquer comme synchronisé
+      await db.update(
+        'sync_outbox',
+        {'status': 'synced'},
+        where: 'id = ?',
+        whereArgs: [opId],
+      );
+
+      // Nettoyer les opérations synchronisées (optionnel, garder pour historique)
+      // await db.delete('sync_outbox', where: 'id = ?', whereArgs: [opId]);
+
+      ConsoleLogger.info(
+        '[SyncService] Operation ${operation['operation_type']} on ${operation['entity_type']} synced',
+      );
+    } catch (e) {
+      // Incrémenter le compteur de retry
+      final retryCount = (operation['retry_count'] as int) + 1;
+
+      await db.update(
+        'sync_outbox',
+        {
+          'status': 'failed',
+          'retry_count': retryCount,
+          'error_message': e.toString().substring(0, 500), // Limiter la taille
+        },
+        where: 'id = ?',
+        whereArgs: [opId],
+      );
+
+      rethrow;
+    }
+  }
+
+  /// Simule un appel API (remplacer par vrai appel en production)
+  Future<void> _mockApiCall(Map<String, dynamic> operation) async {
+    // Simuler latence réseau
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    // Simuler un taux d'échec de 10% en debug pour tester le retry
+    if (kDebugMode && DateTime.now().millisecond % 10 == 0) {
+      throw Exception('Simulated API error for testing');
+    }
+
+    // En production, implémenter:
+    // final response = await http.post(
+    //   Uri.parse('$apiBaseUrl/${operation['entity_type']}'),
+    //   headers: {'Content-Type': 'application/json'},
+    //   body: operation['payload'],
+    // );
+    // if (response.statusCode != 200) throw Exception('API error');
+  }
+
+  /// Compte les opérations en attente
+  Future<int> _getPendingOperationsCount() async {
+    final db = await _databaseService.database;
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM sync_outbox WHERE status IN (?, ?) AND retry_count < ?',
+      ['pending', 'failed', _maxOperationRetries],
+    );
+    return Sqflite.firstIntValue(result) ?? 0;
   }
 
   /// Affiche le dialogue d'erreur de synchronisation
@@ -306,7 +460,96 @@ class SyncService extends ChangeNotifier {
       'lastError': _lastError,
       'syncEnabled': _syncEnabled,
       'userConsent': _userConsent,
+      'pendingOperations': _pendingOperations,
+      'failedOperations': _failedOperations,
     };
+  }
+
+  /// Enregistre une opération locale dans l'outbox pour sync ultérieure
+  /// Principe "local wins": l'opération est d'abord appliquée localement
+  Future<void> enqueueOperation({
+    required String operationType, // 'CREATE', 'UPDATE', 'DELETE'
+    required String
+    entityType, // 'objet', 'foyer', 'reachat_log', 'budget_categories'
+    required int entityId,
+    required Map<String, dynamic> payload,
+  }) async {
+    try {
+      final db = await _databaseService.database;
+
+      await db.insert('sync_outbox', {
+        'operation_type': operationType,
+        'entity_type': entityType,
+        'entity_id': entityId,
+        'payload': jsonEncode(payload),
+        'created_at': DateTime.now().toIso8601String(),
+        'status': 'pending',
+        'retry_count': 0,
+      });
+
+      _pendingOperations = await _getPendingOperationsCount();
+      notifyListeners();
+
+      ConsoleLogger.info(
+        '[SyncService] Operation enqueued: $operationType $entityType #$entityId',
+      );
+
+      // Tenter une sync automatique si en ligne et sync activée
+      if (_syncEnabled &&
+          _userConsent &&
+          _connectivityService.isOnline &&
+          !_isSyncing) {
+        // Sync en arrière-plan sans bloquer
+        unawaited(
+          _performSync().catchError((e) {
+            ConsoleLogger.error('SyncService', 'autoSync', e);
+            return false;
+          }),
+        );
+      }
+    } catch (e, stackTrace) {
+      await ErrorLoggerService.logError(
+        component: 'SyncService',
+        operation: 'enqueueOperation',
+        error: e,
+        stackTrace: stackTrace,
+        severity: ErrorSeverity.high,
+        metadata: {
+          'operation_type': operationType,
+          'entity_type': entityType,
+          'entity_id': entityId,
+        },
+      );
+      rethrow;
+    }
+  }
+
+  /// Nettoie les opérations synchronisées anciennes (> 30 jours)
+  Future<void> cleanupSyncedOperations() async {
+    try {
+      final db = await _databaseService.database;
+      final cutoffDate = DateTime.now().subtract(const Duration(days: 30));
+
+      final deleted = await db.delete(
+        'sync_outbox',
+        where: 'status = ? AND created_at < ?',
+        whereArgs: ['synced', cutoffDate.toIso8601String()],
+      );
+
+      if (deleted > 0) {
+        ConsoleLogger.info(
+          '[SyncService] Cleaned up $deleted old synced operations',
+        );
+      }
+    } catch (e, stackTrace) {
+      await ErrorLoggerService.logError(
+        component: 'SyncService',
+        operation: 'cleanupSyncedOperations',
+        error: e,
+        stackTrace: stackTrace,
+        severity: ErrorSeverity.low,
+      );
+    }
   }
 
   /// Synchronisation automatique en arrière-plan (si activée)

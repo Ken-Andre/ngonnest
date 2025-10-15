@@ -315,6 +315,6 @@ class InventoryRepository {
         errorString.contains('database_closed') ||
         errorString.contains('no such table') ||
         errorString.contains('sqlite_exception') ||
-        errorString.contains('connection') && errorString.contains('lost');
+        (errorString.contains('connection') && errorString.contains('lost'));
   }
 }

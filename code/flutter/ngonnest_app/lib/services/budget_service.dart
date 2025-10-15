@@ -52,6 +52,7 @@ class BudgetService extends ChangeNotifier {
         stackTrace: stackTrace,
         severity: ErrorSeverity.medium,
       );
+      // Return empty list in case of error to prevent app crash
       return [];
     }
   }

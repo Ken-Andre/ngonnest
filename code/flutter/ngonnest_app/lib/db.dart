@@ -1,14 +1,27 @@
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
+import 'dart:io'; // Required for Directory
 
 import 'services/analytics_service.dart';
 
-const int _databaseVersion = 10; // Added room column for import compatibility
+const int _databaseVersion =
+    11; // Added sync_outbox table for offline-first sync
 
 Future<Database> initDatabase() async {
   final databasesPath = await getDatabasesPath();
   final path = join(databasesPath, 'ngonnest.db');
+
+  // Ensure the databases directory exists
+  try {
+    final directory = Directory(databasesPath);
+    if (!await directory.exists()) {
+      await directory.create(recursive: true);
+    }
+  } catch (e) {
+    // If we can't create the directory, we'll let the database handle the error
+    debugPrint('Failed to create database directory: $e');
+  }
 
   return await openDatabase(
     path,
@@ -16,7 +29,6 @@ Future<Database> initDatabase() async {
     onCreate: _onCreate,
     onUpgrade: _onUpgrade,
     onDowngrade: onDatabaseDowngradeDelete, // Prevent downgrades
-
   );
 }
 
@@ -47,7 +59,6 @@ Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
       debugPrint('[DB] Applying migration to version $i');
       await _migrations[i]?.call(db);
       debugPrint('[DB] Successfully applied migration to version $i');
-
     }
 
     stopwatch.stop();
@@ -384,6 +395,46 @@ Future<void> _migrateToVersion10(Database db) async {
   }
 }
 
+Future<void> _migrateToVersion11(Database db) async {
+  debugPrint(
+    '[DB Migration V11] Creating sync_outbox table for offline-first sync',
+  );
+  final tables = await db.rawQuery(
+    "SELECT name FROM sqlite_master WHERE type='table' AND name='sync_outbox'",
+  );
+  if (tables.isEmpty) {
+    await db.execute('''
+      CREATE TABLE sync_outbox (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        operation_type TEXT NOT NULL CHECK (operation_type IN ('CREATE', 'UPDATE', 'DELETE')),
+        entity_type TEXT NOT NULL CHECK (entity_type IN ('objet', 'foyer', 'reachat_log', 'budget_categories')),
+        entity_id INTEGER NOT NULL,
+        payload TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        retry_count INTEGER NOT NULL DEFAULT 0,
+        last_retry_at TEXT,
+        status TEXT NOT NULL CHECK (status IN ('pending', 'syncing', 'synced', 'failed')) DEFAULT 'pending',
+        error_message TEXT
+      )
+    ''');
+
+    // Index pour optimiser les requêtes de sync
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_outbox_status ON sync_outbox(status)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_outbox_created ON sync_outbox(created_at)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_outbox_entity ON sync_outbox(entity_type, entity_id)',
+    );
+
+    debugPrint('[DB Migration V11] ✅ sync_outbox table created.');
+  } else {
+    debugPrint('[DB Migration V11] ✅ sync_outbox table already exists.');
+  }
+}
+
 // --- Migrations Map ---
 
 final Map<int, Future<void> Function(Database)> _migrations = {
@@ -396,6 +447,7 @@ final Map<int, Future<void> Function(Database)> _migrations = {
   8: _migrateToVersion8,
   9: _migrateToVersion9,
   10: _migrateToVersion10,
+  11: _migrateToVersion11,
 };
 
 // --- Debug (Optional, can be removed or conditional) ---
@@ -432,5 +484,6 @@ Future<void> initDatabaseAndDebug() async {
   await _debugLogTableStructure(db, 'budget_categories');
   await _debugLogTableStructure(db, 'product_prices');
   await _debugLogTableStructure(db, 'reachat_log');
+  await _debugLogTableStructure(db, 'sync_outbox');
   // db.close(); // Close if only for debug
 }
