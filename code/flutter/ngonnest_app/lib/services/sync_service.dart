@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'database_service.dart'; // For ErrorContext if ever needed elsewhere, though not directly in logError calls now
 import 'connectivity_service.dart';
 import 'error_logger_service.dart';
+import 'console_logger.dart';
 
 /// Service de synchronisation offline-first pour NgonNest
 /// Respecte les principes : offline first, sync optionnelle, local wins, retry logic
@@ -49,11 +50,9 @@ class SyncService extends ChangeNotifier {
         _lastSyncTime = DateTime.tryParse(lastSyncString);
       }
 
-      if (kDebugMode) {
-        print(
-          '[SyncService] Initialized - Enabled: $_syncEnabled, Consent: $_userConsent',
-        );
-      }
+      ConsoleLogger.info(
+        '[SyncService] Initialized - Enabled: $_syncEnabled, Consent: $_userConsent',
+      );
 
       notifyListeners();
     } catch (e, stackTrace) {
@@ -78,9 +77,7 @@ class SyncService extends ChangeNotifier {
       await prefs.setBool('sync_enabled', _syncEnabled);
       await prefs.setBool('sync_user_consent', _userConsent);
 
-      if (kDebugMode) {
-        print('[SyncService] Sync enabled with user consent: $userConsent');
-      }
+      ConsoleLogger.info('[SyncService] Sync enabled with user consent: $userConsent');
 
       notifyListeners();
 
@@ -109,9 +106,7 @@ class SyncService extends ChangeNotifier {
       await prefs.setBool('sync_enabled', _syncEnabled);
       await prefs.setBool('sync_user_consent', _userConsent);
 
-      if (kDebugMode) {
-        print('[SyncService] Sync disabled');
-      }
+      ConsoleLogger.info('[SyncService] Sync disabled');
 
       notifyListeners();
     } catch (e, stackTrace) {
@@ -204,9 +199,7 @@ class SyncService extends ChangeNotifier {
 
     for (int attempt = 0; attempt < _maxRetries; attempt++) {
       try {
-        if (kDebugMode) {
-          print('[SyncService] Sync attempt ${attempt + 1}/$_maxRetries');
-        }
+        ConsoleLogger.info('[SyncService] Sync attempt ${attempt + 1}/$_maxRetries');
 
         await _syncData();
 
@@ -220,15 +213,11 @@ class SyncService extends ChangeNotifier {
         _isSyncing = false;
         notifyListeners();
 
-        if (kDebugMode) {
-          print('[SyncService] Sync successful');
-        }
+        ConsoleLogger.success('[SyncService] Sync successful');
 
         return true;
       } catch (e, stackTrace) {
-        if (kDebugMode) {
-          print('[SyncService] Sync attempt ${attempt + 1} failed: $e');
-        }
+        ConsoleLogger.error('SyncService', 'performSyncAttempt', e, stackTrace: stackTrace);
 
         await ErrorLoggerService.logError(
           component: 'SyncService',
@@ -264,14 +253,9 @@ class SyncService extends ChangeNotifier {
   Future<void> _syncData() async {
     await Future.delayed(const Duration(seconds: 2));
 
-    if (DateTime.now().millisecond % 10 == 0 && kDebugMode) {
-      // Only throw in debug to test
-      throw Exception('Simulated network error during sync');
-    }
+    // Optionally simulate errors in debug using a feature flag in the future
 
-    if (kDebugMode) {
-      print('[SyncService] Data sync completed (simulated)');
-    }
+    ConsoleLogger.info('[SyncService] Data sync completed (simulated)');
   }
 
   /// Affiche le dialogue d'erreur de synchronisation

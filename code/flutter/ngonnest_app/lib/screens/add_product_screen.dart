@@ -25,6 +25,8 @@ import '../services/product_intelligence_service.dart';
 import '../models/product_template.dart';
 import '../theme/app_theme.dart';
 // import '../config/cameroon_products.dart';
+import '../services/error_logger_service.dart';
+import '../services/console_logger.dart';
 
 class AddProductScreen extends StatefulWidget {
   final bool isConsumable;
@@ -110,9 +112,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
       _loadFoyerId(); // Chargement asynchrone mais sans blocage UI
     } catch (e, stackTrace) {
-      // Log the error for debugging
-      print('Init Error: $e');
-      print('StackTrace: $stackTrace');
+      ConsoleLogger.error('AddProductScreen', 'initializeServices', e, stackTrace: stackTrace);
       // Gestion d'erreur pour éviter les crashes
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -130,21 +130,21 @@ class _AddProductScreenState extends State<AddProductScreen> {
     try {
       final foyer = await HouseholdService.getHouseholdProfile();
       if (foyer != null) {
-        print('✅ FOYER FOUND: ${foyer.id} - ${foyer.nbPersonnes} personnes');
+        ConsoleLogger.success('FOYER FOUND: ${foyer.id} - ${foyer.nbPersonnes} personnes');
         setState(() {
           _foyerId = foyer.id;
           _householdSize = foyer.nbPersonnes; // Récupérer la vraie taille
           _isLoading = false;
         });
       } else {
-        print('⚠️ NO FOYER FOUND: Creating default foyer for MVP...');
+        ConsoleLogger.warning('NO FOYER FOUND: Creating default foyer for MVP...');
         // Créer un foyer par défaut pour le MVP
         final defaultFoyerId = await HouseholdService.createAndSaveFoyer(
           4, // nbPersonnes
           'Appartement', // typeLogement
           'fr', // langue
         );
-        print('✅ DEFAULT FOYER CREATED: $defaultFoyerId');
+        ConsoleLogger.success('DEFAULT FOYER CREATED: $defaultFoyerId');
         setState(() {
           _foyerId = defaultFoyerId;
           _householdSize = 4; // Taille du foyer par défaut
@@ -152,9 +152,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
         });
       }
     } catch (e, stackTrace) {
-      // Log the error for debugging
-      print('❌ FOYER ERROR: $e');
-      print('❌ FOYER STACKTRACE: $stackTrace');
+      ConsoleLogger.error('AddProductScreen', 'loadFoyerId', e, stackTrace: stackTrace);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -275,28 +273,26 @@ class _AddProductScreenState extends State<AddProductScreen> {
   }
 
   Future<void> _saveProduct() async {
-    print('🔄 SAVE PRODUCT: Starting save process...');
+    ConsoleLogger.info('SAVE PRODUCT: Starting save process...');
     if (kDebugMode) {
-      print(
-        '🔄 SAVE PRODUCT: Form validation: ${_formKey.currentState?.validate()}',
-      );
+      ConsoleLogger.info('SAVE PRODUCT: Form validation: ${_formKey.currentState?.validate()}');
     }
-    print('🔄 SAVE PRODUCT: Foyer ID: $_foyerId');
-    print('🔄 SAVE PRODUCT: Product name: ${_productNameController.text}');
-    print('🔄 SAVE PRODUCT: Is consumable: $_isConsumable');
-    print('🔄 SAVE PRODUCT: Selected category: $_selectedCategory');
+    ConsoleLogger.info('SAVE PRODUCT: Foyer ID: $_foyerId');
+    ConsoleLogger.info('SAVE PRODUCT: Product name: ${_productNameController.text}');
+    ConsoleLogger.info('SAVE PRODUCT: Is consumable: $_isConsumable');
+    ConsoleLogger.info('SAVE PRODUCT: Selected category: $_selectedCategory');
 
     if (!_formKey.currentState!.validate()) {
-      print('❌ SAVE PRODUCT: Form validation failed');
+      ConsoleLogger.warning('SAVE PRODUCT: Form validation failed');
       return;
     }
     if (_foyerId == null) {
-      print('❌ SAVE PRODUCT: No foyer ID available');
+      ConsoleLogger.warning('SAVE PRODUCT: No foyer ID available');
       return;
     }
 
     setState(() => _isSaving = true);
-    print('🔄 SAVE PRODUCT: Set saving state to true');
+    ConsoleLogger.info('SAVE PRODUCT: Set saving state to true');
 
     try {
       final objet = Objet(
@@ -341,12 +337,12 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   : null),
       );
 
-      print('🔄 SAVE PRODUCT: Created Objet: ${objet.nom} (${objet.type})');
+      ConsoleLogger.info('SAVE PRODUCT: Created Objet: ${objet.nom} (${objet.type})');
 
       // Use the repository pattern to create the product
-      print('🔄 SAVE PRODUCT: Calling repository.create()...');
+      ConsoleLogger.info('SAVE PRODUCT: Calling repository.create()...');
       final productId = await _inventoryRepository.create(objet);
-      print('✅ SAVE PRODUCT: Product created with ID: $productId');
+      ConsoleLogger.success('SAVE PRODUCT: Product created with ID: $productId');
 
       // Track core action - item added
       final analyticsService = context.read<AnalyticsService>();
@@ -367,15 +363,15 @@ class _AddProductScreenState extends State<AddProductScreen> {
             _foyerId!,
             _selectedCategory,
           );
-          print('✅ BUDGET ALERTS: Checked after product creation');
+          ConsoleLogger.success('BUDGET ALERTS: Checked after product creation');
         } catch (e) {
-          print('⚠️ BUDGET ALERTS: Error checking alerts: $e');
+          ConsoleLogger.warning('BUDGET ALERTS: Error checking alerts: $e');
           // Ne pas bloquer l'ajout du produit si les alertes échouent
         }
       }
 
       if (mounted) {
-        print('🔄 SAVE PRODUCT: Showing success snackbar and popping screen');
+        ConsoleLogger.info('SAVE PRODUCT: Showing success snackbar and popping screen');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -396,9 +392,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
         }
       }
     } catch (e, stackTrace) {
-      // Log the error for debugging
-      print('❌ SAVE PRODUCT: Database Error: $e');
-      print('❌ SAVE PRODUCT: StackTrace: $stackTrace');
+      ConsoleLogger.error('AddProductScreen', 'saveProduct', e, stackTrace: stackTrace);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -415,7 +409,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
       }
     } finally {
       if (mounted) {
-        print('🔄 SAVE PRODUCT: Resetting saving state');
+        ConsoleLogger.info('SAVE PRODUCT: Resetting saving state');
         setState(() => _isSaving = false);
       }
     }
@@ -631,7 +625,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
                       ),
                     ),
                     child: DropdownButtonFormField<String>(
-                      initialValue: _selectedCategory,
+                      initialValue: _categories.any((category) => category['id'] == _selectedCategory) 
+                          ? _selectedCategory 
+                          : null,
                       decoration: const InputDecoration(
                         border: InputBorder.none,
                         contentPadding: EdgeInsets.zero,
@@ -1140,9 +1136,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                     onPressed: _isSaving
                         ? null
                         : () {
-                            print(
-                              '🔘 SAVE BUTTON: Pressed! isSaving: $_isSaving',
-                            );
+                            ConsoleLogger.info('SAVE BUTTON: Pressed! isSaving: $_isSaving');
                             _saveProduct();
                           },
                     child: _isSaving

@@ -362,6 +362,48 @@ class CameroonPrices {
 
   }
 
+  /// Appliquer un facteur d'inflation annuel (par ex. 6%) aux prix moyens
+  /// Retourne une nouvelle map avec les prix ajustés et `lastUpdated` incrémenté d'un an
+  static Map<String, ProductPrice> applyAnnualInflation({double rate = 0.06}) {
+    final Map<String, ProductPrice> adjusted = {};
+    _pricesDatabase.forEach((key, price) {
+      final newAvg = (price.averagePrice * (1 + rate));
+      // Mise à jour de la date (si format YYYY-MM), sinon conserver
+      String newLastUpdated = price.lastUpdated;
+      try {
+        final parts = price.lastUpdated.split('-');
+        final year = int.parse(parts[0]) + 1;
+        final month = parts.length > 1 ? parts[1] : '01';
+        newLastUpdated = '$year-$month';
+      } catch (_) {}
+
+      adjusted[key] = ProductPrice(
+        name: price.name,
+        category: price.category,
+        averagePrice: double.parse(newAvg.toStringAsFixed(2)),
+        unit: price.unit,
+        priceRange: PriceRange(
+          min: double.parse((price.priceRange.min * (1 + rate)).toStringAsFixed(2)),
+          max: double.parse((price.priceRange.max * (1 + rate)).toStringAsFixed(2)),
+        ),
+        region: price.region,
+        lastUpdated: newLastUpdated,
+        source: price.source,
+        notes: price.notes,
+      );
+    });
+    return adjusted;
+  }
+
+  /// Vérifie la couverture de la base de prix par catégorie
+  static Map<String, int> coverageByCategory() {
+    final Map<String, int> counts = {};
+    for (final p in _pricesDatabase.values) {
+      counts[p.category] = (counts[p.category] ?? 0) + 1;
+    }
+    return counts;
+  }
+
   /// Calcule le budget estimé pour une liste de produits
   static BudgetEstimate calculateBudget(List<BudgetItem> items) {
     double totalMin = 0.0;

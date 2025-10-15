@@ -223,7 +223,7 @@ void main() async {
             title: 'NgonNest',
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
-            themeMode: ThemeModeNotifier(initialThemeMode).themeMode,
+            themeMode: themeModeNotifier.themeMode,
             localizationsDelegates: const [
               AppLocalizations.delegate,
               GlobalMaterialLocalizations.delegate,
@@ -522,7 +522,7 @@ class _SplashScreenState extends State<SplashScreen>
                 child: Text(
                   'Gestion intelligente de votre foyer',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                     fontSize: 18,
                   ),
                   textAlign: TextAlign.center,

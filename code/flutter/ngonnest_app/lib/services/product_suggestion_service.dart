@@ -21,35 +21,20 @@ class ProductSuggestionService {
 
   /// Obtient des suggestions de produits intelligentes basées sur le profil du foyer
   Future<List<ProductSuggestion>> getSmartSuggestions({
-    required String
-    foyerId, // foyerId is String as per previous usage, ensure consistency with repo
+    required int foyerId,
     String? category,
     String? room,
     int limit = 10,
   }) async {
     try {
       // Récupérer le profil du foyer
-      // Assuming foyerId is int for the repository method, will verify this.
-      // For now, let's attempt a parse, or the type of foyerId needs to be int throughout.
-      final foyerIdInt = int.tryParse(foyerId);
-      if (foyerIdInt == null) {
-        await ErrorLoggerService.logError(
-          component: 'ProductSuggestionService',
-          operation: 'getSmartSuggestions',
-          error: 'Invalid foyerId format: not an integer',
-          stackTrace: StackTrace.current,
-          severity: ErrorSeverity.low,
-          metadata: {'foyerId': foyerId},
-        );
-        return [];
-      }
       final foyer = await _foyerRepository.get();
       if (foyer == null) {
         return [];
       }
 
       // Récupérer l'historique des produits du foyer
-      final existingProducts = await _inventoryRepository.getAll(foyerIdInt);
+      final existingProducts = await _inventoryRepository.getAll(foyerId);
 
       // Générer les suggestions basées sur différents critères
       final suggestions = <ProductSuggestion>[];
@@ -427,7 +412,7 @@ class ProductSuggestionService {
   }
 
   Future<List<ProductSuggestion>> searchSuggestions({
-    required String foyerId,
+    required int foyerId,
     required String query,
     String? category,
     int limit = 5,
