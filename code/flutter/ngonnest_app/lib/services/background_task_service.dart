@@ -5,7 +5,7 @@ import 'database_service.dart';
 import 'household_service.dart';
 import 'error_logger_service.dart';
 import '../models/alert.dart';
-import '../models/household_profile.dart';
+import '../models/foyer.dart'; // Changed from household_profile.dart to foyer.dart
 
 // This function will be called in the background by Workmanager
 @pragma('vm:entry-point')
@@ -24,18 +24,18 @@ void callbackDispatcher() {
     // Re-initialize NotificationService for background context
     await NotificationService.initialize();
 
-    HouseholdProfile? householdProfile;
+    Foyer? foyer; // Changed from HouseholdProfile? to Foyer?
 
     try {
       print('[BackgroundTask] Checking household profile');
-      householdProfile =
-          await HouseholdService.getHouseholdProfile(); // Corrected: Call static method directly
+      foyer =
+          await HouseholdService.getFoyer(); // Changed from getHouseholdProfile() to getFoyer()
 
-      if (householdProfile != null && householdProfile.id != null) {
-        print('[BackgroundTask] Processing alerts for foyer: ${householdProfile.id}');
+      if (foyer != null && foyer.id != null) {
+        print('[BackgroundTask] Processing alerts for foyer: ${foyer.id}');
         // Get unread alerts from the database - using shared DatabaseService instance
         final List<Alert> unreadAlerts = await dbService.getAlerts(
-          idFoyer: householdProfile.id!,
+          idFoyer: foyer.id!, // Changed from householdProfile.id! to foyer.id!
           unreadOnly: true,
         );
 
@@ -69,7 +69,7 @@ void callbackDispatcher() {
           severity: ErrorSeverity.high,
           metadata: {
             'task_name': taskName,
-            'has_household_profile': householdProfile?.id != null,
+            'has_household_profile': foyer?.id != null, // Changed from householdProfile to foyer
           },
         );
       } catch (logError) {

@@ -6,6 +6,8 @@ plugins {
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+    // Add Firebase Crashlytics plugin
+    id("com.google.firebase.crashlytics")
 }
 
 android {
@@ -49,6 +51,10 @@ android {
             signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
+            // Correct way to enable mapping file upload for Crashlytics
+            firebaseCrashlytics {
+                mappingFileUploadEnabled = true
+            }
         }
     }
 }

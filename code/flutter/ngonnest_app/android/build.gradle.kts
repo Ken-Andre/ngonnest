@@ -7,6 +7,8 @@ buildscript {
     dependencies {
         classpath("com.android.tools.build:gradle:8.9.1")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
+        // Add the Crashlytics Gradle plugin
+        classpath("com.google.firebase:firebase-crashlytics-gradle:3.0.2")
     }
 }
 

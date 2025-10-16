@@ -245,6 +245,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ).colorScheme.onPrimary.withOpacity(0.9),
                   ),
                 ),
+                TextButton(
+                  onPressed: () => throw Exception("error"),
+                  child: const Text("Throw Test Exception 2"),
+                ),
               ],
             ),
           ),

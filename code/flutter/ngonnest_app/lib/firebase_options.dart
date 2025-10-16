@@ -72,4 +72,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'ngonnest-analytics.firebasestorage.app',
     iosBundleId: 'com.example.ngonnestApp',
   );
+
 }

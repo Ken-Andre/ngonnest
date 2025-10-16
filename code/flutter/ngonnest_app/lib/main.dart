@@ -10,7 +10,10 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:ngonnest_app/services/ab_testing_service.dart';
 import 'package:ngonnest_app/services/analytics_debug_helper.dart';
 import 'package:ngonnest_app/services/analytics_service.dart';
+import 'package:ngonnest_app/services/breadcrumb_service.dart';
 import 'package:ngonnest_app/services/console_logger.dart';
+import 'package:ngonnest_app/services/crash_analytics_service.dart';
+import 'package:ngonnest_app/services/crash_metrics_service.dart';
 import 'package:ngonnest_app/services/dynamic_content_service.dart';
 import 'package:ngonnest_app/services/error_logger_service.dart';
 import 'package:ngonnest_app/services/feature_flag_service.dart';
@@ -59,6 +62,12 @@ void main() async {
         options: DefaultFirebaseOptions.currentPlatform,
       );
 
+      // Initialize Crash Analytics Service (avant Analytics pour capturer les erreurs d'init)
+      await CrashAnalyticsService().initialize(enableInDebug: kDebugMode);
+      
+      // Initialize Crash Metrics Service
+      await CrashMetricsService().startSession();
+
       // Initialize services
       await AnalyticsService().initialize();
 
@@ -67,7 +76,7 @@ void main() async {
         await AnalyticsDebugHelper.testFirebaseSetup();
       }
 
-      ConsoleLogger.info('[Main] Firebase and Analytics initialized.');
+      ConsoleLogger.info('[Main] Firebase, Crashlytics, and Analytics initialized.');
     } catch (e) {
       ConsoleLogger.error('[Main]', 'Firebase initialization failed', e);
       // Continue app startup even if Firebase fails
@@ -88,7 +97,8 @@ void main() async {
   // Only set up in non-test environments to avoid conflicts with Flutter Test framework
   if (!Platform.environment.containsKey('FLUTTER_TEST')) {
     FlutterError.onError = (FlutterErrorDetails details) async {
-      await ErrorLoggerService.logError(
+      // Log avec CrashAnalyticsService (qui appelle ErrorLoggerService en interne)
+      await CrashAnalyticsService().logNonFatalError(
         component: 'FlutterFramework',
         operation: 'renderError',
         error: details.exception,
@@ -101,6 +111,21 @@ void main() async {
           'silentCrash': true,
         },
       );
+      
+      // Enregistrer dans les métriques
+      await CrashMetricsService().recordCrash(
+        component: 'FlutterFramework',
+        operation: 'renderError',
+        severity: ErrorSeverity.high,
+        isFatal: false,
+      );
+      
+      // Breadcrumb pour contexte
+      BreadcrumbService().addError(
+        'Flutter render error: ${details.exception.toString()}',
+        data: {'library': details.library},
+      );
+      
       // Log console également
       debugPrint('🔴 [FLUTTER ERROR] ${details.exception.toString()}');
     };
@@ -110,13 +135,21 @@ void main() async {
   Isolate.current.addErrorListener(
     RawReceivePort((dynamic pair) async {
       final errorAndStacktrace = pair as List<dynamic>;
-      await ErrorLoggerService.logError(
-        component: 'Isolate',
-        operation: 'backgroundError',
+      
+      // Log fatal crash
+      await CrashAnalyticsService().logFatalCrash(
         error: errorAndStacktrace.first,
         stackTrace: errorAndStacktrace.last ?? StackTrace.current,
-        severity: ErrorSeverity.critical,
+        reason: 'Isolate background error',
         metadata: {'isolate': 'background'},
+      );
+      
+      // Enregistrer dans les métriques
+      await CrashMetricsService().recordCrash(
+        component: 'Isolate',
+        operation: 'backgroundError',
+        severity: ErrorSeverity.critical,
+        isFatal: true,
       );
     }).sendPort,
   );
@@ -181,6 +214,9 @@ void main() async {
         ChangeNotifierProvider.value(value: foyerProvider),
         Provider<DatabaseService>(create: (_) => DatabaseService()),
         Provider<AnalyticsService>(create: (_) => AnalyticsService()),
+        Provider<CrashAnalyticsService>(create: (_) => CrashAnalyticsService()),
+        Provider<BreadcrumbService>(create: (_) => BreadcrumbService()),
+        Provider<CrashMetricsService>(create: (_) => CrashMetricsService()),
         ChangeNotifierProvider<ConnectivityService>(
           create: (_) => ConnectivityService(),
         ),
