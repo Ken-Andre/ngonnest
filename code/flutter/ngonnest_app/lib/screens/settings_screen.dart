@@ -8,7 +8,6 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart' as ph;
 import 'package:sqflite/sqflite.dart';
-import 'package:http/http.dart' as http;
 import '../l10n/app_localizations.dart';
 import '../theme/theme_mode_notifier.dart';
 import '../widgets/main_navigation_wrapper.dart';
@@ -18,6 +17,7 @@ import '../services/settings_service.dart';
 import '../services/notification_permission_service.dart';
 import '../services/export_import_service.dart';
 import '../services/database_service.dart';
+import '../services/user_feedback_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -68,7 +68,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _localDataOnly = localDataOnly;
         _calendarSyncEnabled = calendarSyncEnabled;
         _hasAcceptedCloudSync = hasAcceptedCloudSync;
-        _notificationFrequency = allowedFrequencies.contains(notificationFrequency)
+        _notificationFrequency =
+            allowedFrequencies.contains(notificationFrequency)
             ? notificationFrequency
             : 'quotidienne';
       });
@@ -406,7 +407,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       await SettingsService.setNotificationFrequency(
                                         value,
                                       );
-
                                     }
                                   },
                                   isExpanded: true,
@@ -464,7 +464,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     await SettingsService.setCloudSyncAccepted(
                                       false,
                                     );
-
                                   }
                                 },
                                 activeColor: Theme.of(
@@ -851,8 +850,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onPressed: () async {
               if (_hasAcceptedCloudSync) {
                 // TODO-SC2: Implement cloud synchronization
-              // Details: Add proper cloud sync service integration with user consent handling
-//                 await SettingsService.setLocalDataOnly(false);
+                // Details: Add proper cloud sync service integration with user consent handling
+                //                 await SettingsService.setLocalDataOnly(false);
                 setState(() => _localDataOnly = false);
                 await SettingsService.setLocalDataOnly(false);
                 await SettingsService.setCloudSyncAccepted(true);
@@ -971,43 +970,41 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           CupertinoDialogAction(
             child: Text(AppLocalizations.of(context)?.send ?? 'Envoyer'),
-            onPressed: () {
+            onPressed: () async {
               if (feedbackMessage.trim().isNotEmpty) {
-                // TODO-SC2: SettingsScreen - Complete Implementation (MEDIUM PRIORITY)
-                // Description: Implement missing dialog methods and cloud sync consent
-                // Details: Implement server-side feedback submission with proper API integration
-                // Impact: Feedback feature is non-functional without backend integration
                 Navigator.of(context).pop();
-                _showFeedbackSentMessage();
+
+                // Afficher un indicateur de chargement avec gestion d'état améliorée
+                _showLoadingDialogWithState('Envoi du feedback...');
+
+                try {
+                  // Envoyer le feedback
+                  final result = await UserFeedbackService.sendFeedback(
+                    message: feedbackMessage,
+                    appVersion: '1.0.0', // TODO: Récupérer depuis package_info
+                  );
+
+                  // Fermer le loading dialog en utilisant la clé globale si nécessaire
+                  if (mounted) {
+                    Navigator.of(context, rootNavigator: true).pop();
+                  }
+
+                  if (result.success) {
+                    _showFeedbackSentMessage();
+                  } else {
+                    _showFeedbackErrorMessage(
+                      result.errorMessage ?? 'Erreur inconnue',
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    Navigator.of(context, rootNavigator: true).pop();
+                  }
+                  _showFeedbackErrorMessage('Erreur inattendue: $e');
+                }
               }
             },
           ),
-//             CupertinoDialogAction(
-//               child: Text(AppLocalizations.of(context)?.send ?? 'Envoyer'),
-//               onPressed: () async {
-//                 if (feedbackMessage.trim().isNotEmpty) {
-//                   try {
-//                     final response = await http
-//                         .post(
-//                           Uri.parse(_feedbackEndpoint),
-//                           body: {'message': feedbackMessage},
-//                         )
-//                         .timeout(const Duration(seconds: 10));
-//                     if (!mounted) return;
-//                     Navigator.of(context).pop();
-//                     if (response.statusCode == 200) {
-//                       _showFeedbackSentMessage();
-//                     } else {
-//                       _showErrorMessage('Erreur lors de l\'envoi');
-//                     }
-//                   } catch (e) {
-//                     if (!mounted) return;
-//                     Navigator.of(context).pop();
-//                     _showErrorMessage('Erreur réseau. Réessayez.');
-//                   }
-//                 }
-//               },
-//             ),
         ],
       ),
     );
@@ -1111,13 +1108,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Text(AppLocalizations.of(context)?.report ?? 'Signaler'),
             onPressed: () async {
               if (bugDescription.trim().isNotEmpty) {
-                // TODO-SC2: Implement bug report handling with Telegram integration
-                // Details: Add proper API call to submit bug reports to backend service
-                // Required: Integrate with Telegram bot API for automated bug reporting
-
-                // TODO: Implement actual bug report submission
                 Navigator.of(context).pop();
-                _showBugReportedMessage();
+
+                // Afficher un indicateur de chargement avec gestion d'état améliorée
+                _showLoadingDialogWithState('Envoi du rapport...');
+
+                try {
+                  // Envoyer le rapport de bug
+                  final result = await UserFeedbackService.sendBugReport(
+                    description: bugDescription,
+                    appVersion: '1.0.0', // TODO: Récupérer depuis package_info
+                  );
+
+                  // Fermer le loading dialog en utilisant la clé globale si nécessaire
+                  if (mounted) {
+                    Navigator.of(context, rootNavigator: true).pop();
+                  }
+
+                  if (result.success) {
+                    _showBugReportedMessage();
+                  } else {
+                    _showBugReportErrorMessage(
+                      result.errorMessage ?? 'Erreur inconnue',
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    Navigator.of(context, rootNavigator: true).pop();
+                  }
+                  _showBugReportErrorMessage('Erreur inattendue: $e');
+                }
               }
             },
           ),
@@ -1168,8 +1188,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-
-  void _showPermissionDialog(String title, String message, {bool isPermanent = false}) {
+  void _showPermissionDialog(
+    String title,
+    String message, {
+    bool isPermanent = false,
+  }) {
     showCupertinoModalPopup<void>(
       context: context,
       builder: (BuildContext context) => CupertinoAlertDialog(
@@ -1574,6 +1597,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  /// Afficher un message d'erreur pour le rapport de bug
+  void _showBugReportErrorMessage(String errorMessage) {
+    showCupertinoModalPopup<void>(
+      context: context,
+      builder: (BuildContext context) => CupertinoAlertDialog(
+        title: const Text('Erreur'),
+        content: Text(
+          'Impossible d\'envoyer le rapport:\n$errorMessage\n\n'
+          'Vérifiez votre connexion internet et réessayez.',
+        ),
+        actions: [
+          CupertinoDialogAction(
+            child: Text(AppLocalizations.of(context)?.ok ?? 'OK'),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _saveSettings() async {
     setState(() => _isLoading = true);
 
@@ -1590,5 +1633,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } finally {
       setState(() => _isLoading = false);
     }
+  }
+
+  /// Afficher un dialogue de chargement avec gestion d'état améliorée
+  void _showLoadingDialogWithState(String message) {
+    showCupertinoDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => CupertinoAlertDialog(
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CupertinoActivityIndicator(),
+            const SizedBox(height: 16),
+            Text(message),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Afficher un message d'erreur pour le feedback
+  void _showFeedbackErrorMessage(String errorMessage) {
+    showCupertinoModalPopup<void>(
+      context: context,
+      builder: (BuildContext context) => CupertinoAlertDialog(
+        title: const Text('Erreur'),
+        content: Text(
+          'Impossible d\'envoyer le feedback:\n$errorMessage\n\n'
+          'Vérifiez votre connexion internet et réessayez.',
+        ),
+        actions: [
+          CupertinoDialogAction(
+            child: Text(AppLocalizations.of(context)?.ok ?? 'OK'),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
+      ),
+    );
   }
 }

@@ -45,5 +45,10 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- Calendar permissions -->
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Cette application utilise le calendrier pour synchroniser vos rappels d'inventaire et de budget.</string>
+	<key>NSCalendarsWriteOnlyAccessUsageDescription</key>
+	<string>Cette application a besoin d'accéder à votre calendrier pour créer des rappels.</string>
 </dict>
 </plist>

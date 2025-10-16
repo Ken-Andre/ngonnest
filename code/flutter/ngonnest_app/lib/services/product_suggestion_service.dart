@@ -1,13 +1,17 @@
-import 'package:flutter/foundation.dart';
 import '../models/objet.dart';
 import '../models/foyer.dart';
 import '../repository/foyer_repository.dart';
 import '../repository/inventory_repository.dart';
 import 'error_logger_service.dart';
-import 'database_service.dart'; // Required if repositories need it upon instantiation here
 
 /// Service intelligent de suggestions de produits basé sur le profil du foyer
 /// Analyse la composition du foyer, l'historique et les habitudes pour proposer des produits pertinents
+///
+/// Catégories normalisées:
+/// - 'hygiène', 'nettoyage', 'cuisine', 'bureau', 'maintenance', 'sécurité', 'événementiel', 'autre'
+///
+/// Unités normalisées:
+/// - 'pièces', 'kg', 'litre', 'boîtes', 'paquets', 'sacs', 'bidons', 'mains', 'tubes', 'bouteilles', 'pack'
 class ProductSuggestionService {
   final FoyerRepository _foyerRepository;
   final InventoryRepository _inventoryRepository;
@@ -96,19 +100,19 @@ class ProductSuggestionService {
       suggestions.addAll([
         ProductSuggestion(
           name: 'Lait en poudre',
-          category: 'Alimentation',
+          category: 'cuisine',
           reason: 'Recommandé pour les familles avec enfants',
           confidence: 0.9,
-          estimatedQuantity: familySize * 0.5, // Adjusted quantity logic
+          estimatedQuantity: familySize * 0.5,
           unit: 'boîtes',
           priority: SuggestionPriority.high,
         ),
         ProductSuggestion(
           name: 'Céréales petit-déjeuner',
-          category: 'Alimentation',
+          category: 'cuisine',
           reason: 'Populaire dans les familles avec enfants',
           confidence: 0.8,
-          estimatedQuantity: familySize * 0.3, // Adjusted quantity logic
+          estimatedQuantity: familySize * 0.3,
           unit: 'paquets',
           priority: SuggestionPriority.medium,
         ),
@@ -120,22 +124,19 @@ class ProductSuggestionService {
       suggestions.addAll([
         ProductSuggestion(
           name: 'Riz (sac)',
-          category: 'Alimentation',
+          category: 'cuisine',
           reason: 'Économique pour grande famille',
           confidence: 0.95,
-          estimatedQuantity: (familySize / 5.0)
-              .ceilToDouble(), // Adjusted quantity logic
+          estimatedQuantity: (familySize / 5.0).ceilToDouble(),
           unit: 'sacs',
           priority: SuggestionPriority.high,
         ),
         ProductSuggestion(
-          name:
-              'Huile végétale (bidon)', // Changed from Huile de palme for neutrality
-          category: 'Alimentation',
+          name: 'Huile végétale (bidon)',
+          category: 'cuisine',
           reason: 'Consommation élevée en grande famille',
           confidence: 0.9,
-          estimatedQuantity: (familySize / 5.0)
-              .ceilToDouble(), // Adjusted quantity logic
+          estimatedQuantity: (familySize / 5.0).ceilToDouble(),
           unit: 'bidons',
           priority: SuggestionPriority.high,
         ),
@@ -206,51 +207,51 @@ class ProductSuggestionService {
       'Cuisine': [
         ProductSuggestion(
           name: 'Éponges de nettoyage',
-          category: 'Entretien',
+          category: 'nettoyage',
           reason: 'Essentiel pour la cuisine',
           confidence: 0.8,
           estimatedQuantity: 3.0,
-          unit: 'unités',
+          unit: 'pièces',
           priority: SuggestionPriority.medium,
         ),
         ProductSuggestion(
           name: 'Liquide vaisselle concentré',
-          category: 'Entretien',
+          category: 'nettoyage',
           reason: 'Nécessaire pour la cuisine',
           confidence: 0.9,
           estimatedQuantity: 1.0,
-          unit: 'bouteille',
+          unit: 'bouteilles',
           priority: SuggestionPriority.medium,
         ),
       ],
       'Salle de bain': [
         ProductSuggestion(
           name: 'Savon corporel',
-          category: 'Hygiène',
+          category: 'hygiène',
           reason: 'Indispensable salle de bain',
           confidence: 0.95,
           estimatedQuantity: 2.0,
-          unit: 'unités',
+          unit: 'pièces',
           priority: SuggestionPriority.high,
         ),
         ProductSuggestion(
           name: 'Papier hygiénique (pack)',
-          category: 'Hygiène',
+          category: 'hygiène',
           reason: 'Consommable essentiel SDB',
           confidence: 0.95,
           estimatedQuantity: 1.0,
-          unit: 'pack de 6',
+          unit: 'pack',
           priority: SuggestionPriority.high,
         ),
       ],
       'Salon': [
         ProductSuggestion(
           name: 'Ampoules LED économiques',
-          category: 'Éclairage',
+          category: 'autre',
           reason: 'Éclairage principal salon',
           confidence: 0.7,
           estimatedQuantity: 2.0,
-          unit: 'unités',
+          unit: 'pièces',
           priority: SuggestionPriority.low,
         ),
       ],
@@ -276,7 +277,7 @@ class ProductSuggestionService {
     final essentials = [
       ProductSuggestion(
         name: 'Riz Parfumé',
-        category: 'Alimentation',
+        category: 'cuisine',
         reason: 'Aliment de base courant',
         confidence: 0.95,
         estimatedQuantity: 5.0,
@@ -285,7 +286,7 @@ class ProductSuggestionService {
       ),
       ProductSuggestion(
         name: 'Huile Végétale',
-        category: 'Alimentation',
+        category: 'cuisine',
         reason: 'Huile de cuisson polyvalente',
         confidence: 0.9,
         estimatedQuantity: 1.0,
@@ -294,16 +295,16 @@ class ProductSuggestionService {
       ),
       ProductSuggestion(
         name: 'Plantain Mûr',
-        category: 'Alimentation',
+        category: 'cuisine',
         reason: 'Accompagnement populaire',
         confidence: 0.85,
-        estimatedQuantity: 5.0, // adjusted from 10
-        unit: 'mains', // adjusted unit
+        estimatedQuantity: 5.0,
+        unit: 'mains',
         priority: SuggestionPriority.medium,
       ),
       ProductSuggestion(
         name: 'Sel de cuisine',
-        category: 'Alimentation',
+        category: 'cuisine',
         reason: 'Essentiel pour l\'assaisonnement',
         confidence: 0.98,
         estimatedQuantity: 1.0,
@@ -312,7 +313,7 @@ class ProductSuggestionService {
       ),
       ProductSuggestion(
         name: 'Sucre en morceaux',
-        category: 'Alimentation',
+        category: 'cuisine',
         reason: 'Pour le petit-déjeuner et boissons',
         confidence: 0.80,
         estimatedQuantity: 1.0,
@@ -342,21 +343,21 @@ class ProductSuggestionService {
     int frequency,
   ) {
     final complementary = <String, List<ProductSuggestion>>{
-      'Alimentation': [
+      'cuisine': [
         ProductSuggestion(
           name: 'Cube de bouillon Maggi',
-          category: 'Alimentation',
+          category: 'cuisine',
           reason: 'Rehausseur de goût commun',
           confidence: 0.7,
           estimatedQuantity: 1.0,
-          unit: 'boîte',
+          unit: 'boîtes',
           priority: SuggestionPriority.low,
         ),
       ],
-      'Entretien': [
+      'nettoyage': [
         ProductSuggestion(
-          name: 'Eau de Javel La Croix',
-          category: 'Entretien',
+          name: 'Eau de Javel',
+          category: 'nettoyage',
           reason: 'Désinfectant multi-usage',
           confidence: 0.6,
           estimatedQuantity: 1.0,
@@ -364,14 +365,14 @@ class ProductSuggestionService {
           priority: SuggestionPriority.low,
         ),
       ],
-      'Hygiène': [
+      'hygiène': [
         ProductSuggestion(
-          name: 'Dentifrice Colgate',
-          category: 'Hygiène',
+          name: 'Dentifrice',
+          category: 'hygiène',
           reason: 'Pour une bonne hygiène buccale',
           confidence: 0.75,
           estimatedQuantity: 1.0,
-          unit: 'tube',
+          unit: 'tubes',
           priority: SuggestionPriority.medium,
         ),
       ],

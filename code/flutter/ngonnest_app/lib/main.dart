@@ -3,6 +3,7 @@ import 'dart:isolate';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -15,6 +16,7 @@ import 'package:ngonnest_app/services/error_logger_service.dart';
 import 'package:ngonnest_app/services/feature_flag_service.dart';
 import 'package:ngonnest_app/services/remote_config_service.dart';
 import 'package:ngonnest_app/services/service_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:workmanager/workmanager.dart';
@@ -423,6 +425,9 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> _checkUserStatus() async {
     try {
+      // Request calendar permissions
+      await _requestCalendarPermissions();
+
       // Initialize Phase 2 components
       await _initializePhase2Components();
 
@@ -448,6 +453,33 @@ class _SplashScreenState extends State<SplashScreen>
       if (mounted) {
         Navigator.of(context).pushReplacementNamed('/onboarding');
       }
+    }
+  }
+
+  Future<void> _requestCalendarPermissions() async {
+    try {
+      // Check if we're on Android or iOS (not web)
+      if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+        final status = await Permission.calendar.request();
+
+        if (status.isGranted) {
+          ConsoleLogger.info('[Main] Calendar permissions granted');
+        } else if (status.isPermanentlyDenied) {
+          ConsoleLogger.warning('[Main] Calendar permissions permanently denied');
+          // Open app settings to allow user to enable permissions
+          await openAppSettings();
+        } else {
+          ConsoleLogger.warning('[Main] Calendar permissions denied');
+        }
+      }
+    } catch (e, stackTrace) {
+      await ErrorLoggerService.logError(
+        component: 'SplashScreen',
+        operation: '_requestCalendarPermissions',
+        error: e,
+        stackTrace: stackTrace,
+        severity: ErrorSeverity.medium,
+      );
     }
   }
 

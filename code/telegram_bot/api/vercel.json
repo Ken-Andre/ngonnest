@@ -10,6 +10,15 @@
     {
       "src": "/api/bot",
       "dest": "api/bot.py"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/api/bot.py"
     }
-  ]
+  ],
+  "env": {
+    "TELEGRAM_TOKEN": "@telegram_token",
+    "GITHUB_TOKEN": "@github_token",
+    "GITHUB_REPO": "Ken-Andre/ngonnest"
+  }
 }

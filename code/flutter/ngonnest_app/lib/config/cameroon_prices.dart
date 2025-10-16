@@ -1,6 +1,16 @@
-// TODO Implement this library.
 /// Base de données des prix moyens en FCFA pour les produits essentiels camerounais
 /// Utilisée pour les calculs budgétaires et recommandations économiques
+///
+/// Dernière mise à jour: Janvier 2024
+/// Source: Marchés locaux Douala/Yaoundé
+/// Taux d'inflation annuel: 6% (ajustement automatique disponible)
+///
+/// Catégories couvertes:
+/// - Alimentation (riz, huile, plantain, haricot, manioc, poisson, légumes)
+/// - Hygiène (savon, dentifrice, shampoing, papier toilette)
+/// - Entretien (eau de javel, liquide vaisselle, éponge)
+/// - Boissons (eau, thé, café)
+/// - Condiments (épices, sel, cube maggi, piment)
 class CameroonPrices {
   static const Map<String, ProductPrice> _pricesDatabase = {
     // === ALIMENTATION DE BASE ===
@@ -341,9 +351,14 @@ class CameroonPrices {
     return name
         .toLowerCase()
         // Remove common prepositions and articles
-        .replaceAll(RegExp(r'\b(de|du|des|la|le|les|un|une|et|à|a|au|aux|en|dans|sur|pour|par|avec|sans)\b', caseSensitive: false), '')
+        .replaceAll(
+          RegExp(
+            r'\b(de|du|des|la|le|les|un|une|et|à|a|au|aux|en|dans|sur|pour|par|avec|sans)\b',
+            caseSensitive: false,
+          ),
+          '',
+        )
         // Normalize accented characters
-
         .replaceAll('é', 'e')
         .replaceAll('è', 'e')
         .replaceAll('à', 'a')
@@ -359,12 +374,35 @@ class CameroonPrices {
         .replaceAll(RegExp(r'_+'), '_')
         // Remove leading/trailing underscores
         .replaceAll(RegExp(r'^_|_$'), '');
+  }
 
+  /// Taux de change FCFA vers Euro (approximatif)
+  static const double fcfaToEuroRate =
+      0.00152; // 1 FCFA = 0.00152 EUR (655.957 FCFA = 1 EUR)
+
+  /// Taux d'inflation annuel par défaut au Cameroun
+  static const double defaultInflationRate = 0.06; // 6% par an
+
+  /// Convertir FCFA vers Euro
+  static double convertToEuro(double fcfa) {
+    return fcfa * fcfaToEuroRate;
+  }
+
+  /// Convertir Euro vers FCFA
+  static double convertToFcfa(double euro) {
+    return euro / fcfaToEuroRate;
   }
 
   /// Appliquer un facteur d'inflation annuel (par ex. 6%) aux prix moyens
   /// Retourne une nouvelle map avec les prix ajustés et `lastUpdated` incrémenté d'un an
-  static Map<String, ProductPrice> applyAnnualInflation({double rate = 0.06}) {
+  ///
+  /// Exemple:
+  /// ```dart
+  /// final adjustedPrices = CameroonPrices.applyAnnualInflation(rate: 0.06);
+  /// ```
+  static Map<String, ProductPrice> applyAnnualInflation({
+    double rate = defaultInflationRate,
+  }) {
     final Map<String, ProductPrice> adjusted = {};
     _pricesDatabase.forEach((key, price) {
       final newAvg = (price.averagePrice * (1 + rate));
@@ -383,8 +421,12 @@ class CameroonPrices {
         averagePrice: double.parse(newAvg.toStringAsFixed(2)),
         unit: price.unit,
         priceRange: PriceRange(
-          min: double.parse((price.priceRange.min * (1 + rate)).toStringAsFixed(2)),
-          max: double.parse((price.priceRange.max * (1 + rate)).toStringAsFixed(2)),
+          min: double.parse(
+            (price.priceRange.min * (1 + rate)).toStringAsFixed(2),
+          ),
+          max: double.parse(
+            (price.priceRange.max * (1 + rate)).toStringAsFixed(2),
+          ),
         ),
         region: price.region,
         lastUpdated: newLastUpdated,
