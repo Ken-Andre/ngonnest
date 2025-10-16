@@ -856,8 +856,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 await SettingsService.setLocalDataOnly(false);
                 await SettingsService.setCloudSyncAccepted(true);
                 Navigator.of(context).pop();
-                await _syncWithCloud();
-                _showSyncEnabledMessage();
+                if (mounted) {
+                  await _syncWithCloud();
+                  _showSyncEnabledMessage();
+                }
               }
             },
           ),
@@ -894,7 +896,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await Future.delayed(const Duration(seconds: 2));
       await SettingsService.setLastSyncTime(DateTime.now());
     } catch (e) {
-      _showErrorMessage('Erreur de synchronisation: $e');
+      if (mounted) {
+        _showErrorMessage('Erreur de synchronisation: $e');
+      }
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -907,7 +911,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await Future.delayed(const Duration(seconds: 1));
       debugPrint('Feedback submitted (length=${message.length})');
     } catch (e) {
-      _showErrorMessage('Erreur feedback: $e');
+      if (mounted) {
+        _showErrorMessage('Erreur feedback: $e');
+      }
     }
   }
 
@@ -916,7 +922,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await Future.delayed(const Duration(seconds: 1));
       debugPrint('Bug report submitted (length=${description.length})');
     } catch (e) {
-      _showErrorMessage('Erreur bug report: $e');
+      if (mounted) {
+        _showErrorMessage('Erreur bug report: $e');
+      }
     }
   }
 
@@ -975,32 +983,58 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Navigator.of(context).pop();
 
                 // Afficher un indicateur de chargement avec gestion d'état améliorée
-                _showLoadingDialogWithState('Envoi du feedback...');
+                if (mounted) {
+                  _showLoadingDialogWithState('Envoi du feedback...');
+                }
 
                 try {
-                  // Envoyer le feedback
-                  final result = await UserFeedbackService.sendFeedback(
-                    message: feedbackMessage,
-                    appVersion: '1.0.0', // TODO: Récupérer depuis package_info
-                  );
+                  // Envoyer le feedback avec timeout
+                  final result =
+                      await UserFeedbackService.sendFeedback(
+                        message: feedbackMessage,
+                        appVersion:
+                            '1.0.0', // TODO: Récupérer depuis package_info
+                      ).timeout(
+                        const Duration(seconds: 15),
+                        onTimeout: () => FeedbackResult(
+                          success: false,
+                          errorMessage:
+                              'Délai d\'attente dépassé. Vérifiez votre connexion.',
+                        ),
+                      );
 
-                  // Fermer le loading dialog en utilisant la clé globale si nécessaire
+                  // Fermer le loading dialog
                   if (mounted) {
-                    Navigator.of(context, rootNavigator: true).pop();
+                    try {
+                      Navigator.of(context, rootNavigator: true).pop();
+                    } catch (e) {
+                      // Dialog déjà fermé ou widget démonté
+                    }
                   }
 
                   if (result.success) {
-                    _showFeedbackSentMessage();
+                    if (mounted) {
+                      _showFeedbackSentMessage();
+                    }
                   } else {
-                    _showFeedbackErrorMessage(
-                      result.errorMessage ?? 'Erreur inconnue',
-                    );
+                    if (mounted) {
+                      _showFeedbackErrorMessage(
+                        result.errorMessage ?? 'Erreur inconnue',
+                      );
+                    }
                   }
                 } catch (e) {
+                  // Fermer le loading dialog en cas d'erreur
                   if (mounted) {
-                    Navigator.of(context, rootNavigator: true).pop();
+                    try {
+                      Navigator.of(context, rootNavigator: true).pop();
+                    } catch (_) {
+                      // Dialog déjà fermé ou widget démonté
+                    }
                   }
-                  _showFeedbackErrorMessage('Erreur inattendue: $e');
+                  if (mounted) {
+                    _showFeedbackErrorMessage('Erreur inattendue: $e');
+                  }
                 }
               }
             },
@@ -1035,7 +1069,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onTap: () async {
                 const url = 'https://t.me/NgonNestBot';
                 await Clipboard.setData(const ClipboardData(text: url));
-                if (context.mounted) {
+                if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
@@ -1111,18 +1145,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Navigator.of(context).pop();
 
                 // Afficher un indicateur de chargement avec gestion d'état améliorée
-                _showLoadingDialogWithState('Envoi du rapport...');
+                if (mounted) {
+                  _showLoadingDialogWithState('Envoi du rapport...');
+                }
 
                 try {
-                  // Envoyer le rapport de bug
-                  final result = await UserFeedbackService.sendBugReport(
-                    description: bugDescription,
-                    appVersion: '1.0.0', // TODO: Récupérer depuis package_info
-                  );
+                  // Envoyer le rapport de bug avec timeout
+                  final result =
+                      await UserFeedbackService.sendBugReport(
+                        description: bugDescription,
+                        appVersion:
+                            '1.0.0', // TODO: Récupérer depuis package_info
+                      ).timeout(
+                        const Duration(seconds: 15),
+                        onTimeout: () => FeedbackResult(
+                          success: false,
+                          errorMessage:
+                              'Délai d\'attente dépassé. Vérifiez votre connexion.',
+                        ),
+                      );
 
-                  // Fermer le loading dialog en utilisant la clé globale si nécessaire
+                  // Fermer le loading dialog
                   if (mounted) {
-                    Navigator.of(context, rootNavigator: true).pop();
+                    try {
+                      Navigator.of(context, rootNavigator: true).pop();
+                    } catch (e) {
+                      // Dialog déjà fermé ou widget démonté
+                    }
                   }
 
                   if (result.success) {
@@ -1133,8 +1182,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     );
                   }
                 } catch (e) {
+                  // Fermer le loading dialog en cas d'erreur
                   if (mounted) {
-                    Navigator.of(context, rootNavigator: true).pop();
+                    try {
+                      Navigator.of(context, rootNavigator: true).pop();
+                    } catch (_) {
+                      // Dialog déjà fermé ou widget démonté
+                    }
                   }
                   _showBugReportErrorMessage('Erreur inattendue: $e');
                 }
@@ -1147,6 +1201,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showFeedbackSentMessage() {
+    if (!mounted) return;
     showCupertinoModalPopup<void>(
       context: context,
       builder: (BuildContext context) => CupertinoAlertDialog(
@@ -1168,6 +1223,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showBugReportedMessage() {
+    if (!mounted) return;
     showCupertinoModalPopup<void>(
       context: context,
       builder: (BuildContext context) => CupertinoAlertDialog(
@@ -1212,7 +1268,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
               onPressed: () async {
                 Navigator.of(context).pop();
-                await ph.openAppSettings();
+                if (mounted) {
+                  await ph.openAppSettings();
+                }
               },
             ),
         ],
@@ -1304,6 +1362,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         directory = await FilePicker.platform.getDirectoryPath();
         directory ??= (await getApplicationDocumentsDirectory()).path;
       } catch (e) {
+        if (!mounted) return;
         throw Exception('Unable to access storage directory: $e');
       }
 
@@ -1599,6 +1658,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   /// Afficher un message d'erreur pour le rapport de bug
   void _showBugReportErrorMessage(String errorMessage) {
+    if (!mounted) return;
     showCupertinoModalPopup<void>(
       context: context,
       builder: (BuildContext context) => CupertinoAlertDialog(
@@ -1624,19 +1684,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
       // Settings are already saved individually when changed
       // This method can be used for any final validation or batch operations
 
-      _showSuccessMessage(
-        AppLocalizations.of(context)?.settingsSaved ??
-            'Paramètres sauvegardés avec succès',
-      );
+      if (mounted) {
+        _showSuccessMessage(
+          AppLocalizations.of(context)?.settingsSaved ??
+              'Paramètres sauvegardés avec succès',
+        );
+      }
     } catch (e) {
-      _showErrorMessage('Erreur lors de la sauvegarde: $e');
+      if (mounted) {
+        _showErrorMessage('Erreur lors de la sauvegarde: $e');
+      }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
   /// Afficher un dialogue de chargement avec gestion d'état améliorée
   void _showLoadingDialogWithState(String message) {
+    if (!mounted) return;
     showCupertinoDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -1655,6 +1722,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   /// Afficher un message d'erreur pour le feedback
   void _showFeedbackErrorMessage(String errorMessage) {
+    if (!mounted) return;
     showCupertinoModalPopup<void>(
       context: context,
       builder: (BuildContext context) => CupertinoAlertDialog(

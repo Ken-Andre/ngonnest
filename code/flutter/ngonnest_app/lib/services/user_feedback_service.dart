@@ -87,9 +87,16 @@ class UserFeedbackService {
           message: 'Feedback envoyé avec succès',
         );
       } else {
+        // Vérifier si c'est un problème de configuration
+        if (_telegramBotToken == null || _telegramChatId == null) {
+          return FeedbackResult(
+            success: false,
+            errorMessage: 'Service de feedback non configuré. Contactez-nous via Telegram: @NgonNestBot',
+          );
+        }
         return FeedbackResult(
           success: false,
-          errorMessage: 'Erreur lors de l\'envoi via Telegram',
+          errorMessage: 'Erreur de connexion. Vérifiez votre réseau et réessayez.',
         );
       }
     } catch (e, stackTrace) {
@@ -200,9 +207,16 @@ class UserFeedbackService {
           message: 'Rapport de bug envoyé avec succès',
         );
       } else {
+        // Vérifier si c'est un problème de configuration
+        if (_telegramBotToken == null || _telegramChatId == null) {
+          return FeedbackResult(
+            success: false,
+            errorMessage: 'Service de rapport non configuré. Contactez-nous via Telegram: @NgonNestBot',
+          );
+        }
         return FeedbackResult(
           success: false,
-          errorMessage: 'Erreur lors de l\'envoi via Telegram',
+          errorMessage: 'Erreur de connexion. Vérifiez votre réseau et réessayez.',
         );
       }
     } catch (e, stackTrace) {
@@ -227,7 +241,22 @@ class UserFeedbackService {
     required String message,
     bool silent = false,
   }) async {
-    if (_telegramBotToken == null || _telegramChatId == null) {
+    // Vérifier si les credentials Telegram sont configurés
+    if (_telegramBotToken == null || 
+        _telegramChatId == null || 
+        _telegramBotToken!.isEmpty || 
+        _telegramChatId!.isEmpty) {
+      await ErrorLoggerService.logError(
+        component: 'UserFeedbackService',
+        operation: '_sendToTelegram',
+        error: Exception('Telegram credentials not configured'),
+        stackTrace: StackTrace.current,
+        severity: ErrorSeverity.low,
+        metadata: {
+          'has_token': _telegramBotToken != null,
+          'has_chat_id': _telegramChatId != null,
+        },
+      );
       return false;
     }
 
