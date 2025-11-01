@@ -1,4 +1,4 @@
-package com.ngonnest.ngonnest_app
+package com.example.ngonnest_app
 
 import io.flutter.embedding.android.FlutterActivity
 

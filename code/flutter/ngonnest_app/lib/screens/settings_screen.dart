@@ -1,23 +1,24 @@
 import 'dart:io';
-import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
+
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart' as ph;
+import 'package:provider/provider.dart';
 import 'package:sqflite/sqflite.dart';
+
 import '../l10n/app_localizations.dart';
+import '../providers/locale_provider.dart';
+import '../services/export_import_service.dart';
+import '../services/navigation_service.dart';
+import '../services/notification_permission_service.dart';
+import '../services/settings_service.dart';
+import '../services/user_feedback_service.dart';
 import '../theme/theme_mode_notifier.dart';
 import '../widgets/main_navigation_wrapper.dart';
-import '../services/navigation_service.dart';
-import '../providers/locale_provider.dart';
-import '../services/settings_service.dart';
-import '../services/notification_permission_service.dart';
-import '../services/export_import_service.dart';
-import '../services/database_service.dart';
-import '../services/user_feedback_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -402,7 +403,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   onChanged: (value) async {
                                     if (value != null) {
                                       setState(
-                                        () => _notificationFrequency = value!,
+                                        () => _notificationFrequency = value,
                                       );
                                       await SettingsService.setNotificationFrequency(
                                         value,

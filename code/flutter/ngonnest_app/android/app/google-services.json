@@ -9,7 +9,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:323254445931:android:706bd1ffba4cd9e0260e2e",
         "android_client_info": {
-          "package_name": "com.ngonnest.app"
+          "package_name": "com.example.ngonnest_app"
         }
       },
       "oauth_client": [],

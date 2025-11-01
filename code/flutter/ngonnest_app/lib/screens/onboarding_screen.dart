@@ -1,12 +1,13 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
 import '../models/foyer.dart';
 import '../models/household_profile.dart';
-import '../services/household_service.dart';
-import '../services/analytics_service.dart';
-import '../theme/app_theme.dart';
-import 'package:provider/provider.dart';
 import '../providers/foyer_provider.dart';
+import '../services/analytics_service.dart';
+import '../services/household_service.dart';
+import '../theme/app_theme.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -652,7 +653,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           TextField(
             controller: _budgetController,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(labelText: 'Montant en €'),
+            style: const TextStyle(color: AppTheme.neutralBlack, fontSize: 16),
+            decoration: const InputDecoration(
+              labelText: 'Montant en €',
+              filled: true,
+              fillColor: AppTheme.neutralWhite,
+              labelStyle: TextStyle(color: AppTheme.neutralGrey, fontSize: 16),
+            ),
           ),
           const SizedBox(height: 60),
         ],
@@ -679,7 +686,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           TextField(
             controller: _roomsController,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(labelText: 'Pièces'),
+            style: const TextStyle(color: AppTheme.neutralBlack, fontSize: 16),
+            decoration: const InputDecoration(
+              labelText: 'Pièces',
+              filled: true,
+              fillColor: AppTheme.neutralWhite,
+              labelStyle: TextStyle(color: AppTheme.neutralGrey, fontSize: 16),
+            ),
           ),
           const SizedBox(height: 60),
         ],
@@ -689,7 +702,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Widget _buildBottomNavigation() {
     bool canProceed = false;
-    
+
     switch (_currentStep) {
       case 0:
         canProceed = _selectedLanguage.isNotEmpty;
@@ -718,7 +731,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         width: double.infinity,
         child: CupertinoButton(
           padding: const EdgeInsets.symmetric(vertical: 16),
-          color: canProceed && !_isLoading ? AppTheme.primaryGreen : AppTheme.neutralGrey,
+          color: canProceed && !_isLoading
+              ? AppTheme.primaryGreen
+              : AppTheme.neutralGrey,
           borderRadius: BorderRadius.circular(12),
           onPressed: canProceed && !_isLoading ? _nextStep : null,
           child: _isLoading
@@ -735,13 +750,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       ),
     );
   }
-  
+
   /// Helper method to check if a string represents a valid number
   bool _isValidNumber(String value) {
     final number = double.tryParse(value.replaceAll(',', '.'));
     return number != null && number >= 0;
   }
-  
+
   /// Helper method to check if a string represents a valid integer
   bool _isValidInteger(String value) {
     final number = int.tryParse(value);

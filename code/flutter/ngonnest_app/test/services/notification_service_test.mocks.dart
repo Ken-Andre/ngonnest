@@ -241,6 +241,45 @@ class MockCalendarSyncService extends _i1.Mock
             returnValueForMissingStub: _i3.Future<void>.value(),
           )
           as _i3.Future<void>);
+
+  @override
+  _i3.Future<bool> deleteEvent({
+    required String? title,
+    required DateTime? start,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#deleteEvent, [], {#title: title, #start: start}),
+            returnValue: _i3.Future<bool>.value(false),
+          )
+          as _i3.Future<bool>);
+
+  @override
+  _i3.Future<bool> isCalendarAvailable() =>
+      (super.noSuchMethod(
+            Invocation.method(#isCalendarAvailable, []),
+            returnValue: _i3.Future<bool>.value(false),
+          )
+          as _i3.Future<bool>);
+
+  @override
+  _i3.Future<_i10.CalendarPermissionStatus> getPermissionStatus() =>
+      (super.noSuchMethod(
+            Invocation.method(#getPermissionStatus, []),
+            returnValue: _i3.Future<_i10.CalendarPermissionStatus>.value(
+              _i10.CalendarPermissionStatus.granted,
+            ),
+          )
+          as _i3.Future<_i10.CalendarPermissionStatus>);
+
+  @override
+  _i3.Future<_i10.CalendarPermissionResult> requestPermissionsWithFeedback() =>
+      (super.noSuchMethod(
+            Invocation.method(#requestPermissionsWithFeedback, []),
+            returnValue: _i3.Future<_i10.CalendarPermissionResult>.value(
+              _i10.CalendarPermissionResult.granted,
+            ),
+          )
+          as _i3.Future<_i10.CalendarPermissionResult>);
 }
 
 /// A class which mocks [SettingsService].

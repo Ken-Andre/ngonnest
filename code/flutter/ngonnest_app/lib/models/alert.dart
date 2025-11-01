@@ -13,6 +13,7 @@ enum AlertUrgency {
 
 class Alert {
   final int? id;
+  final int idFoyer;
   final int? idObjet;
   final AlertType typeAlerte;
   final String titre;
@@ -25,6 +26,7 @@ class Alert {
 
   const Alert({
     this.id,
+    required this.idFoyer,
     this.idObjet,
     required this.typeAlerte,
     required this.titre,
@@ -39,6 +41,7 @@ class Alert {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
+      'id_foyer': idFoyer,
       'id_objet': idObjet,
       'type_alerte': typeAlerte.toString().split('.').last,
       'titre': titre,
@@ -54,6 +57,7 @@ class Alert {
   factory Alert.fromMap(Map<String, dynamic> map) {
     return Alert(
       id: map['id'],
+      idFoyer: map['id_foyer'],
       idObjet: map['id_objet'],
       typeAlerte: AlertType.values.firstWhere(
         (e) => e.toString().split('.').last == map['type_alerte'],
@@ -78,6 +82,7 @@ class Alert {
 
   Alert copyWith({
     int? id,
+    int? idFoyer,
     int? idObjet,
     AlertType? typeAlerte,
     String? titre,
@@ -90,6 +95,7 @@ class Alert {
   }) {
     return Alert(
       id: id ?? this.id,
+      idFoyer: idFoyer ?? this.idFoyer,
       idObjet: idObjet ?? this.idObjet,
       typeAlerte: typeAlerte ?? this.typeAlerte,
       titre: titre ?? this.titre,

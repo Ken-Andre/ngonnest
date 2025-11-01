@@ -597,6 +597,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Grant Storage Permission'**
   String get grantStoragePermission;
+
+  /// No description provided for @requestTimedOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Request timed out'**
+  String get requestTimedOut;
+
+  /// No description provided for @networkError.
+  ///
+  /// In en, this message translates to:
+  /// **'Network error. Please verify your internet connection.'**
+  String get networkError;
 }
 
 class _AppLocalizationsDelegate

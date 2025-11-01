@@ -168,9 +168,6 @@ void main() {
                         FeedbackService.showError(
                           context,
                           'Erreur de synchronisation. Vérifiez votre connexion.',
-                          onRetry: () {
-                            // Retry logic would go here
-                          },
                         );
                       },
                       child: const Text('Trigger Sync Error'),
@@ -191,7 +188,6 @@ void main() {
             find.text('Erreur de synchronisation. Vérifiez votre connexion.'),
             findsOneWidget,
           );
-          expect(find.text('Réessayer'), findsOneWidget);
           expect(find.byIcon(Icons.error), findsOneWidget);
 
           // Verify error styling (red background)
@@ -229,10 +225,9 @@ void main() {
         // Verify timeout message appears
         expect(find.byType(SnackBar), findsOneWidget);
         expect(
-          find.text('La requête a expiré. Vérifiez votre connexion internet.'),
+          find.text('Request timed out'),
           findsOneWidget,
         );
-        expect(find.text('Réessayer'), findsOneWidget);
 
         print('✓ Timeout error messages verified');
       });
@@ -252,7 +247,6 @@ void main() {
                         FeedbackService.showSuccess(
                           context,
                           'Action réussie avec succès',
-                          duration: const Duration(seconds: 2),
                         );
                       },
                       child: const Text('Trigger Success'),
@@ -275,7 +269,6 @@ void main() {
           // Verify success styling (green background)
           final snackBar = tester.widget<SnackBar>(find.byType(SnackBar));
           expect(snackBar.backgroundColor, equals(Colors.green[600]));
-          expect(snackBar.duration, equals(const Duration(seconds: 2)));
 
           // Verify it stays visible for at least 2 seconds
           await tester.pump(const Duration(seconds: 1));

@@ -25,7 +25,7 @@
 -dontwarn io.flutter.**
 
 # Keep Dart classes
--keep class com.ngonnest.app.** { *; }
+-keep class com.example.app.** { *; }
 
 # Keep SQLite classes
 -keep class * extends android.database.sqlite.SQLiteOpenHelper

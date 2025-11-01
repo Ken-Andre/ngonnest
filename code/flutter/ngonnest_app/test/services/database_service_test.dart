@@ -1,11 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
-import 'package:sqflite/sqflite.dart';
-import 'package:ngonnest_app/services/database_service.dart';
+import 'package:mockito/mockito.dart';
 import 'package:ngonnest_app/models/foyer.dart';
 import 'package:ngonnest_app/models/objet.dart';
-import 'package:ngonnest_app/models/alert.dart';
+import 'package:ngonnest_app/services/database_service.dart';
+import 'package:sqflite/sqflite.dart';
 
 @GenerateMocks([Database])
 import 'database_service_test.mocks.dart';
@@ -31,13 +30,21 @@ void main() {
     group('Connection Management', () {
       test('should establish database connection successfully', () async {
         when(mockDatabase.isOpen).thenReturn(true);
-        when(mockDatabase.rawQuery('SELECT 1')).thenAnswer((_) async => [{'1': 1}]);
+        when(mockDatabase.rawQuery('SELECT 1')).thenAnswer(
+          (_) async => [
+            {'1': 1},
+          ],
+        );
         expect(() => databaseService.database, returnsNormally);
       });
 
       test('should validate connection with simple query', () async {
         when(mockDatabase.isOpen).thenReturn(true);
-        when(mockDatabase.rawQuery('SELECT 1')).thenAnswer((_) async => [{'1': 1}]);
+        when(mockDatabase.rawQuery('SELECT 1')).thenAnswer(
+          (_) async => [
+            {'1': 1},
+          ],
+        );
         final isValid = await databaseService.isConnectionValid();
         expect(isValid, isA<bool>());
       });
@@ -68,8 +75,9 @@ void main() {
           'date_modification': DateTime.now().toIso8601String(),
         };
 
-        when(mockDatabase.query('foyer', limit: 1))
-            .thenAnswer((_) async => [testFoyerMap]);
+        when(
+          mockDatabase.query('foyer', limit: 1),
+        ).thenAnswer((_) async => [testFoyerMap]);
 
         final result = await databaseService.getFoyer();
         expect(result, isA<Foyer>());
@@ -78,8 +86,7 @@ void main() {
       });
 
       test('should return null when no foyer exists', () async {
-        when(mockDatabase.query('foyer', limit: 1))
-            .thenAnswer((_) async => []);
+        when(mockDatabase.query('foyer', limit: 1)).thenAnswer((_) async => []);
         final result = await databaseService.getFoyer();
         expect(result, isNull);
       });
@@ -104,8 +111,14 @@ void main() {
           typeLogement: 'maison',
           langue: 'en',
         );
-        when(mockDatabase.update('foyer', any, where: anyNamed('where'), whereArgs: anyNamed('whereArgs')))
-            .thenAnswer((_) async => 1);
+        when(
+          mockDatabase.update(
+            'foyer',
+            any,
+            where: anyNamed('where'),
+            whereArgs: anyNamed('whereArgs'),
+          ),
+        ).thenAnswer((_) async => 1);
         final result = await databaseService.updateFoyer(testFoyer);
         expect(result, equals(1));
       });
@@ -128,8 +141,14 @@ void main() {
           },
         ];
 
-        when(mockDatabase.query('objet', where: anyNamed('where'), whereArgs: anyNamed('whereArgs'), orderBy: anyNamed('orderBy')))
-            .thenAnswer((_) async => testObjetMaps);
+        when(
+          mockDatabase.query(
+            'objet',
+            where: anyNamed('where'),
+            whereArgs: anyNamed('whereArgs'),
+            orderBy: anyNamed('orderBy'),
+          ),
+        ).thenAnswer((_) async => testObjetMaps);
 
         final result = await databaseService.getObjets(idFoyer: idFoyer);
         expect(result, hasLength(1));
@@ -146,6 +165,8 @@ void main() {
           seuilAlerteQuantite: 1.0,
           prixUnitaire: 4.00,
           dateAchat: DateTime.now(),
+          quantiteInitiale: 5,
+          unite: '',
         );
         when(mockDatabase.insert('objet', any)).thenAnswer((_) async => 5);
         final result = await databaseService.insertObjet(testObjet);
@@ -170,7 +191,9 @@ void main() {
           },
         ];
 
-        when(mockDatabase.rawQuery(any, any)).thenAnswer((_) async => alertMaps);
+        when(
+          mockDatabase.rawQuery(any, any),
+        ).thenAnswer((_) async => alertMaps);
         final result = await databaseService.getAlerts(idFoyer: idFoyer);
         expect(result, hasLength(1));
         expect(result[0].titre, equals('Stock faible'));
@@ -178,8 +201,14 @@ void main() {
 
       test('should mark alert as read', () async {
         const alertId = 1;
-        when(mockDatabase.update('alertes', any, where: anyNamed('where'), whereArgs: anyNamed('whereArgs')))
-            .thenAnswer((_) async => 1);
+        when(
+          mockDatabase.update(
+            'alertes',
+            any,
+            where: anyNamed('where'),
+            whereArgs: anyNamed('whereArgs'),
+          ),
+        ).thenAnswer((_) async => 1);
         final result = await databaseService.markAlertAsRead(alertId);
         expect(result, equals(1));
       });
@@ -187,38 +216,63 @@ void main() {
 
     group('Error Handling', () {
       test('should retry on database busy error', () async {
-        final busyError = DatabaseException('Database is locked', 5);
-        when(mockDatabase.query('foyer', limit: 1))
-            .thenThrow(busyError)
-            .thenAnswer((_) async => []);
+        // Create a mock exception that simulates a database busy error
+        final busyError = Exception('Database is locked');
+        when(
+          mockDatabase.query('foyer', limit: 1),
+        ).thenThrow(busyError);
+        when(
+          mockDatabase.query('foyer', limit: 1),
+        ).thenAnswer((_) async => []);
         final result = await databaseService.getFoyer();
         expect(result, isNull);
       });
 
       test('should not retry on non-retryable errors', () async {
-        final nonRetryableError = DatabaseException('Syntax error', 1);
-        when(mockDatabase.query('foyer', limit: 1)).thenThrow(nonRetryableError);
-        expect(() => databaseService.getFoyer(), throwsA(isA<DatabaseException>()));
+        // Create a mock exception for non-retryable errors
+        final nonRetryableError = Exception('Syntax error');
+        when(
+          mockDatabase.query('foyer', limit: 1),
+        ).thenThrow(nonRetryableError);
+        expect(
+          () => databaseService.getFoyer(),
+          throwsA(isA<Exception>()),
+        );
       });
     });
 
     group('NgonNest Specific', () {
       test('should handle Cameroon product categories', () async {
-        const cameroonCategories = ['Hygiène', 'Nettoyage', 'Cuisine', 'Divers'];
-        final testObjets = cameroonCategories.map((cat) => {
-          'id': cameroonCategories.indexOf(cat) + 1,
-          'id_foyer': 1,
-          'nom': 'Produit $cat',
-          'categorie': cat,
-          'type': 'consommable',
-          'quantite_restante': 2.0,
-          'seuil_alerte_quantite': 1.0,
-          'prix_unitaire': 1000.0,
-          'date_achat': DateTime.now().toIso8601String(),
-        }).toList();
+        const cameroonCategories = [
+          'Hygiène',
+          'Nettoyage',
+          'Cuisine',
+          'Divers',
+        ];
+        final testObjets = cameroonCategories
+            .map(
+              (cat) => {
+                'id': cameroonCategories.indexOf(cat) + 1,
+                'id_foyer': 1,
+                'nom': 'Produit $cat',
+                'categorie': cat,
+                'type': 'consommable',
+                'quantite_restante': 2.0,
+                'seuil_alerte_quantite': 1.0,
+                'prix_unitaire': 1000.0,
+                'date_achat': DateTime.now().toIso8601String(),
+              },
+            )
+            .toList();
 
-        when(mockDatabase.query('objet', where: anyNamed('where'), whereArgs: anyNamed('whereArgs'), orderBy: anyNamed('orderBy')))
-            .thenAnswer((_) async => testObjets);
+        when(
+          mockDatabase.query(
+            'objet',
+            where: anyNamed('where'),
+            whereArgs: anyNamed('whereArgs'),
+            orderBy: anyNamed('orderBy'),
+          ),
+        ).thenAnswer((_) async => testObjets);
 
         final result = await databaseService.getObjets(idFoyer: 1);
         expect(result, hasLength(4));

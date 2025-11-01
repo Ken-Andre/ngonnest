@@ -6,7 +6,7 @@ class AppTheme {
   static const Color primaryOrange = Color(0xFFE58800);
   static const Color primaryRed = Color(0xFFC62828);
   static const Color primaryYellow = Color(0xFFFDD835);
-  
+
   // Neutral colors for accessibility
   static const Color neutralBlack = Color(0xFF1A1A1A);
   static const Color neutralWhite = Color(0xFFFFFFFF);
@@ -16,7 +16,7 @@ class AppTheme {
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
-      
+
       // Color scheme with high contrast for accessibility
       colorScheme: ColorScheme.fromSeed(
         seedColor: primaryGreen,
@@ -31,7 +31,7 @@ class AppTheme {
         onSurface: neutralBlack,
         onBackground: neutralBlack,
       ),
-      
+
       // Typography with minimum 16px font size for accessibility
       textTheme: const TextTheme(
         displayLarge: TextStyle(
@@ -110,7 +110,7 @@ class AppTheme {
           color: neutralGrey,
         ),
       ),
-      
+
       // App bar theme
       appBarTheme: const AppBarTheme(
         backgroundColor: primaryGreen,
@@ -123,7 +123,7 @@ class AppTheme {
           color: neutralWhite,
         ),
       ),
-      
+
       // Elevated button theme
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -134,25 +134,19 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
-          textStyle: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
+          textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
         ),
       ),
-      
+
       // Text button theme
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: primaryGreen,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          textStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
       ),
-      
+
       // Input decoration theme
       inputDecorationTheme: InputDecorationTheme(
         border: OutlineInputBorder(
@@ -171,40 +165,32 @@ class AppTheme {
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Color(0xFFD32F2F), width: 2),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        labelStyle: const TextStyle(
-          fontSize: 16,
-          color: neutralGrey,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
         ),
-        hintStyle: const TextStyle(
-          fontSize: 16,
-          color: neutralGrey,
-        ),
+        labelStyle: const TextStyle(fontSize: 16, color: neutralGrey),
+        hintStyle: const TextStyle(fontSize: 16, color: neutralGrey),
       ),
-      
+
       // Card theme
       cardTheme: CardThemeData(
         color: neutralWhite,
         elevation: 4,
-        shadowColor: neutralBlack.withOpacity(0.1),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shadowColor: neutralBlack.withValues(alpha: 0.1),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
-      
+
       // Icon theme
-      iconTheme: const IconThemeData(
-        color: primaryGreen,
-        size: 24,
-      ),
-      
+      iconTheme: const IconThemeData(color: primaryGreen, size: 24),
+
       // Floating action button theme
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
         backgroundColor: primaryGreen,
         foregroundColor: neutralWhite,
         elevation: 8,
       ),
-      
+
       // Bottom navigation bar theme
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: neutralWhite,
@@ -221,14 +207,14 @@ class AppTheme {
           fontWeight: FontWeight.normal,
         ),
       ),
-      
+
       // Divider theme
       dividerTheme: const DividerThemeData(
         color: neutralGrey,
         thickness: 1,
         space: 1,
       ),
-      
+
       // Progress indicator theme
       progressIndicatorTheme: const ProgressIndicatorThemeData(
         color: primaryGreen,
@@ -241,7 +227,7 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      
+
       // Color scheme for dark mode
       colorScheme: ColorScheme.fromSeed(
         seedColor: primaryGreen,
@@ -256,7 +242,7 @@ class AppTheme {
         onSurface: neutralWhite,
         onBackground: neutralWhite,
       ),
-      
+
       // Typography for dark mode
       textTheme: const TextTheme(
         displayLarge: TextStyle(
@@ -335,7 +321,7 @@ class AppTheme {
           color: neutralLightGrey,
         ),
       ),
-      
+
       // App bar theme for dark mode
       appBarTheme: const AppBarTheme(
         backgroundColor: Color(0xFF1E1E1E),
@@ -348,7 +334,7 @@ class AppTheme {
           color: neutralWhite,
         ),
       ),
-      
+
       // Elevated button theme for dark mode
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -359,25 +345,19 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
-          textStyle: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
+          textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
         ),
       ),
-      
+
       // Text button theme for dark mode
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: primaryGreen,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          textStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
       ),
-      
+
       // Input decoration theme for dark mode
       inputDecorationTheme: InputDecorationTheme(
         border: OutlineInputBorder(
@@ -396,40 +376,35 @@ class AppTheme {
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Color(0xFFD32F2F), width: 2),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        labelStyle: const TextStyle(
-          fontSize: 16,
-          color: neutralLightGrey,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
         ),
-        hintStyle: const TextStyle(
-          fontSize: 16,
-          color: neutralLightGrey,
-        ),
+        labelStyle: const TextStyle(fontSize: 16, color: neutralLightGrey),
+        hintStyle: const TextStyle(fontSize: 16, color: neutralLightGrey),
       ),
-      
+
       // Card theme for dark mode
       cardTheme: CardThemeData(
         color: const Color(0xFF1E1E1E),
         elevation: 4,
-        shadowColor: neutralBlack.withOpacity(0.3),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shadowColor: neutralBlack.withValues(alpha: 0.3),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
-      
+
       // Icon theme for dark mode
       iconTheme: const IconThemeData(
         color: neutralWhite, // Changed to neutralWhite for dark mode visibility
         size: 24,
       ),
-      
+
       // Floating action button theme for dark mode
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
         backgroundColor: primaryGreen,
         foregroundColor: neutralWhite,
         elevation: 8,
       ),
-      
+
       // Bottom navigation bar theme for dark mode
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: Color(0xFF1E1E1E),
@@ -446,14 +421,14 @@ class AppTheme {
           fontWeight: FontWeight.normal,
         ),
       ),
-      
+
       // Divider theme for dark mode
       dividerTheme: const DividerThemeData(
         color: neutralGrey,
         thickness: 1,
         space: 1,
       ),
-      
+
       // Progress indicator theme for dark mode
       progressIndicatorTheme: const ProgressIndicatorThemeData(
         color: primaryGreen,

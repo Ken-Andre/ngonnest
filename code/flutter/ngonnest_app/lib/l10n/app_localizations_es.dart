@@ -276,4 +276,11 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get grantStoragePermission => 'Conceder permiso de almacenamiento';
+
+  @override
+  String get requestTimedOut => 'Tiempo de espera agotado';
+
+  @override
+  String get networkError =>
+      'Error de red. Por favor verifica tu conexión a internet.';
 }

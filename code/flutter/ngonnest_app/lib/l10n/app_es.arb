@@ -81,5 +81,7 @@
   "storagePermissionRequired": "Se requiere permiso de almacenamiento para exportar datos",
   "storagePermissionDenied": "Permiso de almacenamiento denegado. Por favor concede acceso en configuración del sistema",
   "storagePermissionPermanentlyDenied": "Permiso de almacenamiento permanentemente denegado. Por favor actívalo en configuración de la aplicación",
-  "grantStoragePermission": "Conceder permiso de almacenamiento"
+  "grantStoragePermission": "Conceder permiso de almacenamiento",
+  "requestTimedOut": "Tiempo de espera agotado",
+  "networkError": "Error de red. Por favor verifica tu conexión a internet."
 }

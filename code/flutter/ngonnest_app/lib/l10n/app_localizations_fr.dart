@@ -275,4 +275,11 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get grantStoragePermission => 'Accorder l\'autorisation de stockage';
+
+  @override
+  String get requestTimedOut => 'Requête expirée';
+
+  @override
+  String get networkError =>
+      'Erreur réseau. Veuillez vérifier votre connexion internet.';
 }

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/product_suggestion_service.dart';
+
 import '../repository/foyer_repository.dart';
 import '../repository/inventory_repository.dart';
+import '../services/product_suggestion_service.dart';
 import '../theme/app_theme.dart'; // AppTheme is still needed for _PriorityConfig or other direct consts if any
 
 /// Widget intelligent d'affichage des suggestions de produits
@@ -129,7 +130,9 @@ class _LoadingWidget extends StatelessWidget {
           Text(
             'Chargement des suggestions...',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.7),
             ),
           ),
         ],
@@ -184,14 +187,18 @@ class _EmptyWidget extends StatelessWidget {
         children: [
           Icon(
             Icons.lightbulb_outline,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.5),
             size: 16,
           ),
           const SizedBox(width: 8),
           Text(
             'Aucune suggestion disponible',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.7),
             ),
           ),
         ],
@@ -315,7 +322,7 @@ class _SuggestionCard extends StatelessWidget {
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Theme.of(
                       context,
-                    ).colorScheme.onSurface.withOpacity(0.7),
+                    ).colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -342,9 +349,12 @@ class _PriorityIndicator extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: config.color.withOpacity(0.1),
+        color: config.color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: config.color.withOpacity(0.3), width: 1),
+        border: Border.all(
+          color: config.color.withValues(alpha: 0.3),
+          width: 1,
+        ),
       ),
       child: Text(
         config.label,
@@ -504,6 +514,7 @@ class _SmartSuggestionSearchState extends State<SmartSuggestionSearch> {
       children: [
         TextField(
           controller: _controller,
+          style: const TextStyle(color: AppTheme.neutralBlack, fontSize: 16),
           decoration: InputDecoration(
             hintText: widget.hintText,
             prefixIcon: const Icon(Icons.search),
@@ -523,6 +534,12 @@ class _SmartSuggestionSearchState extends State<SmartSuggestionSearch> {
                         )
                       : null),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            filled: true,
+            fillColor: AppTheme.neutralWhite,
+            labelStyle: const TextStyle(
+              color: AppTheme.neutralGrey,
+              fontSize: 16,
+            ),
           ),
           onChanged: _performSearch,
         ),
@@ -535,7 +552,7 @@ class _SmartSuggestionSearchState extends State<SmartSuggestionSearch> {
               borderRadius: BorderRadius.circular(8),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
+                  color: Colors.grey.withValues(alpha: 0.1),
                   spreadRadius: 1,
                   blurRadius: 3,
                   offset: const Offset(0, 1),

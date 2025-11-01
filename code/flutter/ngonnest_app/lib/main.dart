@@ -2,8 +2,8 @@ import 'dart:io' show Platform;
 import 'dart:isolate';
 
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_remote_config/firebase_remote_config.dart';
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+// import 'package:firebase_remote_config/firebase_remote_config.dart';
+// import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -18,14 +18,12 @@ import 'package:ngonnest_app/services/dynamic_content_service.dart';
 import 'package:ngonnest_app/services/error_logger_service.dart';
 import 'package:ngonnest_app/services/feature_flag_service.dart';
 import 'package:ngonnest_app/services/remote_config_service.dart';
-import 'package:ngonnest_app/services/service_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:workmanager/workmanager.dart';
 
 import 'firebase_options.dart';
-
 import 'l10n/app_localizations.dart';
 import 'models/objet.dart';
 import 'providers/foyer_provider.dart';
@@ -64,7 +62,7 @@ void main() async {
 
       // Initialize Crash Analytics Service (avant Analytics pour capturer les erreurs d'init)
       await CrashAnalyticsService().initialize(enableInDebug: kDebugMode);
-      
+
       // Initialize Crash Metrics Service
       await CrashMetricsService().startSession();
 
@@ -76,7 +74,9 @@ void main() async {
         await AnalyticsDebugHelper.testFirebaseSetup();
       }
 
-      ConsoleLogger.info('[Main] Firebase, Crashlytics, and Analytics initialized.');
+      ConsoleLogger.info(
+        '[Main] Firebase, Crashlytics, and Analytics initialized.',
+      );
     } catch (e) {
       ConsoleLogger.error('[Main]', 'Firebase initialization failed', e);
       // Continue app startup even if Firebase fails
@@ -111,7 +111,7 @@ void main() async {
           'silentCrash': true,
         },
       );
-      
+
       // Enregistrer dans les métriques
       await CrashMetricsService().recordCrash(
         component: 'FlutterFramework',
@@ -119,13 +119,13 @@ void main() async {
         severity: ErrorSeverity.high,
         isFatal: false,
       );
-      
+
       // Breadcrumb pour contexte
       BreadcrumbService().addError(
         'Flutter render error: ${details.exception.toString()}',
         data: {'library': details.library},
       );
-      
+
       // Log console également
       debugPrint('🔴 [FLUTTER ERROR] ${details.exception.toString()}');
     };
@@ -135,7 +135,7 @@ void main() async {
   Isolate.current.addErrorListener(
     RawReceivePort((dynamic pair) async {
       final errorAndStacktrace = pair as List<dynamic>;
-      
+
       // Log fatal crash
       await CrashAnalyticsService().logFatalCrash(
         error: errorAndStacktrace.first,
@@ -143,7 +143,7 @@ void main() async {
         reason: 'Isolate background error',
         metadata: {'isolate': 'background'},
       );
-      
+
       // Enregistrer dans les métriques
       await CrashMetricsService().recordCrash(
         component: 'Isolate',
@@ -501,7 +501,9 @@ class _SplashScreenState extends State<SplashScreen>
         if (status.isGranted) {
           ConsoleLogger.info('[Main] Calendar permissions granted');
         } else if (status.isPermanentlyDenied) {
-          ConsoleLogger.warning('[Main] Calendar permissions permanently denied');
+          ConsoleLogger.warning(
+            '[Main] Calendar permissions permanently denied',
+          );
           // Open app settings to allow user to enable permissions
           await openAppSettings();
         } else {

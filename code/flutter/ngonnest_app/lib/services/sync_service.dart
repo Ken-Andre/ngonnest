@@ -1,19 +1,37 @@
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
-import 'database_service.dart'; // For ErrorContext if ever needed elsewhere, though not directly in logError calls now
+
 import 'connectivity_service.dart';
-import 'error_logger_service.dart';
 import 'console_logger.dart';
+import 'database_service.dart'; // For ErrorContext if ever needed elsewhere, though not directly in logError calls now
+import 'error_logger_service.dart';
 
 /// Service de synchronisation offline-first pour NgonNest
 /// Respecte les principes : offline first, sync optionnelle, local wins, retry logic
+///
+/// Assumptions:
+/// - This service is intended to be used within a single Flutter app lifecycle
+/// - Thread safety is ensured by Flutter's single-threaded nature (main isolate)
+/// - If accessed across isolates, additional synchronization would be required
 class SyncService extends ChangeNotifier {
-  static final SyncService _instance = SyncService._internal();
-  factory SyncService() => _instance;
+  static SyncService? _instance;
+
+  /// Reset instance untuk testing
+  static void resetInstance() {
+    _instance?._disposeInternals();
+    _instance = null;
+  }
+
+  factory SyncService() {
+    _instance ??= SyncService._internal();
+    return _instance!;
+  }
+
   SyncService._internal();
 
   final DatabaseService _databaseService = DatabaseService();
@@ -566,6 +584,18 @@ class SyncService extends ChangeNotifier {
     }
 
     await _performSync();
+  }
+
+  /// Nettoyage des ressources du service
+  void _disposeInternals() {
+    _isSyncing = false;
+    _hasError = false;
+    _lastError = null;
+    _lastSyncTime = null;
+    _syncEnabled = false;
+    _userConsent = false;
+    _pendingOperations = 0;
+    _failedOperations = 0;
   }
 
   /// Nettoyage des ressources

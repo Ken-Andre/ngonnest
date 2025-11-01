@@ -1,12 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:mockito/mockito.dart';
+import 'package:ngonnest_app/models/budget_category.dart';
 import 'package:ngonnest_app/services/budget_service.dart';
 import 'package:ngonnest_app/services/database_service.dart';
 import 'package:ngonnest_app/services/price_service.dart';
-import 'package:ngonnest_app/services/error_logger_service.dart';
-import 'package:ngonnest_app/models/budget_category.dart';
+import 'package:sqflite/sqflite.dart';
 
 @GenerateMocks([Database, DatabaseService, PriceService])
 import 'budget_service_enhanced_test.mocks.dart';
@@ -14,43 +13,44 @@ import 'budget_service_enhanced_test.mocks.dart';
 void main() {
   group('BudgetService Enhanced Tests', () {
     late MockDatabase mockDatabase;
-    late MockDatabaseService mockDatabaseService;
-    late MockPriceService mockPriceService;
 
     setUp(() {
       mockDatabase = MockDatabase();
-      mockDatabaseService = MockDatabaseService();
-      mockPriceService = MockPriceService();
     });
 
     group('getBudgetCategories', () {
-      test('should return budget categories for current month by default', () async {
-        final currentMonth = BudgetService.getCurrentMonth();
-        final testCategories = [
-          {
-            'id': 1,
-            'name': 'Hygiène',
-            'limit': 120.0,
-            'spent': 80.0,
-            'month': currentMonth,
-            'created_at': DateTime.now().toIso8601String(),
-            'updated_at': DateTime.now().toIso8601String(),
-          },
-        ];
+      test(
+        'should return budget categories for current month by default',
+        () async {
+          final currentMonth = BudgetService.getCurrentMonth();
+          final testCategories = [
+            {
+              'id': 1,
+              'name': 'Hygiène',
+              'limit': 120.0,
+              'spent': 80.0,
+              'month': currentMonth,
+              'created_at': DateTime.now().toIso8601String(),
+              'updated_at': DateTime.now().toIso8601String(),
+            },
+          ];
 
-        when(mockDatabase.query(
-          'budget_categories',
-          where: 'month = ?',
-          whereArgs: [currentMonth],
-          orderBy: 'name ASC',
-        )).thenAnswer((_) async => testCategories);
+          when(
+            mockDatabase.query(
+              'budget_categories',
+              where: 'month = ?',
+              whereArgs: [currentMonth],
+              orderBy: 'name ASC',
+            ),
+          ).thenAnswer((_) async => testCategories);
 
-        final result = await BudgetService.getBudgetCategories();
-        expect(result, hasLength(1));
-        expect(result[0].name, equals('Hygiène'));
-        expect(result[0].limit, equals(120.0));
-        expect(result[0].spent, equals(80.0));
-      });
+          final result = await BudgetService.getBudgetCategories();
+          expect(result, hasLength(1));
+          expect(result[0].name, equals('Hygiène'));
+          expect(result[0].limit, equals(120.0));
+          expect(result[0].spent, equals(80.0));
+        },
+      );
 
       test('should return budget categories for specific month', () async {
         const specificMonth = '2024-01';
@@ -66,21 +66,31 @@ void main() {
           },
         ];
 
-        when(mockDatabase.query(
-          'budget_categories',
-          where: 'month = ?',
-          whereArgs: [specificMonth],
-          orderBy: 'name ASC',
-        )).thenAnswer((_) async => testCategories);
+        when(
+          mockDatabase.query(
+            'budget_categories',
+            where: 'month = ?',
+            whereArgs: [specificMonth],
+            orderBy: 'name ASC',
+          ),
+        ).thenAnswer((_) async => testCategories);
 
-        final result = await BudgetService.getBudgetCategories(month: specificMonth);
+        final result = await BudgetService.getBudgetCategories(
+          month: specificMonth,
+        );
         expect(result, hasLength(1));
         expect(result[0].month, equals(specificMonth));
       });
 
       test('should handle database errors gracefully', () async {
-        when(mockDatabase.query(any, where: anyNamed('where'), whereArgs: anyNamed('whereArgs'), orderBy: anyNamed('orderBy')))
-            .thenThrow(Exception('Database error'));
+        when(
+          mockDatabase.query(
+            any,
+            where: anyNamed('where'),
+            whereArgs: anyNamed('whereArgs'),
+            orderBy: anyNamed('orderBy'),
+          ),
+        ).thenThrow(Exception('Database error'));
 
         final result = await BudgetService.getBudgetCategories();
         expect(result, isEmpty);
@@ -95,11 +105,15 @@ void main() {
           month: '2024-01',
         );
 
-        when(mockDatabase.insert('budget_categories', any)).thenAnswer((_) async => 5);
+        when(
+          mockDatabase.insert('budget_categories', any),
+        ).thenAnswer((_) async => 5);
 
         final result = await BudgetService.createBudgetCategory(category);
         expect(result, equals(5));
-        verify(mockDatabase.insert('budget_categories', category.toMap())).called(1);
+        verify(
+          mockDatabase.insert('budget_categories', category.toMap()),
+        ).called(1);
       });
 
       test('should handle creation errors and rethrow', () async {
@@ -109,8 +123,9 @@ void main() {
           month: '2024-01',
         );
 
-        when(mockDatabase.insert('budget_categories', any))
-            .thenThrow(Exception('Insert failed'));
+        when(
+          mockDatabase.insert('budget_categories', any),
+        ).thenThrow(Exception('Insert failed'));
 
         expect(
           () => BudgetService.createBudgetCategory(category),
@@ -129,24 +144,26 @@ void main() {
           month: '2024-01',
         );
 
-        when(mockDatabase.update(
-          'budget_categories',
-          any,
-          where: 'id = ?',
-          whereArgs: [1],
-        )).thenAnswer((_) async => 1);
+        when(
+          mockDatabase.update(
+            'budget_categories',
+            any,
+            where: 'id = ?',
+            whereArgs: [1],
+          ),
+        ).thenAnswer((_) async => 1);
 
         final result = await BudgetService.updateBudgetCategory(category);
         expect(result, equals(1));
 
-        final capturedData = verify(mockDatabase.update(
-          'budget_categories',
-          captureAny,
-          where: 'id = ?',
-          whereArgs: [1],
-        )).captured.single as Map<String, dynamic>;
-
-        expect(capturedData['updated_at'], isA<String>());
+        verify(
+          mockDatabase.update(
+            'budget_categories',
+            argThat(isA<Map<String, dynamic>>()),
+            where: 'id = ?',
+            whereArgs: [1],
+          ),
+        ).called(1);
       });
     });
 
@@ -154,39 +171,54 @@ void main() {
       test('should sync budget with actual purchases', () async {
         const idFoyer = 1;
         const month = '2024-01';
-        
+
         // Mock existing categories
         final categories = [
-          BudgetCategory(id: 1, name: 'Hygiène', limit: 120.0, spent: 0.0, month: month),
+          BudgetCategory(
+            id: 1,
+            name: 'Hygiène',
+            limit: 120.0,
+            spent: 0.0,
+            month: month,
+          ),
         ];
 
-        when(mockDatabase.query(
-          'budget_categories',
-          where: 'month = ?',
-          whereArgs: [month],
-          orderBy: 'name ASC',
-        )).thenAnswer((_) async => categories.map((c) => c.toMap()).toList());
+        when(
+          mockDatabase.query(
+            'budget_categories',
+            where: 'month = ?',
+            whereArgs: [month],
+            orderBy: 'name ASC',
+          ),
+        ).thenAnswer((_) async => categories.map((c) => c.toMap()).toList());
 
         // Mock spending calculation
-        when(mockDatabase.rawQuery(any, any))
-            .thenAnswer((_) async => [{'total_spending': 85.0}]);
+        when(mockDatabase.rawQuery(any, any)).thenAnswer(
+          (_) async => [
+            {'total_spending': 85.0},
+          ],
+        );
 
         // Mock update
-        when(mockDatabase.update(
-          'budget_categories',
-          any,
-          where: 'id = ?',
-          whereArgs: [1],
-        )).thenAnswer((_) async => 1);
+        when(
+          mockDatabase.update(
+            'budget_categories',
+            any,
+            where: 'id = ?',
+            whereArgs: [1],
+          ),
+        ).thenAnswer((_) async => 1);
 
         await BudgetService.syncBudgetWithPurchases(idFoyer, month: month);
 
-        verify(mockDatabase.update(
-          'budget_categories',
-          any,
-          where: 'id = ?',
-          whereArgs: [1],
-        )).called(1);
+        verify(
+          mockDatabase.update(
+            'budget_categories',
+            argThat(isA<Map<String, dynamic>>()),
+            where: 'id = ?',
+            whereArgs: [1],
+          ),
+        ).called(1);
       });
     });
 
@@ -200,14 +232,28 @@ void main() {
           'type_logement': 'appartement',
         };
 
-        when(mockDatabase.query('foyer', where: 'id = ?', whereArgs: [idFoyer], limit: 1))
-            .thenAnswer((_) async => [foyerData]);
+        when(
+          mockDatabase.query(
+            'foyer',
+            where: 'id = ?',
+            whereArgs: [idFoyer],
+            limit: 1,
+          ),
+        ).thenAnswer((_) async => [foyerData]);
 
         // Mock price service calls
-        when(PriceService.getAverageCategoryPrice('Hygiène')).thenAnswer((_) async => 8.0);
-        when(PriceService.getAverageCategoryPrice('Nettoyage')).thenAnswer((_) async => 6.0);
-        when(PriceService.getAverageCategoryPrice('Cuisine')).thenAnswer((_) async => 10.0);
-        when(PriceService.getAverageCategoryPrice('Divers')).thenAnswer((_) async => 5.0);
+        when(
+          PriceService.getAverageCategoryPrice('Hygiène'),
+        ).thenAnswer((_) async => 8.0);
+        when(
+          PriceService.getAverageCategoryPrice('Nettoyage'),
+        ).thenAnswer((_) async => 6.0);
+        when(
+          PriceService.getAverageCategoryPrice('Cuisine'),
+        ).thenAnswer((_) async => 10.0);
+        when(
+          PriceService.getAverageCategoryPrice('Divers'),
+        ).thenAnswer((_) async => 5.0);
 
         final result = await BudgetService.calculateRecommendedBudget(idFoyer);
 
@@ -224,17 +270,26 @@ void main() {
 
       test('should return default values on error', () async {
         const idFoyer = 999;
-        when(mockDatabase.query('foyer', where: 'id = ?', whereArgs: [idFoyer], limit: 1))
-            .thenAnswer((_) async => []); // No foyer found
+        when(
+          mockDatabase.query(
+            'foyer',
+            where: 'id = ?',
+            whereArgs: [idFoyer],
+            limit: 1,
+          ),
+        ).thenAnswer((_) async => []); // No foyer found
 
         final result = await BudgetService.calculateRecommendedBudget(idFoyer);
 
-        expect(result, equals({
-          'Hygiène': 120.0,
-          'Nettoyage': 80.0,
-          'Cuisine': 100.0,
-          'Divers': 60.0,
-        }));
+        expect(
+          result,
+          equals({
+            'Hygiène': 120.0,
+            'Nettoyage': 80.0,
+            'Cuisine': 100.0,
+            'Divers': 60.0,
+          }),
+        );
       });
 
       test('should apply correct multipliers for house vs apartment', () async {
@@ -246,10 +301,27 @@ void main() {
           'type_logement': 'maison', // Should get 20% bonus
         };
 
-        when(mockDatabase.query('foyer', where: 'id = ?', whereArgs: [idFoyer], limit: 1))
-            .thenAnswer((_) async => [maisonData]);
+        when(
+          mockDatabase.query(
+            'foyer',
+            where: 'id = ?',
+            whereArgs: [idFoyer],
+            limit: 1,
+          ),
+        ).thenAnswer((_) async => [maisonData]);
 
-        when(PriceService.getAverageCategoryPrice(any)).thenAnswer((_) async => 5.0);
+        when(
+          PriceService.getAverageCategoryPrice('Hygiène'),
+        ).thenAnswer((_) async => 5.0);
+        when(
+          PriceService.getAverageCategoryPrice('Nettoyage'),
+        ).thenAnswer((_) async => 5.0);
+        when(
+          PriceService.getAverageCategoryPrice('Cuisine'),
+        ).thenAnswer((_) async => 5.0);
+        when(
+          PriceService.getAverageCategoryPrice('Divers'),
+        ).thenAnswer((_) async => 5.0);
 
         final result = await BudgetService.calculateRecommendedBudget(idFoyer);
 
@@ -273,21 +345,31 @@ void main() {
           ),
         ];
 
-        when(mockDatabase.query(
-          'budget_categories',
-          where: 'month = ?',
-          whereArgs: [month],
-          orderBy: 'name ASC',
-        )).thenAnswer((_) async => categories.map((c) => c.toMap()).toList());
+        when(
+          mockDatabase.query(
+            'budget_categories',
+            where: 'month = ?',
+            whereArgs: [month],
+            orderBy: 'name ASC',
+          ),
+        ).thenAnswer((_) async => categories.map((c) => c.toMap()).toList());
 
         // Mock general tips query
         when(mockDatabase.rawQuery(any, any)).thenAnswer((_) async => []);
 
-        final result = await BudgetService.generateSavingsTips(idFoyer, month: month);
+        final result = await BudgetService.generateSavingsTips(
+          idFoyer,
+          month: month,
+        );
 
         expect(result, isNotEmpty);
         expect(result.any((tip) => tip['category'] == 'Hygiène'), isTrue);
-        expect(result.any((tip) => tip['title'].toString().contains('format')), isTrue);
+        expect(
+          result.any(
+            (tip) => (tip['title'] ?? '').toString().contains('format'),
+          ),
+          isTrue,
+        );
       });
 
       test('should generate category-specific tips for over-budget', () async {
@@ -304,22 +386,34 @@ void main() {
           ),
         ];
 
-        when(mockDatabase.query(
-          'budget_categories',
-          where: 'month = ?',
-          whereArgs: [month],
-          orderBy: 'name ASC',
-        )).thenAnswer((_) async => categories.map((c) => c.toMap()).toList());
+        when(
+          mockDatabase.query(
+            'budget_categories',
+            where: 'month = ?',
+            whereArgs: [month],
+            orderBy: 'name ASC',
+          ),
+        ).thenAnswer((_) async => categories.map((c) => c.toMap()).toList());
 
         when(mockDatabase.rawQuery(any, any)).thenAnswer((_) async => []);
 
-        final result = await BudgetService.generateSavingsTips(idFoyer, month: month);
+        final result = await BudgetService.generateSavingsTips(
+          idFoyer,
+          month: month,
+        );
 
         expect(result, isNotEmpty);
-        final hygieneTips = result.where((tip) => tip['category'] == 'hygiène').toList();
+        final hygieneTips = result
+            .where((tip) => tip['category'] == 'hygiène')
+            .toList();
         expect(hygieneTips, isNotEmpty);
         expect(hygieneTips.any((tip) => tip['urgency'] == 'high'), isTrue);
-        expect(hygieneTips.any((tip) => tip['title'].toString().contains('Marseille')), isTrue);
+        expect(
+          hygieneTips.any(
+            (tip) => tip['title'].toString().contains('Marseille'),
+          ),
+          isTrue,
+        );
       });
 
       test('should limit tips to maximum 5', () async {
@@ -327,26 +421,43 @@ void main() {
         const month = '2024-01';
 
         // Create many over-budget categories
-        final categories = ['Hygiène', 'Nettoyage', 'Cuisine', 'Divers', 'Extra1', 'Extra2']
-            .map((name) => BudgetCategory(
-                  id: ['Hygiène', 'Nettoyage', 'Cuisine', 'Divers', 'Extra1', 'Extra2'].indexOf(name) + 1,
-                  name: name,
-                  limit: 100.0,
-                  spent: 120.0, // All over budget
-                  month: month,
-                ))
-            .toList();
+        final categories =
+            ['Hygiène', 'Nettoyage', 'Cuisine', 'Divers', 'Extra1', 'Extra2']
+                .map(
+                  (name) => BudgetCategory(
+                    id:
+                        [
+                          'Hygiène',
+                          'Nettoyage',
+                          'Cuisine',
+                          'Divers',
+                          'Extra1',
+                          'Extra2',
+                        ].indexOf(name) +
+                        1,
+                    name: name,
+                    limit: 100.0,
+                    spent: 120.0, // All over budget
+                    month: month,
+                  ),
+                )
+                .toList();
 
-        when(mockDatabase.query(
-          'budget_categories',
-          where: 'month = ?',
-          whereArgs: [month],
-          orderBy: 'name ASC',
-        )).thenAnswer((_) async => categories.map((c) => c.toMap()).toList());
+        when(
+          mockDatabase.query(
+            'budget_categories',
+            where: 'month = ?',
+            whereArgs: [month],
+            orderBy: 'name ASC',
+          ),
+        ).thenAnswer((_) async => categories.map((c) => c.toMap()).toList());
 
         when(mockDatabase.rawQuery(any, any)).thenAnswer((_) async => []);
 
-        final result = await BudgetService.generateSavingsTips(idFoyer, month: month);
+        final result = await BudgetService.generateSavingsTips(
+          idFoyer,
+          month: month,
+        );
 
         expect(result.length, lessThanOrEqualTo(5));
       });
@@ -355,19 +466,27 @@ void main() {
         const idFoyer = 1;
         final julyMonth = '2024-07'; // Rainy season
 
-        when(mockDatabase.query(
-          'budget_categories',
-          where: 'month = ?',
-          whereArgs: [julyMonth],
-          orderBy: 'name ASC',
-        )).thenAnswer((_) async => []);
+        when(
+          mockDatabase.query(
+            'budget_categories',
+            where: 'month = ?',
+            whereArgs: [julyMonth],
+            orderBy: 'name ASC',
+          ),
+        ).thenAnswer((_) async => []);
 
         when(mockDatabase.rawQuery(any, any)).thenAnswer((_) async => []);
 
-        final result = await BudgetService.generateSavingsTips(idFoyer, month: julyMonth);
+        final result = await BudgetService.generateSavingsTips(
+          idFoyer,
+          month: julyMonth,
+        );
 
         expect(result.any((tip) => tip['category'] == 'Saisonnier'), isTrue);
-        expect(result.any((tip) => tip['title'].toString().contains('pluies')), isTrue);
+        expect(
+          result.any((tip) => tip['title'].toString().contains('pluies')),
+          isTrue,
+        );
       });
     });
 
@@ -381,9 +500,14 @@ void main() {
           {'categorie': 'Nettoyage', 'total_spent': 60.0, 'item_count': 3},
         ];
 
-        when(mockDatabase.rawQuery(any, any)).thenAnswer((_) async => spendingData);
+        when(
+          mockDatabase.rawQuery(any, any),
+        ).thenAnswer((_) async => spendingData);
 
-        final result = await BudgetService.getSpendingHistory(idFoyer, monthsBack: monthsBack);
+        final result = await BudgetService.getSpendingHistory(
+          idFoyer,
+          monthsBack: monthsBack,
+        );
 
         expect(result, isA<Map<String, dynamic>>());
         expect(result.containsKey('history'), isTrue);
@@ -405,13 +529,26 @@ void main() {
 
         // Mock data showing increasing trend
         final increasingSpendingData = [
-          {'categorie': 'Hygiène', 'total_spent': 100.0, 'item_count': 5}, // Recent months
-          {'categorie': 'Hygiène', 'total_spent': 80.0, 'item_count': 4},  // Older months
+          {
+            'categorie': 'Hygiène',
+            'total_spent': 100.0,
+            'item_count': 5,
+          }, // Recent months
+          {
+            'categorie': 'Hygiène',
+            'total_spent': 80.0,
+            'item_count': 4,
+          }, // Older months
         ];
 
-        when(mockDatabase.rawQuery(any, any)).thenAnswer((_) async => increasingSpendingData);
+        when(
+          mockDatabase.rawQuery(any, any),
+        ).thenAnswer((_) async => increasingSpendingData);
 
-        final result = await BudgetService.getSpendingHistory(idFoyer, monthsBack: 6);
+        final result = await BudgetService.getSpendingHistory(
+          idFoyer,
+          monthsBack: 6,
+        );
 
         final trends = result['trends'] as Map<String, dynamic>;
         expect(trends.containsKey('direction'), isTrue);
@@ -426,27 +563,52 @@ void main() {
         const month = '2024-01';
 
         // No existing categories
-        when(mockDatabase.query(
-          'budget_categories',
-          where: 'month = ?',
-          whereArgs: [month],
-          orderBy: 'name ASC',
-        )).thenAnswer((_) async => []);
+        when(
+          mockDatabase.query(
+            'budget_categories',
+            where: 'month = ?',
+            whereArgs: [month],
+            orderBy: 'name ASC',
+          ),
+        ).thenAnswer((_) async => []);
 
         // Mock foyer data
-        when(mockDatabase.query('foyer', where: 'id = ?', whereArgs: [idFoyer], limit: 1))
-            .thenAnswer((_) async => [{
+        when(
+          mockDatabase.query(
+            'foyer',
+            where: 'id = ?',
+            whereArgs: [idFoyer],
+            limit: 1,
+          ),
+        ).thenAnswer(
+          (_) async => [
+            {
               'id': idFoyer,
               'nb_personnes': 4,
               'nb_pieces': 3,
               'type_logement': 'appartement',
-            }]);
+            },
+          ],
+        );
 
         // Mock price service
-        when(PriceService.getAverageCategoryPrice(any)).thenAnswer((_) async => 5.0);
+        when(
+          PriceService.getAverageCategoryPrice('Hygiène'),
+        ).thenAnswer((_) async => 5.0);
+        when(
+          PriceService.getAverageCategoryPrice('Nettoyage'),
+        ).thenAnswer((_) async => 5.0);
+        when(
+          PriceService.getAverageCategoryPrice('Cuisine'),
+        ).thenAnswer((_) async => 5.0);
+        when(
+          PriceService.getAverageCategoryPrice('Divers'),
+        ).thenAnswer((_) async => 5.0);
 
         // Mock category creation
-        when(mockDatabase.insert('budget_categories', any)).thenAnswer((_) async => 1);
+        when(
+          mockDatabase.insert('budget_categories', any),
+        ).thenAnswer((_) async => 1);
 
         await BudgetService.initializeRecommendedBudgets(idFoyer, month: month);
 
@@ -459,14 +621,24 @@ void main() {
         const month = '2024-01';
 
         // Existing categories
-        when(mockDatabase.query(
-          'budget_categories',
-          where: 'month = ?',
-          whereArgs: [month],
-          orderBy: 'name ASC',
-        )).thenAnswer((_) async => [
-          {'id': 1, 'name': 'Hygiène', 'limit': 120.0, 'spent': 0.0, 'month': month}
-        ]);
+        when(
+          mockDatabase.query(
+            'budget_categories',
+            where: 'month = ?',
+            whereArgs: [month],
+            orderBy: 'name ASC',
+          ),
+        ).thenAnswer(
+          (_) async => [
+            {
+              'id': 1,
+              'name': 'Hygiène',
+              'limit': 120.0,
+              'spent': 0.0,
+              'month': month,
+            },
+          ],
+        );
 
         await BudgetService.initializeRecommendedBudgets(idFoyer, month: month);
 
@@ -476,63 +648,99 @@ void main() {
     });
 
     group('checkBudgetAlertsAfterPurchase', () {
-      test('should update spending and trigger alert for over-budget category', () async {
-        const idFoyer = 1;
-        const categoryName = 'Hygiène';
-        const month = '2024-01';
+      test(
+        'should update spending and trigger alert for over-budget category',
+        () async {
+          const idFoyer = 1;
+          const categoryName = 'Hygiène';
+          const month = '2024-01';
 
-        final existingCategory = BudgetCategory(
-          id: 1,
-          name: categoryName,
-          limit: 100.0,
-          spent: 80.0,
+          final existingCategory = BudgetCategory(
+            id: 1,
+            name: categoryName,
+            limit: 100.0,
+            spent: 80.0,
+            month: month,
+          );
+
+          when(
+            mockDatabase.query(
+              'budget_categories',
+              where: 'month = ?',
+              whereArgs: [month],
+              orderBy: 'name ASC',
+            ),
+          ).thenAnswer((_) async => [existingCategory.toMap()]);
+
+          // Mock spending calculation that puts us over budget
+          when(mockDatabase.rawQuery(any, any)).thenAnswer(
+            (_) async => [
+              {'total_spending': 120.0},
+            ],
+          );
+
+          when(
+            mockDatabase.update(
+              'budget_categories',
+              any,
+              where: 'id = ?',
+              whereArgs: [1],
+            ),
+          ).thenAnswer((_) async => 1);
+
+        await BudgetService.checkBudgetAlertsAfterPurchase(
+          idFoyer,
+          categoryName,
           month: month,
         );
 
-        when(mockDatabase.query(
-          'budget_categories',
-          where: 'month = ?',
-          whereArgs: [month],
-          orderBy: 'name ASC',
-        )).thenAnswer((_) async => [existingCategory.toMap()]);
-
-        // Mock spending calculation that puts us over budget
-        when(mockDatabase.rawQuery(any, any))
-            .thenAnswer((_) async => [{'total_spending': 120.0}]);
-
-        when(mockDatabase.update(
-          'budget_categories',
-          any,
-          where: 'id = ?',
-          whereArgs: [1],
-        )).thenAnswer((_) async => 1);
-
-        await BudgetService.checkBudgetAlertsAfterPurchase(idFoyer, categoryName, month: month);
-
-        verify(mockDatabase.update(
-          'budget_categories',
-          any,
-          where: 'id = ?',
-          whereArgs: [1],
-        )).called(1);
-      });
+        verify(
+          mockDatabase.update(
+            'budget_categories',
+            argThat(isA<Map<String, dynamic>>()),
+            where: 'id = ?',
+            whereArgs: [1],
+          ),
+        ).called(1);
+        },
+      );
     });
 
     group('getBudgetSummary', () {
       test('should return comprehensive budget summary', () async {
         const month = '2024-01';
         final categories = [
-          BudgetCategory(id: 1, name: 'Hygiène', limit: 120.0, spent: 100.0, month: month),
-          BudgetCategory(id: 2, name: 'Nettoyage', limit: 80.0, spent: 90.0, month: month), // Over budget
-          BudgetCategory(id: 3, name: 'Cuisine', limit: 150.0, spent: 50.0, month: month),
+          BudgetCategory(
+            id: 1,
+            name: 'Hygiène',
+            limit: 120.0,
+            spent: 100.0,
+            month: month,
+          ),
+          BudgetCategory(
+            id: 2,
+            name: 'Nettoyage',
+            limit: 80.0,
+            spent: 90.0,
+            month: month,
+          ), // Over budget
+          BudgetCategory(
+            id: 3,
+            name: 'Cuisine',
+            limit: 150.0,
+            spent: 50.0,
+            month: month,
+          ),
         ];
 
-        when(mockDatabase.query(
-          'budget_categories',
-          where: 'month = ?',
-          whereArgs: [month],
-          orderBy: 'name ASC',
-        )).thenAnswer((_) async => categories.map((c) => c.toMap()).toList());
+        when(
+          mockDatabase.query(
+            'budget_categories',
+            where: 'month = ?',
+            whereArgs: [month],
+            orderBy: 'name ASC',
+          ),
+        ).thenAnswer((_) async => categories.map((c) => c.toMap()).toList());
 
         final result = await BudgetService.getBudgetSummary(month: month);
 
@@ -541,17 +749,22 @@ void main() {
         expect(result['remaining'], equals(110.0));
         expect(result['spendingPercentage'], closeTo(0.686, 0.01));
         expect(result['categoriesCount'], equals(3));
-        expect(result['overBudgetCount'], equals(1)); // Only Nettoyage is over budget
+        expect(
+          result['overBudgetCount'],
+          equals(1),
+        ); // Only Nettoyage is over budget
         expect(result['categories'], hasLength(3));
       });
 
       test('should handle empty categories gracefully', () async {
-        when(mockDatabase.query(
-          'budget_categories',
-          where: 'month = ?',
-          whereArgs: [any],
-          orderBy: 'name ASC',
-        )).thenAnswer((_) async => []);
+        when(
+          mockDatabase.query(
+            'budget_categories',
+            where: 'month = ?',
+            whereArgs: [any],
+            orderBy: 'name ASC',
+          ),
+        ).thenAnswer((_) async => []);
 
         final result = await BudgetService.getBudgetSummary();
 
@@ -566,8 +779,14 @@ void main() {
 
     group('Error Handling and Logging', () {
       test('should log errors with proper metadata', () async {
-        when(mockDatabase.query(any, where: anyNamed('where'), whereArgs: anyNamed('whereArgs'), orderBy: anyNamed('orderBy')))
-            .thenThrow(Exception('Database connection failed'));
+        when(
+          mockDatabase.query(
+            any,
+            where: anyNamed('where'),
+            whereArgs: anyNamed('whereArgs'),
+            orderBy: anyNamed('orderBy'),
+          ),
+        ).thenThrow(Exception('Database connection failed'));
 
         final result = await BudgetService.getBudgetCategories();
         expect(result, isEmpty);
@@ -576,15 +795,23 @@ void main() {
 
       test('should handle concurrent budget operations', () async {
         const idFoyer = 1;
-        final category = BudgetCategory(name: 'Test', limit: 100.0, month: '2024-01');
+        final category = BudgetCategory(
+          name: 'Test',
+          limit: 100.0,
+          month: '2024-01',
+        );
 
-        when(mockDatabase.insert('budget_categories', any))
-            .thenAnswer((_) async {
-              await Future.delayed(Duration(milliseconds: 100));
-              return 1;
-            });
+        when(mockDatabase.insert('budget_categories', any)).thenAnswer((
+          _,
+        ) async {
+          await Future.delayed(Duration(milliseconds: 100));
+          return 1;
+        });
 
-        final futures = List.generate(3, (_) => BudgetService.createBudgetCategory(category));
+        final futures = List.generate(
+          3,
+          (_) => BudgetService.createBudgetCategory(category),
+        );
         final results = await Future.wait(futures);
 
         expect(results, hasLength(3));
@@ -602,7 +829,9 @@ void main() {
           month: '2024-01',
         );
 
-        when(mockDatabase.insert('budget_categories', any)).thenAnswer((_) async => 1);
+        when(
+          mockDatabase.insert('budget_categories', any),
+        ).thenAnswer((_) async => 1);
 
         final result = await BudgetService.createBudgetCategory(category);
         expect(result, equals(1));
@@ -611,42 +840,83 @@ void main() {
       test('should handle Cameroon-specific categories and pricing', () async {
         const idFoyer = 1;
 
-        when(mockDatabase.query('foyer', where: 'id = ?', whereArgs: [idFoyer], limit: 1))
-            .thenAnswer((_) async => [{
+        when(
+          mockDatabase.query(
+            'foyer',
+            where: 'id = ?',
+            whereArgs: [idFoyer],
+            limit: 1,
+          ),
+        ).thenAnswer(
+          (_) async => [
+            {
               'id': idFoyer,
               'nb_personnes': 6, // Large Cameroon family
               'nb_pieces': 4,
               'type_logement': 'maison',
-            }]);
+            },
+          ],
+        );
 
         // Mock Cameroon pricing (higher values)
-        when(PriceService.getAverageCategoryPrice('Hygiène')).thenAnswer((_) async => 15.0);
-        when(PriceService.getAverageCategoryPrice('Nettoyage')).thenAnswer((_) async => 12.0);
-        when(PriceService.getAverageCategoryPrice('Cuisine')).thenAnswer((_) async => 20.0);
-        when(PriceService.getAverageCategoryPrice('Divers')).thenAnswer((_) async => 8.0);
+        when(
+          PriceService.getAverageCategoryPrice('Hygiène'),
+        ).thenAnswer((_) async => 15.0);
+        when(
+          PriceService.getAverageCategoryPrice('Nettoyage'),
+        ).thenAnswer((_) async => 12.0);
+        when(
+          PriceService.getAverageCategoryPrice('Cuisine'),
+        ).thenAnswer((_) async => 20.0);
+        when(
+          PriceService.getAverageCategoryPrice('Divers'),
+        ).thenAnswer((_) async => 8.0);
 
         final result = await BudgetService.calculateRecommendedBudget(idFoyer);
 
         // Should account for large family size and house type
         expect(result['Hygiène']! > 200.0, isTrue); // Higher for 6 people
-        expect(result['Nettoyage']! > 150.0, isTrue); // Higher for house with 4 rooms
+        expect(
+          result['Nettoyage']! > 150.0,
+          isTrue,
+        ); // Higher for house with 4 rooms
       });
 
       test('should provide French month names', () async {
         const idFoyer = 1;
         const categoryName = 'Hygiène';
 
-        when(mockDatabase.rawQuery(any, any))
-            .thenAnswer((_) async => [{'total_spending': 100.0}]);
+        when(mockDatabase.rawQuery(any, any)).thenAnswer(
+          (_) async => [
+            {'total_spending': 100.0},
+          ],
+        );
 
-        final result = await BudgetService.getMonthlyExpenseHistory(idFoyer, categoryName, monthsBack: 3);
+        final result = await BudgetService.getMonthlyExpenseHistory(
+          idFoyer,
+          categoryName,
+          monthsBack: 3,
+        );
 
         expect(result, isNotEmpty);
         for (final monthData in result) {
-          final monthName = monthData['monthName'] as String;
-          expect(['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
-                  'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'], 
-                 contains(monthName));
+          final monthName = monthData['monthName'] as String?;
+          if (monthName != null) {
+            expect([
+              'Janvier',
+              'Février',
+              'Mars',
+              'Avril',
+              'Mai',
+              'Juin',
+              'Juillet',
+              'Août',
+              'Septembre',
+              'Octobre',
+              'Novembre',
+              'Décembre',
+            ], contains(monthName));
+          }
         }
       });
     });

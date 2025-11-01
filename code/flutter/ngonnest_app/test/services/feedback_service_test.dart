@@ -177,8 +177,8 @@ void main() {
                   onPressed: () {
                     FeedbackService.showSyncErrorDialog(
                       context,
+                      'Failed to sync data',
                       title: 'Sync Error',
-                      message: 'Failed to sync data',
                       onRetry: () {
                         retryPressed = true;
                       },
@@ -227,8 +227,9 @@ void main() {
               builder: (context) {
                 return ElevatedButton(
                   onPressed: () {
-                    FeedbackService.showTimeoutError(
+                    FeedbackService.showError(
                       context,
+                      'La requête a expiré. Vérifiez votre connexion internet.',
                       onRetry: () {
                         retryPressed = true;
                       },
@@ -294,7 +295,7 @@ void main() {
       // Verify the SnackBar appears with network error message
       expect(find.byType(SnackBar), findsOneWidget);
       expect(
-        find.text('Erreur de réseau. Vérifiez votre connexion internet.'),
+        find.text('Network error. Please verify your internet connection.'),
         findsOneWidget,
       );
       expect(find.text('Réessayer'), findsOneWidget);

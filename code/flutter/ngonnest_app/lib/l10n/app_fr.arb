@@ -81,5 +81,7 @@
   "storagePermissionRequired": "L'autorisation de stockage est requise pour exporter les données",
   "storagePermissionDenied": "Autorisation de stockage refusée. Veuillez accorder l'accès dans les paramètres système",
   "storagePermissionPermanentlyDenied": "Autorisation de stockage définitivement refusée. Veuillez l'activer dans les paramètres de l'application",
-  "grantStoragePermission": "Accorder l'autorisation de stockage"
+  "grantStoragePermission": "Accorder l'autorisation de stockage",
+  "requestTimedOut": "Requête expirée",
+  "networkError": "Erreur réseau. Veuillez vérifier votre connexion internet."
 }

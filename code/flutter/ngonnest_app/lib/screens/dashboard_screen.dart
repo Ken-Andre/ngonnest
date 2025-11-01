@@ -1102,7 +1102,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       case AlertUrgency.low:
         return AppTheme.primaryGreen;
       default:
-        return Theme.of(context).colorScheme.onSurface.withOpacity(0.7);
+        return Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7);
     }
   }
 

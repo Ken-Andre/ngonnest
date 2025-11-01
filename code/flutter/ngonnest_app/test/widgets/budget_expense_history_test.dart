@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:ngonnest_app/widgets/budget_expense_history.dart';
+import 'package:mockito/annotations.dart';
 import 'package:ngonnest_app/models/budget_category.dart';
 import 'package:ngonnest_app/services/database_service.dart';
-import 'package:mockito/mockito.dart';
-import 'package:mockito/annotations.dart';
+import 'package:ngonnest_app/widgets/budget_expense_history.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 // Generate mocks for Mockito
-@GenerateMocks([DatabaseService])
-import 'budget_expense_history_test.mocks.dart';
+import '../integration/inventory_search_integration_test.dart';
 
+@GenerateMocks([DatabaseService])
+// import 'budget_expense_history_test.mocks.dart' hide MockDatabaseService;
 void main() {
   group('BudgetExpenseHistory', () {
     late BudgetCategory testCategory;

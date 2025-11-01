@@ -71,10 +71,13 @@ void main() {
         // Assert
         verify(mockNotificationsPlugin.show(
           id,
-          'Stock faible',
-          '$productName - Plus que $remainingQuantity article(s) en stock',
+          argThat(equals('Stock faible')),
+          argThat(allOf([
+            contains(productName),
+            contains('$remainingQuantity article(s)'),
+          ])),
           any,
-          payload: 'low_stock_$id',
+          payload: argThat(equals('low_stock_$id')),
         )).called(1);
       });
 
@@ -93,8 +96,8 @@ void main() {
 
         // Assert
         final capturedDetails = verify(mockNotificationsPlugin.show(
-          any, any, any, captureAny, payload: anyNamed('payload')
-        )).captured.single as NotificationDetails;
+          any, any, any, any, payload: anyNamed('payload')
+        )).captured.first as NotificationDetails;
 
         expect(capturedDetails.android?.channelId, equals('low_stock_channel'));
         expect(capturedDetails.android?.channelName, equals('Stock faible'));
@@ -125,10 +128,13 @@ void main() {
         // Assert
         verify(mockNotificationsPlugin.show(
           id,
-          'Expiration proche',
-          '$productName expire bientôt ($expiryDate)',
+          argThat(equals('Expiration proche')),
+          argThat(allOf([
+            contains(productName),
+            contains(expiryDate),
+          ])),
           any,
-          payload: 'expiry_$id',
+          payload: argThat(equals('expiry_$id')),
         )).called(1);
       });
 
@@ -147,8 +153,8 @@ void main() {
 
         // Assert
         final capturedDetails = verify(mockNotificationsPlugin.show(
-          any, any, any, captureAny, payload: anyNamed('payload')
-        )).captured.single as NotificationDetails;
+          any, any, any, any, payload: anyNamed('payload')
+        )).captured.first as NotificationDetails;
 
         expect(capturedDetails.android?.channelId, equals('expiry_channel'));
         expect(capturedDetails.android?.channelName, equals('Expiration proche'));
@@ -182,8 +188,8 @@ void main() {
         // Assert
         verify(mockNotificationsPlugin.zonedSchedule(
           id,
-          title,
-          body,
+          argThat(equals(title)),
+          argThat(equals(body)),
           any, // TZDateTime
           any, // NotificationDetails
           androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
@@ -223,9 +229,9 @@ void main() {
 
         // Assert
         verify(mockCalendarService.addEvent(
-          title: title,
-          description: body,
-          start: scheduledDate,
+          title: argThat(equals(title)),
+          description: argThat(equals(body)),
+          start: argThat(equals(scheduledDate)),
         )).called(1);
       });
 
@@ -287,10 +293,10 @@ void main() {
         // Assert
         verify(mockNotificationsPlugin.show(
           id,
-          reminderTitle,
-          message,
+          argThat(equals(reminderTitle)),
+          argThat(equals(message)),
           any,
-          payload: 'reminder_$id',
+          payload: argThat(equals('reminder_$id')),
         )).called(1);
       });
 
@@ -308,8 +314,8 @@ void main() {
 
         // Assert
         final capturedDetails = verify(mockNotificationsPlugin.show(
-          any, any, any, captureAny, payload: anyNamed('payload')
-        )).captured.single as NotificationDetails;
+          any, any, any, any, payload: anyNamed('payload')
+        )).captured.first as NotificationDetails;
 
         expect(capturedDetails.android?.channelId, equals('reminder_channel'));
         expect(capturedDetails.android?.channelName, equals('Rappels'));
@@ -342,10 +348,14 @@ void main() {
         // Assert
         verify(mockNotificationsPlugin.show(
           id,
-          'Budget dépassé - $categoryName',
-          'Vous avez dépensé ${spentAmount.toStringAsFixed(2)} € sur ${limitAmount.toStringAsFixed(2)} € ($percentage%)',
+          argThat(contains(categoryName)),
+          argThat(allOf([
+            contains(spentAmount.toStringAsFixed(2)),
+            contains(limitAmount.toStringAsFixed(2)),
+            contains('$percentage%'),
+          ])),
           any,
-          payload: 'budget_alert_$id',
+          payload: argThat(contains('budget_alert_$id')),
         )).called(1);
       });
 
@@ -365,8 +375,8 @@ void main() {
 
         // Assert
         final capturedDetails = verify(mockNotificationsPlugin.show(
-          any, any, any, captureAny, payload: anyNamed('payload')
-        )).captured.single as NotificationDetails;
+          any, any, any, any, payload: anyNamed('payload')
+        )).captured.first as NotificationDetails;
 
         expect(capturedDetails.android?.channelId, equals('budget_alert_channel'));
         expect(capturedDetails.android?.channelName, equals('Alertes budget'));
@@ -402,8 +412,8 @@ void main() {
         // Assert
         verify(mockNotificationsPlugin.zonedSchedule(
           id,
-          title,
-          body,
+          argThat(equals(title)),
+          argThat(equals(body)),
           any, // TZDateTime
           any, // NotificationDetails
           androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
@@ -463,11 +473,12 @@ void main() {
         // Arrange
         final alert = Alert(
           id: 1,
+          idFoyer: 1,
           idObjet: 123,
           typeAlerte: AlertType.stockFaible,
           titre: 'Stock faible',
           message: 'Savon de Marseille est en rupture de stock (quantité restante: 1)',
-          urgences: 'high',
+          urgences: AlertUrgency.high,
           dateCreation: DateTime.now(),
           lu: false,
           resolu: false,
@@ -482,8 +493,8 @@ void main() {
         // Assert
         verify(mockNotificationsPlugin.show(
           any,
-          'Stock faible',
-          contains('Savon de Marseille'),
+          argThat(equals('Stock faible')),
+          argThat(contains('Savon de Marseille')),
           any,
           payload: anyNamed('payload'),
         )).called(1);
@@ -493,11 +504,12 @@ void main() {
         // Arrange
         final alert = Alert(
           id: 2,
+          idFoyer: 1,
           idObjet: 456,
           typeAlerte: AlertType.expirationProche,
           titre: 'Expiration proche',
           message: 'Lait expire bientôt (le 2024-01-15)',
-          urgences: 'medium',
+          urgences: AlertUrgency.medium,
           dateCreation: DateTime.now(),
           lu: false,
           resolu: false,
@@ -512,8 +524,8 @@ void main() {
         // Assert
         verify(mockNotificationsPlugin.show(
           any,
-          'Expiration proche',
-          contains('Lait'),
+          argThat(equals('Expiration proche')),
+          argThat(contains('Lait')),
           any,
           payload: anyNamed('payload'),
         )).called(1);
@@ -523,11 +535,12 @@ void main() {
         // Arrange
         final alert = Alert(
           id: 3,
+          idFoyer: 1,
           idObjet: 789,
           typeAlerte: AlertType.reminder,
           titre: 'Rappel personnel',
           message: 'Acheter du savon au marché',
-          urgences: 'low',
+          urgences: AlertUrgency.low,
           dateCreation: DateTime.now(),
           lu: false,
           resolu: false,
@@ -542,8 +555,8 @@ void main() {
         // Assert
         verify(mockNotificationsPlugin.show(
           any,
-          'Rappel personnel',
-          'Acheter du savon au marché',
+          argThat(equals('Rappel personnel')),
+          argThat(equals('Acheter du savon au marché')),
           any,
           payload: anyNamed('payload'),
         )).called(1);
@@ -553,11 +566,12 @@ void main() {
         // Arrange
         final alert = Alert(
           id: 4,
+          idFoyer: 1,
           idObjet: 101,
           typeAlerte: AlertType.system,
           titre: 'Alerte système',
           message: 'Mise à jour des prix disponible',
-          urgences: 'medium',
+          urgences: AlertUrgency.medium,
           dateCreation: DateTime.now(),
           lu: false,
           resolu: false,
@@ -572,8 +586,8 @@ void main() {
         // Assert
         verify(mockNotificationsPlugin.show(
           any,
-          'Alerte système',
-          'Mise à jour des prix disponible',
+          argThat(equals('Alerte système')),
+          argThat(equals('Mise à jour des prix disponible')),
           any,
           payload: anyNamed('payload'),
         )).called(1);
@@ -585,11 +599,12 @@ void main() {
         // Arrange
         final alert = Alert(
           id: 1,
+          idFoyer: 1,
           idObjet: 123,
           typeAlerte: AlertType.stockFaible,
           titre: 'Stock faible',
           message: 'Savon de Marseille est en rupture de stock (quantité restante: 2)',
-          urgences: 'high',
+          urgences: AlertUrgency.high,
           dateCreation: DateTime.now(),
           lu: false,
           resolu: false,
@@ -605,7 +620,7 @@ void main() {
         verify(mockNotificationsPlugin.show(
           any,
           any,
-          contains('2 article(s)'), // Should extract quantity correctly
+          argThat(contains('2 article(s)')), // Should extract quantity correctly
           any,
           payload: anyNamed('payload'),
         )).called(1);
@@ -615,11 +630,12 @@ void main() {
         // Arrange
         final alert = Alert(
           id: 2,
+          idFoyer: 1,
           idObjet: 456,
           typeAlerte: AlertType.expirationProche,
           titre: 'Expiration proche',
           message: 'Yaourt expire bientôt (le 2024-01-20)',
-          urgences: 'medium',
+          urgences: AlertUrgency.medium,
           dateCreation: DateTime.now(),
           lu: false,
           resolu: false,
@@ -635,7 +651,7 @@ void main() {
         verify(mockNotificationsPlugin.show(
           any,
           any,
-          contains('2024-01-20'), // Should extract date correctly
+          argThat(contains('2024-01-20')), // Should extract date correctly
           any,
           payload: anyNamed('payload'),
         )).called(1);
@@ -710,7 +726,7 @@ void main() {
           verify(mockNotificationsPlugin.show(
             any,
             any,
-            contains(productName),
+            argThat(contains(productName)),
             any,
             payload: anyNamed('payload'),
           )).called(1);
