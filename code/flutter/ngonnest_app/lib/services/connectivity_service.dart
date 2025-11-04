@@ -37,6 +37,9 @@ class ConnectivityService extends ChangeNotifier {
   String get bannerMessage => _bannerMessage;
   Color get bannerColor => _bannerColor;
   IconData get bannerIcon => _bannerIcon;
+  
+  // Expose the connectivity stream for external listeners
+  Stream<List<ConnectivityResult>> get connectivityStream => _connectivity.onConnectivityChanged;
 
   /// Initialise la surveillance de la connectivité
   Future<void> _initConnectivity() async {

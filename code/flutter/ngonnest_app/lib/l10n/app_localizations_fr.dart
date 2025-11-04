@@ -30,7 +30,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get notifications => 'Notifications';
 
   @override
-  String get notificationsEnabled => 'Activer les notifications';
+  String get notificationsEnabled => 'Activerles notifications';
 
   @override
   String get notificationsDisabled => 'Désactiver les notifications';
@@ -67,7 +67,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get notificationPermissionDenied =>
-      'Permission de notification refusée. Vous pouvez l\'activer dans les paramètres système.';
+      'Permission de notification refusée. Vous pouvez l\'activerdans les paramètres système.';
 
   @override
   String get openSystemSettings => 'Ouvrir les paramètres système';
@@ -124,7 +124,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get sendFeedback => 'Envoyer un feedback';
 
   @override
-  String get shareYourSuggestions => 'Partagez vos suggestions';
+  String get shareYourSuggestions => 'Partagez vossuggestions';
 
   @override
   String get send => 'Envoyer';
@@ -158,6 +158,89 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get import => 'Importer';
+
+  @override
+  String get cloudImportTitle => 'Données cloudtrouvées';
+
+  @override
+  String get cloudImportMessage =>
+      'Nous avons trouvé des données existantes dans votre compte cloud. Que souhaitez-vous faire ?';
+
+  @override
+  String get importOption => 'Importer';
+
+  @override
+  String get importOptionDescription =>
+      'Remplacer les données locales par les données cloud';
+
+  @override
+  String get mergeOption => 'Fusionner';
+
+  @override
+  String get mergeOptionDescription => 'Combiner les données locales et cloud';
+
+  @override
+  String get skipOption => 'Ignorer';
+
+  @override
+  String get skipOptionDescription =>
+      'Conserver uniquement les données locales';
+
+  @override
+  String get importInProgress => 'Import en cours...';
+
+  @override
+  String get importingHouseholds => 'Importation des ménages...';
+
+  @override
+  String get importingProducts => 'Importation des produits...';
+
+  @override
+  String get importingBudgets => 'Importation des budgets...';
+
+  @override
+  String get importingPurchases => 'Importation des achats...';
+
+  @override
+  String get importSuccess => 'Import réussi';
+
+  @override
+  String get importSuccessMessage =>
+      'Vos données ont été importées avec succès';
+
+  @override
+  String get importPartialSuccess => 'Import partiellement réussi';
+
+  @override
+  String get importError => 'Erreur d\'importation';
+
+  @override
+  String get retry => 'Réessayer';
+
+  @override
+  String entitiesImported(Object count) {
+    return '$count éléments importés';
+  }
+
+  @override
+  String householdsImported(Object count) {
+    return '$count ménages';
+  }
+
+  @override
+  String productsImported(Object count) {
+    return '$count produits';
+  }
+
+  @override
+  String budgetsImported(Object count) {
+    return '$count budgets';
+  }
+
+  @override
+  String purchasesImported(Object count) {
+    return '$count achats';
+  }
 
   @override
   String get deleteAllData => 'Supprimer toutes les données';
@@ -259,9 +342,6 @@ class AppLocalizationsFr extends AppLocalizations {
       'Cette opération remplacera vos données actuelles. Continuer ?';
 
   @override
-  String get importSuccess => 'Import réussi';
-
-  @override
   String get storagePermissionRequired =>
       'L\'autorisation de stockage est requise pour exporter les données';
 
@@ -282,4 +362,191 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get networkError =>
       'Erreur réseau. Veuillez vérifier votre connexion internet.';
+
+  @override
+  String get welcome => 'Bienvenue !';
+
+  @override
+  String get email => 'Email';
+
+  @override
+  String get password => 'Mot de passe';
+
+  @override
+  String get confirmPassword => 'Confirmer le mot de passe';
+
+  @override
+  String get fullName => 'Nom complet';
+
+  @override
+  String get signIn => 'Se connecter';
+
+  @override
+  String get signUp => 'Créer un compte';
+
+  @override
+  String get continueWithGoogle => 'Continuer avec Google';
+
+  @override
+  String get continueWithApple => 'Continuer avec Apple';
+
+  @override
+  String get useYourEmail => 'Utiliser votre email';
+
+  @override
+  String get alreadyHaveAccount => 'Déjà un compte? Se connecter';
+
+  @override
+  String get noAccount => 'Pas de compte ? Créer un compte';
+
+  @override
+  String get invalidEmail => 'Email invalide';
+
+  @override
+  String get passwordTooShort => 'Mot de passe trop court (min 6 caractères)';
+
+  @override
+  String get passwordsDoNotMatch => 'Les mots de passe ne correspondent pas';
+
+  @override
+  String get pleaseEnterFullName => 'Veuillez saisir votre nom complet';
+
+  @override
+  String get pleaseEnterFirstAndLastName =>
+      'Veuillez saisir votre prénom et nom';
+
+  @override
+  String get pleaseEnterEmail => 'Veuillez saisir votre email';
+
+  @override
+  String get pleaseEnterPassword => 'Veuillez saisir votre mot de passe';
+
+  @override
+  String get pleaseConfirmPassword => 'Veuillez confirmer votre mot de passe';
+
+  @override
+  String get accountCreatedSuccessfully => 'Compte créé avec succès !';
+
+  @override
+  String get signInSuccessful => 'Connexion réussie !';
+
+  @override
+  String get googleSignInSuccessful => 'Connexion Google réussie !';
+
+  @override
+  String get appleSignInSuccessful => 'Connexion Apple réussie !';
+
+  @override
+  String get connectQuicklyWithExistingAccount =>
+      'Connectez-vous rapidement avec votre compte existant';
+
+  @override
+  String get or => 'ou';
+
+  @override
+  String get socialNetworks => 'Réseaux sociaux';
+
+  @override
+  String get syncDataQuestion => 'Voulez-vous synchroniser vos données?';
+
+  @override
+  String get syncDataExplanation =>
+      'La synchronisation cloud permet de sauvegarder vos données en ligne et de les retrouver sur tous vos appareils.';
+
+  @override
+  String get yes => 'Oui';
+
+  @override
+  String get noLater => 'Non, plus tard';
+
+  @override
+  String get syncLaterMessage =>
+      'Vous pouvez activer la synchronisation plus tard dansles paramètres';
+
+  @override
+  String get synchronization => 'Synchronisation';
+
+  @override
+  String get syncStatus => 'État de la synchronisation';
+
+  @override
+  String get syncDisabled => 'Désactivée';
+
+  @override
+  String get syncEnabledStatus => 'Activée';
+
+  @override
+  String get syncUpToDate => '✓ Synchronisé';
+
+  @override
+  String syncPending(Object count) {
+    return '⏳ En attente ($count opérations)';
+  }
+
+  @override
+  String get syncInProgress => '🔄 Synchronisation...';
+
+  @override
+  String get syncError => '⚠️ Erreur de sync';
+
+  @override
+  String lastSyncTime(String time) {
+    return 'Dernière sync: $time';
+  }
+
+  @override
+  String get neverSynced => 'Jamais synchronisé';
+
+  @override
+  String get tapForDetails => 'Appuyez pour plus de détails';
+
+  @override
+  String get connectToEnableSync =>
+      'Connectez-vous pour activer la synchronisation';
+
+  @override
+  String get syncStatusDetails => 'Détails de synchronisation';
+
+  @override
+  String get pendingOperations => 'Opérations en attente';
+
+  @override
+  String get failedOperations => 'Opérations échouées';
+
+  @override
+  String get syncHistory => 'Historique de synchronisation';
+
+  @override
+  String get enableCloudSync => 'Activer la synchronisation cloud';
+
+  @override
+  String get disableCloudSync => 'Désactiver la synchronisation cloud';
+
+  @override
+  String get keepLocal => 'Conserver local';
+
+  @override
+  String get keepLocalDescription => 'Envoyer les donnéeslocales vers le cloud';
+
+  @override
+  String get importFromCloud => 'Importer du cloud';
+
+  @override
+  String get importFromCloudDescription => 'Télécharger les données du cloud';
+
+  @override
+  String get mergeData => 'Fusionner';
+
+  @override
+  String get mergeDataDescription => 'Combiner les données locales et cloud';
+
+  @override
+  String get syncSuccessMessage => 'Synchronisation activée avec succès';
+
+  @override
+  String get importOptionsTitle => 'Options d\'importation';
+
+  @override
+  String get chooseImportOption =>
+      'Choisissez comment gérer vos données existantes';
 }

@@ -158,6 +158,86 @@ class AppLocalizationsEn extends AppLocalizations {
   String get import => 'Import';
 
   @override
+  String get cloudImportTitle => 'Cloud data found';
+
+  @override
+  String get cloudImportMessage =>
+      'We found existing data in your cloud account. What would you like to do?';
+
+  @override
+  String get importOption => 'Import';
+
+  @override
+  String get importOptionDescription => 'Replace local data with cloud data';
+
+  @override
+  String get mergeOption => 'Merge';
+
+  @override
+  String get mergeOptionDescription => 'Combine local and cloud data';
+
+  @override
+  String get skipOption => 'Skip';
+
+  @override
+  String get skipOptionDescription => 'Keep only local data';
+
+  @override
+  String get importInProgress => 'Import in progress...';
+
+  @override
+  String get importingHouseholds => 'Importing households...';
+
+  @override
+  String get importingProducts => 'Importing products...';
+
+  @override
+  String get importingBudgets => 'Importing budgets...';
+
+  @override
+  String get importingPurchases => 'Importing purchases...';
+
+  @override
+  String get importSuccess => 'Import successful';
+
+  @override
+  String get importSuccessMessage => 'Your data has been imported successfully';
+
+  @override
+  String get importPartialSuccess => 'Import partially successful';
+
+  @override
+  String get importError => 'Import error';
+
+  @override
+  String get retry => 'Retry';
+
+  @override
+  String entitiesImported(Object count) {
+    return '$count items imported';
+  }
+
+  @override
+  String householdsImported(Object count) {
+    return '$count households';
+  }
+
+  @override
+  String productsImported(Object count) {
+    return '$count products';
+  }
+
+  @override
+  String budgetsImported(Object count) {
+    return '$count budgets';
+  }
+
+  @override
+  String purchasesImported(Object count) {
+    return '$count purchases';
+  }
+
+  @override
   String get deleteAllData => 'Delete all data';
 
   @override
@@ -256,9 +336,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'This operation will replace your current data. Continue?';
 
   @override
-  String get importSuccess => 'Import successful';
-
-  @override
   String get storagePermissionRequired =>
       'Storage permission is required to export data';
 
@@ -279,4 +356,189 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get networkError =>
       'Network error. Please verify your internet connection.';
+
+  @override
+  String get welcome => 'Welcome!';
+
+  @override
+  String get email => 'Email';
+
+  @override
+  String get password => 'Password';
+
+  @override
+  String get confirmPassword => 'Confirm password';
+
+  @override
+  String get fullName => 'Full name';
+
+  @override
+  String get signIn => 'Sign in';
+
+  @override
+  String get signUp => 'Create account';
+
+  @override
+  String get continueWithGoogle => 'Continue with Google';
+
+  @override
+  String get continueWithApple => 'Continue with Apple';
+
+  @override
+  String get useYourEmail => 'Use your email';
+
+  @override
+  String get alreadyHaveAccount => 'Already have an account? Sign in';
+
+  @override
+  String get noAccount => 'No account? Create account';
+
+  @override
+  String get invalidEmail => 'Invalid email';
+
+  @override
+  String get passwordTooShort => 'Password too short (min 6 characters)';
+
+  @override
+  String get passwordsDoNotMatch => 'Passwords do not match';
+
+  @override
+  String get pleaseEnterFullName => 'Please enter your full name';
+
+  @override
+  String get pleaseEnterFirstAndLastName =>
+      'Please enter your first and last name';
+
+  @override
+  String get pleaseEnterEmail => 'Please enter your email';
+
+  @override
+  String get pleaseEnterPassword => 'Please enter your password';
+
+  @override
+  String get pleaseConfirmPassword => 'Please confirm your password';
+
+  @override
+  String get accountCreatedSuccessfully => 'Account created successfully!';
+
+  @override
+  String get signInSuccessful => 'Sign in successful!';
+
+  @override
+  String get googleSignInSuccessful => 'Google sign in successful!';
+
+  @override
+  String get appleSignInSuccessful => 'Apple sign in successful!';
+
+  @override
+  String get connectQuicklyWithExistingAccount =>
+      'Connect quickly with your existing account';
+
+  @override
+  String get or => 'or';
+
+  @override
+  String get socialNetworks => 'Social networks';
+
+  @override
+  String get syncDataQuestion => 'Do you want to synchronize your data?';
+
+  @override
+  String get syncDataExplanation =>
+      'Cloud synchronization allows you to backup your data online and access it from all your devices.';
+
+  @override
+  String get yes => 'Yes';
+
+  @override
+  String get noLater => 'No, later';
+
+  @override
+  String get syncLaterMessage =>
+      'You can enable synchronization later in settings';
+
+  @override
+  String get synchronization => 'Synchronization';
+
+  @override
+  String get syncStatus => 'Sync status';
+
+  @override
+  String get syncDisabled => 'Disabled';
+
+  @override
+  String get syncEnabledStatus => 'Enabled';
+
+  @override
+  String get syncUpToDate => '✓ Synchronized';
+
+  @override
+  String syncPending(Object count) {
+    return '⏳ Pending ($count operations)';
+  }
+
+  @override
+  String get syncInProgress => '🔄 Synchronizing...';
+
+  @override
+  String get syncError => '⚠️ Sync error';
+
+  @override
+  String lastSyncTime(String time) {
+    return 'Last sync: $time';
+  }
+
+  @override
+  String get neverSynced => 'Never synchronized';
+
+  @override
+  String get tapForDetails => 'Tap for details';
+
+  @override
+  String get connectToEnableSync => 'Connect to enable synchronization';
+
+  @override
+  String get syncStatusDetails => 'Synchronization details';
+
+  @override
+  String get pendingOperations => 'Pending operations';
+
+  @override
+  String get failedOperations => 'Failed operations';
+
+  @override
+  String get syncHistory => 'Sync history';
+
+  @override
+  String get enableCloudSync => 'Enable cloud sync';
+
+  @override
+  String get disableCloudSync => 'Disable cloud sync';
+
+  @override
+  String get keepLocal => 'Keep local';
+
+  @override
+  String get keepLocalDescription => 'Upload local data to cloud';
+
+  @override
+  String get importFromCloud => 'Import from cloud';
+
+  @override
+  String get importFromCloudDescription => 'Download data from cloud';
+
+  @override
+  String get mergeData => 'Merge';
+
+  @override
+  String get mergeDataDescription => 'Combine local and cloud data';
+
+  @override
+  String get syncSuccessMessage => 'Synchronization enabled successfully';
+
+  @override
+  String get importOptionsTitle => 'Import options';
+
+  @override
+  String get chooseImportOption => 'Choose how to handle your existing data';
 }

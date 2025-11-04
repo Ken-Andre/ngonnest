@@ -48,6 +48,64 @@
   "importData": "Importar datos",
   "restoreFromBackupFile": "Restaurar desde archivo de respaldo",
   "import": "Importar",
+  "cloudImportTitle": "Datos encontrados en la nube",
+  "cloudImportMessage": "Encontramos datos existentes en tu cuenta de la nube. ¿Qué te gustaría hacer?",
+  "importOption": "Importar",
+  "importOptionDescription": "Reemplazar datos locales con datos de la nube",
+  "mergeOption": "Fusionar",
+  "mergeOptionDescription": "Combinar datos locales y de la nube",
+  "skipOption": "Omitir",
+  "skipOptionDescription": "Mantener solo datos locales",
+  "importInProgress": "Importación en progreso...",
+  "importingHouseholds": "Importando hogares...",
+  "importingProducts": "Importando productos...",
+  "importingBudgets": "Importando presupuestos...",
+  "importingPurchases": "Importando compras...",
+  "importSuccess": "Importación exitosa",
+  "importSuccessMessage": "Tus datos han sido importados exitosamente",
+  "importPartialSuccess": "Importación parcialmente exitosa",
+  "importError": "Error de importación",
+  "retry": "Reintentar",
+  "entitiesImported": "{count} elementos importados",
+  "@entitiesImported": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "householdsImported": "{count} hogares",
+  "@householdsImported": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "productsImported": "{count} productos",
+  "@productsImported": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "budgetsImported": "{count} presupuestos",
+  "@budgetsImported": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "purchasesImported": "{count} compras",
+  "@purchasesImported": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
   "deleteAllData": "Eliminar todos los datos",
   "completeResetIrreversible": "Reinicio completo - Acción irreversible",
   "delete": "Eliminar",
@@ -83,5 +141,47 @@
   "storagePermissionPermanentlyDenied": "Permiso de almacenamiento permanentemente denegado. Por favor actívalo en configuración de la aplicación",
   "grantStoragePermission": "Conceder permiso de almacenamiento",
   "requestTimedOut": "Tiempo de espera agotado",
-  "networkError": "Error de red. Por favor verifica tu conexión a internet."
+  "networkError": "Error de red. Por favor verifica tu conexión a internet.",
+  
+  "synchronization": "Sincronización",
+  "syncStatus": "Estado de sincronización",
+  "syncDisabled": "Desactivada",
+  "syncEnabledStatus": "Activada",
+  "syncUpToDate": "✓ Sincronizado",
+  "syncPending": "⏳ Pendiente ({count} operaciones)",
+  "@syncPending": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "syncInProgress": "🔄 Sincronizando...",
+  "syncError": "⚠️ Error de sincronización",
+  "lastSyncTime": "Última sincronización: {time}",
+  "@lastSyncTime": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "neverSynced": "Nunca sincronizado",
+  "tapForDetails": "Toca para detalles",
+  "connectToEnableSync": "Conéctate para activar la sincronización",
+  "syncStatusDetails": "Detalles de sincronización",
+  "pendingOperations": "Operaciones pendientes",
+  "failedOperations": "Operaciones fallidas",
+  "syncHistory": "Historial de sincronización",
+  "enableCloudSync": "Activar sincronización en la nube",
+  "disableCloudSync": "Desactivar sincronización en la nube",
+  "keepLocal": "Mantener local",
+  "keepLocalDescription": "Subir datos locales a la nube",
+  "importFromCloud": "Importar de la nube",
+  "importFromCloudDescription": "Descargar datos de la nube",
+  "mergeData": "Fusionar",
+  "mergeDataDescription": "Combinar datos locales y de la nube",
+  "syncSuccessMessage": "Sincronización activada exitosamente",
+  "importOptionsTitle": "Opciones de importación",
+  "chooseImportOption": "Elige cómo manejar tus datos existentes"
 }

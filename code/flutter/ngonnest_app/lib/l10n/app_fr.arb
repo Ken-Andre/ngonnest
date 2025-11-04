@@ -1,4 +1,8 @@
 {
+"appName": "NgonNest",
+  "@appName": {
+    "description": "Le nom de l'application"
+  },
   "appTitle": "NgonNest",
   "dashboard": "Tableau de bord",
   "inventory": "Inventaire",
@@ -6,19 +10,19 @@
   "settings": "Paramètres",
   "language": "Langue",
   "notifications": "Notifications",
-  "notificationsEnabled": "Activer les notifications",
+  "notificationsEnabled": "Activerles notifications",
   "notificationsDisabled": "Désactiver les notifications",
   "theme": "Thème",
   "lightMode": "Mode clair",
   "darkMode": "Mode sombre",
   "systemMode": "Mode système",
   "save": "Sauvegarder",
-  "cancel": "Annuler",
+ "cancel": "Annuler",
   "ok": "OK",
   "error": "Erreur",
   "success": "Succès",
   "settingsSaved": "Paramètres sauvegardés avec succès",
-  "notificationPermissionDenied": "Permission de notification refusée. Vous pouvez l'activer dans les paramètres système.",
+  "notificationPermissionDenied": "Permission de notification refusée. Vous pouvez l'activerdans les paramètres système.",
   "openSystemSettings": "Ouvrir les paramètres système",
   "intelligentHouseholdManagement": "Gestion intelligente de votre foyer",
   "languageOfApp": "Langue de l'application",
@@ -36,7 +40,7 @@
   "changeAppAppearance": "Changer l'apparence de l'application",
   "support": "Support",
   "sendFeedback": "Envoyer un feedback",
-  "shareYourSuggestions": "Partagez vos suggestions",
+  "shareYourSuggestions": "Partagez vossuggestions",
   "send": "Envoyer",
   "reportBug": "Signaler un bug",
   "describeProblem": "Décrivez le problème",
@@ -48,6 +52,64 @@
   "importData": "Importer des données",
   "restoreFromBackupFile": "Restaurer depuis un fichier sauvegardé",
   "import": "Importer",
+  "cloudImportTitle": "Données cloudtrouvées",
+  "cloudImportMessage": "Nous avons trouvé des données existantes dans votre compte cloud. Que souhaitez-vous faire ?",
+  "importOption": "Importer",
+  "importOptionDescription": "Remplacer les données locales par les données cloud",
+  "mergeOption": "Fusionner",
+"mergeOptionDescription": "Combiner les données locales et cloud",
+  "skipOption": "Ignorer",
+  "skipOptionDescription": "Conserver uniquement les données locales",
+  "importInProgress": "Import en cours...",
+  "importingHouseholds": "Importation des ménages...",
+"importingProducts": "Importation des produits...",
+  "importingBudgets": "Importation des budgets...",
+  "importingPurchases": "Importation des achats...",
+  "importSuccess": "Import réussi",
+  "importSuccessMessage": "Vos données ont été importées avec succès",
+"importPartialSuccess": "Import partiellement réussi",
+  "importError": "Erreur d'importation",
+  "retry": "Réessayer",
+  "entitiesImported": "{count} éléments importés",
+  "@entitiesImported": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+   }
+  },
+  "householdsImported": "{count} ménages",
+  "@householdsImported": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "productsImported": "{count} produits",
+  "@productsImported": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "budgetsImported": "{count} budgets",
+  "@budgetsImported": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "purchasesImported": "{count} achats",
+  "@purchasesImported": {
+    "placeholders":{
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
   "deleteAllData": "Supprimer toutes les données",
   "completeResetIrreversible": "Reset complet - Action irréversible",
   "delete": "Supprimer",
@@ -67,7 +129,7 @@
   "continueContactTelegram": "Pour continuer à nous contacter, rejoignez notre bot Telegram :",
   "telegramLinkCopied": "Lien Telegram copié !",
   "feedbackSent": "Feedback envoyé",
-  "feedbackSentSuccessfully": "Votre feedback a été envoyé avec succès.",
+ "feedbackSentSuccessfully": "Votre feedback a été envoyé avec succès.",
   "bugReportSent": "Signalement envoyé",
   "bugReportSentSuccessfully": "Votre signalement a été envoyé avec succès.",
   "deleteAllDataConfirmation": "Supprimer toutes les données ?",
@@ -77,11 +139,85 @@
   "exportDataConfirm": "Exporter toutes vos données vers un fichier JSON ?",
   "exportSuccess": "Export effectué avec succès",
   "importDataConfirm": "Cette opération remplacera vos données actuelles. Continuer ?",
-  "importSuccess": "Import réussi",
+ "importSuccess": "Import réussi",
   "storagePermissionRequired": "L'autorisation de stockage est requise pour exporter les données",
   "storagePermissionDenied": "Autorisation de stockage refusée. Veuillez accorder l'accès dans les paramètres système",
   "storagePermissionPermanentlyDenied": "Autorisation de stockage définitivement refusée. Veuillez l'activer dans les paramètres de l'application",
   "grantStoragePermission": "Accorder l'autorisation de stockage",
   "requestTimedOut": "Requête expirée",
-  "networkError": "Erreur réseau. Veuillez vérifier votre connexion internet."
+  "networkError": "Erreur réseau. Veuillez vérifier votre connexion internet.",
+  "welcome": "Bienvenue !",
+  "email": "Email",
+  "password": "Mot de passe",
+  "confirmPassword": "Confirmer le mot de passe",
+  "fullName": "Nom complet",
+  "signIn": "Se connecter",
+  "signUp": "Créer un compte",
+  "continueWithGoogle": "Continuer avec Google",
+  "continueWithApple": "Continuer avec Apple",
+  "useYourEmail": "Utiliser votre email",
+  "alreadyHaveAccount": "Déjà un compte? Se connecter",
+  "noAccount": "Pas de compte ? Créer un compte",
+  "invalidEmail": "Email invalide",
+  "passwordTooShort": "Mot de passe trop court (min 6 caractères)",
+  "passwordsDoNotMatch": "Les mots de passe ne correspondent pas",
+  "pleaseEnterFullName": "Veuillez saisir votre nom complet",
+  "pleaseEnterFirstAndLastName": "Veuillez saisir votre prénom et nom",
+  "pleaseEnterEmail": "Veuillez saisir votre email",
+  "pleaseEnterPassword": "Veuillez saisir votre mot de passe",
+"pleaseConfirmPassword": "Veuillez confirmer votre mot de passe",
+  "accountCreatedSuccessfully": "Compte créé avec succès !",
+  "signInSuccessful": "Connexion réussie !",
+  "googleSignInSuccessful": "Connexion Google réussie !",
+  "appleSignInSuccessful": "Connexion Apple réussie !",
+  "connectQuicklyWithExistingAccount": "Connectez-vous rapidement avec votre compte existant",
+  "or": "ou",
+  "socialNetworks": "Réseaux sociaux",
+  "syncDataQuestion": "Voulez-vous synchroniser vos données?",
+  "syncDataExplanation": "La synchronisation cloud permet de sauvegarder vos données en ligne et de les retrouver sur tous vos appareils.",
+  "yes": "Oui",
+  "noLater": "Non, plus tard",
+  "syncLaterMessage": "Vous pouvez activer la synchronisation plus tard dansles paramètres",
+  
+  "synchronization": "Synchronisation",
+  "syncStatus": "État de la synchronisation",
+  "syncDisabled": "Désactivée",
+  "syncEnabledStatus": "Activée",
+  "syncUpToDate": "✓ Synchronisé",
+  "syncPending":"⏳ En attente ({count} opérations)",
+  "@syncPending": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "syncInProgress": "🔄 Synchronisation...",
+  "syncError": "⚠️ Erreur de sync",
+"lastSyncTime": "Dernière sync: {time}",
+  "@lastSyncTime": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "neverSynced": "Jamais synchronisé",
+  "tapForDetails": "Appuyez pour plus de détails",
+  "connectToEnableSync": "Connectez-vous pour activer la synchronisation",
+  "syncStatusDetails": "Détails de synchronisation",
+  "pendingOperations": "Opérations en attente",
+  "failedOperations": "Opérations échouées",
+  "syncHistory": "Historique de synchronisation",
+  "enableCloudSync": "Activer la synchronisation cloud",
+  "disableCloudSync": "Désactiver la synchronisation cloud",
+  "keepLocal": "Conserver local",
+  "keepLocalDescription": "Envoyer les donnéeslocales vers le cloud",
+  "importFromCloud": "Importer du cloud",
+  "importFromCloudDescription": "Télécharger les données du cloud",
+  "mergeData": "Fusionner",
+  "mergeDataDescription": "Combiner les données locales et cloud",
+  "syncSuccessMessage": "Synchronisation activée avec succès",
+  "importOptionsTitle": "Options d'importation",
+  "chooseImportOption": "Choisissez comment gérer vos données existantes"
 }

@@ -114,6 +114,64 @@
   "importData": "Import data",
   "restoreFromBackupFile": "Restore from backup file",
   "import": "Import",
+  "cloudImportTitle": "Cloud data found",
+  "cloudImportMessage": "We found existing data in your cloud account. What would you like to do?",
+  "importOption": "Import",
+  "importOptionDescription": "Replace local data with cloud data",
+  "mergeOption": "Merge",
+  "mergeOptionDescription": "Combine local and cloud data",
+  "skipOption": "Skip",
+  "skipOptionDescription": "Keep only local data",
+  "importInProgress": "Import in progress...",
+  "importingHouseholds": "Importing households...",
+  "importingProducts": "Importing products...",
+  "importingBudgets": "Importing budgets...",
+  "importingPurchases": "Importing purchases...",
+  "importSuccess": "Import successful",
+  "importSuccessMessage": "Your data has been imported successfully",
+  "importPartialSuccess": "Import partially successful",
+  "importError": "Import error",
+  "retry": "Retry",
+  "entitiesImported": "{count} items imported",
+  "@entitiesImported": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "householdsImported": "{count} households",
+  "@householdsImported": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "productsImported": "{count} products",
+  "@productsImported": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "budgetsImported": "{count} budgets",
+  "@budgetsImported": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "purchasesImported": "{count} purchases",
+  "@purchasesImported": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
   "deleteAllData": "Delete all data",
   "completeResetIrreversible": "Complete reset - Irreversible action",
   "delete": "Delete",
@@ -149,5 +207,79 @@
   "storagePermissionPermanentlyDenied": "Storage permission permanently denied. Please enable it in app settings",
   "grantStoragePermission": "Grant Storage Permission",
   "requestTimedOut": "Request timed out",
-  "networkError": "Network error. Please verify your internet connection."
+  "networkError": "Network error. Please verify your internet connection.",
+  "welcome": "Welcome!",
+  "email": "Email",
+  "password": "Password",
+  "confirmPassword": "Confirm password",
+  "fullName": "Full name",
+  "signIn": "Sign in",
+  "signUp": "Create account",
+  "continueWithGoogle": "Continue with Google",
+  "continueWithApple": "Continue with Apple",
+  "useYourEmail": "Use your email",
+  "alreadyHaveAccount": "Already have an account? Sign in",
+  "noAccount": "No account? Create account",
+  "invalidEmail": "Invalid email",
+  "passwordTooShort": "Password too short (min 6 characters)",
+  "passwordsDoNotMatch": "Passwords do not match",
+  "pleaseEnterFullName": "Please enter your full name",
+  "pleaseEnterFirstAndLastName": "Please enter your first and last name",
+  "pleaseEnterEmail": "Please enter your email",
+  "pleaseEnterPassword": "Please enter your password",
+  "pleaseConfirmPassword": "Please confirm your password",
+  "accountCreatedSuccessfully": "Account created successfully!",
+  "signInSuccessful": "Sign in successful!",
+  "googleSignInSuccessful": "Google sign in successful!",
+  "appleSignInSuccessful": "Apple sign in successful!",
+  "connectQuicklyWithExistingAccount": "Connect quickly with your existing account",
+  "or": "or",
+  "socialNetworks": "Social networks",
+  "syncDataQuestion": "Do you want to synchronize your data?",
+  "syncDataExplanation": "Cloud synchronization allows you to backup your data online and access it from all your devices.",
+  "yes": "Yes",
+  "noLater": "No, later",
+  "syncLaterMessage": "You can enable synchronization later in settings",
+  
+  "synchronization": "Synchronization",
+  "syncStatus": "Sync status",
+  "syncDisabled": "Disabled",
+  "syncEnabledStatus": "Enabled",
+  "syncUpToDate": "✓ Synchronized",
+  "syncPending": "⏳ Pending ({count} operations)",
+  "@syncPending": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "syncInProgress": "🔄 Synchronizing...",
+  "syncError": "⚠️ Sync error",
+  "lastSyncTime": "Last sync: {time}",
+  "@lastSyncTime": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "neverSynced": "Never synchronized",
+  "tapForDetails": "Tap for details",
+  "connectToEnableSync": "Connect to enable synchronization",
+  "syncStatusDetails": "Synchronization details",
+  "pendingOperations": "Pending operations",
+  "failedOperations": "Failed operations",
+  "syncHistory": "Sync history",
+  "enableCloudSync": "Enable cloud sync",
+  "disableCloudSync": "Disable cloud sync",
+  "keepLocal": "Keep local",
+  "keepLocalDescription": "Upload local data to cloud",
+  "importFromCloud": "Import from cloud",
+  "importFromCloudDescription": "Download data from cloud",
+  "mergeData": "Merge",
+  "mergeDataDescription": "Combine local and cloud data",
+  "syncSuccessMessage": "Synchronization enabled successfully",
+  "importOptionsTitle": "Import options",
+  "chooseImportOption": "Choose how to handle your existing data"
 }

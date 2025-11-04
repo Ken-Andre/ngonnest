@@ -2,12 +2,17 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../l10n/app_localizations.dart';
 import '../models/foyer.dart';
 import '../models/household_profile.dart';
 import '../providers/foyer_provider.dart';
 import '../services/analytics_service.dart';
+import '../services/auth_service.dart';
+import '../services/cloud_import_service.dart';
 import '../services/household_service.dart';
+import '../services/sync_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/cloud_import_dialog.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -132,7 +137,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       );
 
       if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/dashboard');
+        // Show sync offer dialog after profile creation
+        await _showSyncOfferDialog();
       }
     } catch (e, stackTrace) {
       // Log the error for debugging
@@ -761,5 +767,157 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   bool _isValidInteger(String value) {
     final number = int.tryParse(value);
     return number != null && number >= 0;
+  }
+
+  /// Show sync offer dialog after profile creation
+  Future<void> _showSyncOfferDialog() async {
+    final l10n = AppLocalizations.of(context)!;
+    
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              CupertinoIcons.cloud,
+              color: AppTheme.primaryGreen,
+              size: 24,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                l10n.syncDataQuestion,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.neutralBlack,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l10n.syncDataExplanation,
+              style: TextStyle(
+                fontSize: 14,
+                color: AppTheme.neutralGrey,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryGreen.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: AppTheme.primaryGreen.withOpacity(0.3),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    CupertinoIcons.info_circle,
+                    color: AppTheme.primaryGreen,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Vos données restent privées et sécurisées',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.primaryGreen,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(
+              l10n.noLater,
+              style: TextStyle(
+                color: AppTheme.neutralGrey,
+                fontSize: 16,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryGreen,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+            child: Text(
+              l10n.yes,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true) {
+      // User accepted sync - navigate to authentication
+      await _handleSyncAccepted();
+    } else {
+      // User declined sync - show message and continue to dashboard
+      await _handleSyncDeclined();
+    }
+  }
+
+  /// Handle when user accepts sync offer
+  Future<void> _handleSyncAccepted() async {
+    if (!mounted) return;
+    
+    // Navigate to authentication screen with onboarding context
+    Navigator.of(context).pushReplacementNamed(
+      '/authentication',
+      arguments: {
+        'source': 'onboarding',
+        'contextMessage': 'Connectez-vous pour activer la synchronisation',
+      },
+    );
+  }
+
+  /// Handle when user declines sync offer
+  Future<void> _handleSyncDeclined() async {
+    final l10n = AppLocalizations.of(context)!;
+    
+    // Show message about enabling sync later
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.syncLaterMessage),
+          backgroundColor: AppTheme.primaryGreen,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+      
+      // Log analytics event
+      final analyticsService = context.read<AnalyticsService>();
+      await analyticsService.logEvent('onboarding_sync_declined');
+      
+      // Navigate to dashboard
+      Navigator.of(context).pushReplacementNamed('/dashboard');
+    }
   }
 }

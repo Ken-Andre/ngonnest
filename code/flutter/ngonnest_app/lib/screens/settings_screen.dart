@@ -12,13 +12,19 @@ import 'package:sqflite/sqflite.dart';
 
 import '../l10n/app_localizations.dart';
 import '../providers/locale_provider.dart';
+import '../services/auth_service.dart';
+import '../services/cloud_import_service.dart';
 import '../services/export_import_service.dart';
 import '../services/navigation_service.dart';
 import '../services/notification_permission_service.dart';
 import '../services/settings_service.dart';
+import '../services/sync_service.dart';
 import '../services/user_feedback_service.dart';
 import '../theme/theme_mode_notifier.dart';
 import '../widgets/main_navigation_wrapper.dart';
+import '../widgets/settings_import_dialog.dart';
+import '../widgets/sync_status_dialog.dart';
+import '../widgets/sync_status_indicator.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -433,6 +439,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                         ),
                         const SizedBox(height: 24),
+                        // Synchronization Section
+                        _buildSectionTitle(
+                          AppLocalizations.of(context)?.synchronization ??
+                              'Synchronisation',
+                        ),
+                        _buildSyncStatusSection(),
+                        const SizedBox(height: 24),
                         // Privacy Section
                         _buildSectionTitle(
                           AppLocalizations.of(context)?.privacy ??
@@ -809,6 +822,205 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
       ),
     );
+  }
+
+  /// Build the sync status section
+  Widget _buildSyncStatusSection() {
+    return Consumer2<SyncService, AuthService>(
+      builder: (context, syncService, authService, child) {
+        return Column(
+          children: [
+            // Sync status indicator
+            SyncStatusIndicator(
+              onTap: () => SyncStatusDialog.show(context),
+            ),
+            const SizedBox(height: 16),
+            // Sync toggle
+            _buildSettingCard(
+              title: syncService.syncEnabled
+                  ? (AppLocalizations.of(context)?.enableCloudSync ?? 'Cloud sync enabled')
+                  : (AppLocalizations.of(context)?.disableCloudSync ?? 'Cloud sync disabled'),
+              subtitle: authService.isAuthenticated
+                  ? (syncService.syncEnabled 
+                      ? 'Vos données sont sauvegardées dans le cloud'
+                      : 'Activez pour sauvegarder vos données')
+                  : (AppLocalizations.of(context)?.connectToEnableSync ?? 'Connect to enable sync'),
+              child: CupertinoSwitch(
+                value: syncService.syncEnabled && authService.isAuthenticated,
+                onChanged: (value) => _handleSyncToggle(value, syncService, authService),
+                activeColor: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Handle sync toggle with authentication check
+  Future<void> _handleSyncToggle(
+    bool value,
+    SyncService syncService,
+    AuthService authService,
+  ) async {
+    if (value) {
+      // Enabling sync
+      if (!authService.isAuthenticated) {
+        // Navigate to authentication screen with context
+        await _navigateToAuthentication();
+      } else {
+        // User is authenticated, check for cloud data and enable sync
+        await _handleAuthenticatedSyncEnable(syncService);
+      }
+    } else {
+      // Disabling sync
+      await syncService.disableSync();
+      _showSuccessMessage(
+        AppLocalizations.of(context)?.settingsSaved ?? 'Settings saved',
+      );
+    }
+  }
+
+  /// Handle sync enable when user is already authenticated
+  Future<void> _handleAuthenticatedSyncEnable(SyncService syncService) async {
+    try {
+      // Check for cloud data and show import options if needed
+      await _checkCloudDataAndShowOptions(syncService);
+    } catch (e) {
+      // If cloud check fails, still enable sync
+      await syncService.enableSync(userConsent: true);
+      _showSuccessMessage(
+        AppLocalizations.of(context)?.syncSuccessMessage ?? 
+        'Synchronization enabled successfully',
+      );
+    }
+  }
+
+  /// Navigate to authentication screen
+  Future<void> _navigateToAuthentication() async {
+    final result = await Navigator.of(context).pushNamed(
+      '/authentication',
+      arguments: {
+        'contextMessage': AppLocalizations.of(context)?.connectToEnableSync ?? 
+            'Connectez-vous pour activer la synchronisation',
+        'source': 'settings',
+      },
+    );
+
+    // Check if authentication was successful
+    if (result == true) {
+      // Authentication successful, handle the flow
+      await _handleSuccessfulAuthentication();
+    }
+  }
+
+  /// Handle successful authentication from settings
+  Future<void> _handleSuccessfulAuthentication() async {
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final syncService = Provider.of<SyncService>(context, listen: false);
+    
+    if (authService.isAuthenticated) {
+      // Check for cloud data and show import options
+      await _checkCloudDataAndShowOptions(syncService);
+    }
+  }
+
+  /// Check for cloud data and show import options
+  Future<void> _checkCloudDataAndShowOptions(SyncService syncService) async {
+    try {
+      final cloudImportService = CloudImportService();
+      final hasCloudData = await cloudImportService.checkCloudData();
+
+      if (hasCloudData) {
+        // Show import options dialog with enhanced options
+        final result = await showDialog<String>(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => SettingsImportDialog(
+            cloudImportService: cloudImportService,
+            onComplete: () {
+              // Dialog completion callback
+            },
+          ),
+        );
+
+        if (result != null) {
+          // User made a choice, enable sync
+          await syncService.enableSync(userConsent: true);
+          
+          // Handle each option appropriately
+          await _handleImportOption(result, syncService);
+          
+          // Show appropriate success message based on choice
+          _showImportSuccessMessage(result);
+        }
+      } else {
+        // No cloud data, enable sync and trigger initial sync to upload local data
+        await syncService.enableSync(userConsent: true);
+        
+        // Trigger initial sync to upload local data
+        await syncService.forceSyncWithFeedback(context);
+        
+        _showSuccessMessage(
+          'Synchronisation activée. Vos données locales seront sauvegardées dans le cloud.',
+        );
+      }
+    } catch (e) {
+      // Handle error gracefully
+      await syncService.enableSync(userConsent: true);
+      
+      // Still try to trigger initial sync
+      await syncService.forceSyncWithFeedback(context);
+      
+      _showSuccessMessage(
+        AppLocalizations.of(context)?.syncSuccessMessage ?? 
+        'Synchronization enabled successfully',
+      );
+    }
+  }
+
+  /// Handle the selected import option
+  Future<void> _handleImportOption(String option, SyncService syncService) async {
+    switch (option) {
+      case 'keep_local':
+        // For "Conserver local", upload local data to cloud
+        // The sync service will handle uploading local data
+        await syncService.forceSyncWithFeedback(context);
+        break;
+        
+      case 'import_cloud':
+        // For "Importer", cloud data has already been imported by the dialog
+        // Just trigger a sync to ensure everything is up to date
+        await syncService.forceSyncWithFeedback(context);
+        break;
+        
+      case 'merge':
+        // For "Fusionner", data has been merged by the dialog
+        // Trigger sync to upload any local changes and resolve conflicts
+        await syncService.forceSyncWithFeedback(context);
+        break;
+    }
+  }
+
+  /// Show success message based on import option
+  void _showImportSuccessMessage(String option) {
+    String message;
+    switch (option) {
+      case 'keep_local':
+        message = 'Synchronisation activée. Vos données locales seront sauvegardées dans le cloud.';
+        break;
+      case 'import_cloud':
+        message = 'Données importées du cloud et synchronisation activée.';
+        break;
+      case 'merge':
+        message = 'Données fusionnées et synchronisation activée.';
+        break;
+      default:
+        message = AppLocalizations.of(context)?.syncSuccessMessage ?? 
+            'Synchronization enabled successfully';
+    }
+    
+    _showSuccessMessage(message);
   }
 
   void _showCloudSyncConsent() {

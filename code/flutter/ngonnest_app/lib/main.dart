@@ -25,10 +25,13 @@ import 'package:workmanager/workmanager.dart';
 
 import 'firebase_options.dart';
 import 'l10n/app_localizations.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'config/supabase_config.dart';
 import 'models/objet.dart';
 import 'providers/foyer_provider.dart';
 import 'providers/locale_provider.dart';
 import 'screens/add_product_screen.dart';
+import 'screens/authentication_screen.dart';
 import 'screens/budget_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/developer_console_screen.dart';
@@ -37,6 +40,7 @@ import 'screens/inventory_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/preferences_screen.dart';
 import 'screens/settings_screen.dart';
+import 'services/auth_service.dart';
 import 'services/background_task_service.dart' show callbackDispatcher;
 import 'services/budget_service.dart';
 import 'services/connectivity_service.dart';
@@ -45,6 +49,7 @@ import 'services/household_service.dart';
 import 'services/notification_service.dart';
 import 'services/price_service.dart';
 import 'services/settings_service.dart';
+import 'services/sync_service.dart';
 import 'theme/app_theme.dart';
 import 'theme/theme_mode_notifier.dart';
 import 'widgets/connectivity_banner.dart';
@@ -81,6 +86,22 @@ void main() async {
       ConsoleLogger.error('[Main]', 'Firebase initialization failed', e);
       // Continue app startup even if Firebase fails
     }
+  }
+
+  // Initialize Supabase (before sqflite to avoid conflicts)
+  if (SupabaseConfig.isConfigured()) {
+    try {
+      await Supabase.initialize(
+        url: SupabaseConfig.url,
+        anonKey: SupabaseConfig.anonKey,
+      );
+      ConsoleLogger.info('[Main] Supabase initialized successfully.');
+    } catch (e) {
+      ConsoleLogger.warning('[Main] Supabase initialization failed: $e');
+      // Continue app startup even if Supabase fails - offline mode available
+    }
+  } else {
+    ConsoleLogger.warning('[Main] Supabase not configured - running in offline-only mode.');
   }
 
   // Initialize sqflite FFI for desktop and testing environments
@@ -220,6 +241,12 @@ void main() async {
         ChangeNotifierProvider<ConnectivityService>(
           create: (_) => ConnectivityService(),
         ),
+        ChangeNotifierProvider<AuthService>(
+          create: (_) => AuthService.instance,
+        ),
+        ChangeNotifierProvider<SyncService>(
+          create: (_) => SyncService(),
+        ),
         // Firebase Remote Config Services
         // TODO: Initialize services asynchronously to avoid blocking app startup
         // TODO: Add error handling for service initialization failures
@@ -307,6 +334,13 @@ void main() async {
               '/preferences': (context) => const PreferencesScreen(),
               '/developer': (context) => const DeveloperConsoleScreen(),
               '/onboarding': (context) => const OnboardingScreen(),
+              '/authentication': (context) {
+                final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+                return AuthenticationScreen(
+                  contextMessage: args?['contextMessage'] as String?,
+                  source: args?['source'] as String?,
+                );
+              },
             },
             debugShowCheckedModeBanner: false,
           );
@@ -360,6 +394,15 @@ class MyApp extends StatelessWidget {
             const AppWithConnectivityOverlay(child: SettingsScreen()),
         '/developer-console': (context) =>
             const AppWithConnectivityOverlay(child: DeveloperConsoleScreen()),
+        '/authentication': (context) {
+          final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+          return AppWithConnectivityOverlay(
+            child: AuthenticationScreen(
+              contextMessage: args?['contextMessage'] as String?,
+              source: args?['source'] as String?,
+            ),
+          );
+        },
         '/edit-objet': (context) {
           final objet = ModalRoute.of(context)?.settings.arguments as Objet?;
           if (objet == null) {

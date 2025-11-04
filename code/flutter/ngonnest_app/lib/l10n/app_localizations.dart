@@ -394,6 +394,144 @@ abstract class AppLocalizations {
   /// **'Import'**
   String get import;
 
+  /// No description provided for @cloudImportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud data found'**
+  String get cloudImportTitle;
+
+  /// No description provided for @cloudImportMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'We found existing data in your cloud account. What would you like to do?'**
+  String get cloudImportMessage;
+
+  /// No description provided for @importOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Import'**
+  String get importOption;
+
+  /// No description provided for @importOptionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace local data with cloud data'**
+  String get importOptionDescription;
+
+  /// No description provided for @mergeOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge'**
+  String get mergeOption;
+
+  /// No description provided for @mergeOptionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Combine local and cloud data'**
+  String get mergeOptionDescription;
+
+  /// No description provided for @skipOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get skipOption;
+
+  /// No description provided for @skipOptionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep only local data'**
+  String get skipOptionDescription;
+
+  /// No description provided for @importInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Import in progress...'**
+  String get importInProgress;
+
+  /// No description provided for @importingHouseholds.
+  ///
+  /// In en, this message translates to:
+  /// **'Importing households...'**
+  String get importingHouseholds;
+
+  /// No description provided for @importingProducts.
+  ///
+  /// In en, this message translates to:
+  /// **'Importing products...'**
+  String get importingProducts;
+
+  /// No description provided for @importingBudgets.
+  ///
+  /// In en, this message translates to:
+  /// **'Importing budgets...'**
+  String get importingBudgets;
+
+  /// No description provided for @importingPurchases.
+  ///
+  /// In en, this message translates to:
+  /// **'Importing purchases...'**
+  String get importingPurchases;
+
+  /// No description provided for @importSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Import successful'**
+  String get importSuccess;
+
+  /// No description provided for @importSuccessMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your data has been imported successfully'**
+  String get importSuccessMessage;
+
+  /// No description provided for @importPartialSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Import partially successful'**
+  String get importPartialSuccess;
+
+  /// No description provided for @importError.
+  ///
+  /// In en, this message translates to:
+  /// **'Import error'**
+  String get importError;
+
+  /// No description provided for @retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retry;
+
+  /// No description provided for @entitiesImported.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} items imported'**
+  String entitiesImported(Object count);
+
+  /// No description provided for @householdsImported.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} households'**
+  String householdsImported(Object count);
+
+  /// No description provided for @productsImported.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} products'**
+  String productsImported(Object count);
+
+  /// No description provided for @budgetsImported.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} budgets'**
+  String budgetsImported(Object count);
+
+  /// No description provided for @purchasesImported.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} purchases'**
+  String purchasesImported(Object count);
+
   /// No description provided for @deleteAllData.
   ///
   /// In en, this message translates to:
@@ -568,12 +706,6 @@ abstract class AppLocalizations {
   /// **'This operation will replace your current data. Continue?'**
   String get importDataConfirm;
 
-  /// No description provided for @importSuccess.
-  ///
-  /// In en, this message translates to:
-  /// **'Import successful'**
-  String get importSuccess;
-
   /// No description provided for @storagePermissionRequired.
   ///
   /// In en, this message translates to:
@@ -609,6 +741,360 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Network error. Please verify your internet connection.'**
   String get networkError;
+
+  /// No description provided for @welcome.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome!'**
+  String get welcome;
+
+  /// No description provided for @email.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get email;
+
+  /// No description provided for @password.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get password;
+
+  /// No description provided for @confirmPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm password'**
+  String get confirmPassword;
+
+  /// No description provided for @fullName.
+  ///
+  /// In en, this message translates to:
+  /// **'Full name'**
+  String get fullName;
+
+  /// No description provided for @signIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in'**
+  String get signIn;
+
+  /// No description provided for @signUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Create account'**
+  String get signUp;
+
+  /// No description provided for @continueWithGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Google'**
+  String get continueWithGoogle;
+
+  /// No description provided for @continueWithApple.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Apple'**
+  String get continueWithApple;
+
+  /// No description provided for @useYourEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Use your email'**
+  String get useYourEmail;
+
+  /// No description provided for @alreadyHaveAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Already have an account? Sign in'**
+  String get alreadyHaveAccount;
+
+  /// No description provided for @noAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'No account? Create account'**
+  String get noAccount;
+
+  /// No description provided for @invalidEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid email'**
+  String get invalidEmail;
+
+  /// No description provided for @passwordTooShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Password too short (min 6 characters)'**
+  String get passwordTooShort;
+
+  /// No description provided for @passwordsDoNotMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Passwords do not match'**
+  String get passwordsDoNotMatch;
+
+  /// No description provided for @pleaseEnterFullName.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter your full name'**
+  String get pleaseEnterFullName;
+
+  /// No description provided for @pleaseEnterFirstAndLastName.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter your first and last name'**
+  String get pleaseEnterFirstAndLastName;
+
+  /// No description provided for @pleaseEnterEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter your email'**
+  String get pleaseEnterEmail;
+
+  /// No description provided for @pleaseEnterPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter your password'**
+  String get pleaseEnterPassword;
+
+  /// No description provided for @pleaseConfirmPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Please confirm your password'**
+  String get pleaseConfirmPassword;
+
+  /// No description provided for @accountCreatedSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'Account created successfully!'**
+  String get accountCreatedSuccessfully;
+
+  /// No description provided for @signInSuccessful.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in successful!'**
+  String get signInSuccessful;
+
+  /// No description provided for @googleSignInSuccessful.
+  ///
+  /// In en, this message translates to:
+  /// **'Google sign in successful!'**
+  String get googleSignInSuccessful;
+
+  /// No description provided for @appleSignInSuccessful.
+  ///
+  /// In en, this message translates to:
+  /// **'Apple sign in successful!'**
+  String get appleSignInSuccessful;
+
+  /// No description provided for @connectQuicklyWithExistingAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect quickly with your existing account'**
+  String get connectQuicklyWithExistingAccount;
+
+  /// No description provided for @or.
+  ///
+  /// In en, this message translates to:
+  /// **'or'**
+  String get or;
+
+  /// No description provided for @socialNetworks.
+  ///
+  /// In en, this message translates to:
+  /// **'Social networks'**
+  String get socialNetworks;
+
+  /// No description provided for @syncDataQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Do you want to synchronize your data?'**
+  String get syncDataQuestion;
+
+  /// No description provided for @syncDataExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud synchronization allows you to backup your data online and access it from all your devices.'**
+  String get syncDataExplanation;
+
+  /// No description provided for @yes.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes'**
+  String get yes;
+
+  /// No description provided for @noLater.
+  ///
+  /// In en, this message translates to:
+  /// **'No, later'**
+  String get noLater;
+
+  /// No description provided for @syncLaterMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You can enable synchronization later in settings'**
+  String get syncLaterMessage;
+
+  /// No description provided for @synchronization.
+  ///
+  /// In en, this message translates to:
+  /// **'Synchronization'**
+  String get synchronization;
+
+  /// No description provided for @syncStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync status'**
+  String get syncStatus;
+
+  /// No description provided for @syncDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Disabled'**
+  String get syncDisabled;
+
+  /// No description provided for @syncEnabledStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Enabled'**
+  String get syncEnabledStatus;
+
+  /// No description provided for @syncUpToDate.
+  ///
+  /// In en, this message translates to:
+  /// **'✓ Synchronized'**
+  String get syncUpToDate;
+
+  /// No description provided for @syncPending.
+  ///
+  /// In en, this message translates to:
+  /// **'⏳ Pending ({count} operations)'**
+  String syncPending(Object count);
+
+  /// No description provided for @syncInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'🔄 Synchronizing...'**
+  String get syncInProgress;
+
+  /// No description provided for @syncError.
+  ///
+  /// In en, this message translates to:
+  /// **'⚠️ Sync error'**
+  String get syncError;
+
+  /// No description provided for @lastSyncTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Last sync: {time}'**
+  String lastSyncTime(String time);
+
+  /// No description provided for @neverSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'Never synchronized'**
+  String get neverSynced;
+
+  /// No description provided for @tapForDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap for details'**
+  String get tapForDetails;
+
+  /// No description provided for @connectToEnableSync.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to enable synchronization'**
+  String get connectToEnableSync;
+
+  /// No description provided for @syncStatusDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Synchronization details'**
+  String get syncStatusDetails;
+
+  /// No description provided for @pendingOperations.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending operations'**
+  String get pendingOperations;
+
+  /// No description provided for @failedOperations.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed operations'**
+  String get failedOperations;
+
+  /// No description provided for @syncHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync history'**
+  String get syncHistory;
+
+  /// No description provided for @enableCloudSync.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable cloud sync'**
+  String get enableCloudSync;
+
+  /// No description provided for @disableCloudSync.
+  ///
+  /// In en, this message translates to:
+  /// **'Disable cloud sync'**
+  String get disableCloudSync;
+
+  /// No description provided for @keepLocal.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep local'**
+  String get keepLocal;
+
+  /// No description provided for @keepLocalDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload local data to cloud'**
+  String get keepLocalDescription;
+
+  /// No description provided for @importFromCloud.
+  ///
+  /// In en, this message translates to:
+  /// **'Import from cloud'**
+  String get importFromCloud;
+
+  /// No description provided for @importFromCloudDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Download data from cloud'**
+  String get importFromCloudDescription;
+
+  /// No description provided for @mergeData.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge'**
+  String get mergeData;
+
+  /// No description provided for @mergeDataDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Combine local and cloud data'**
+  String get mergeDataDescription;
+
+  /// No description provided for @syncSuccessMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Synchronization enabled successfully'**
+  String get syncSuccessMessage;
+
+  /// No description provided for @importOptionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Import options'**
+  String get importOptionsTitle;
+
+  /// No description provided for @chooseImportOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose how to handle your existing data'**
+  String get chooseImportOption;
 }
 
 class _AppLocalizationsDelegate

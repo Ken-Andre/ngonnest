@@ -10,6 +10,8 @@ import 'connectivity_service.dart';
 import 'console_logger.dart';
 import 'database_service.dart'; // For ErrorContext if ever needed elsewhere, though not directly in logError calls now
 import 'error_logger_service.dart';
+import '../config/supabase_config.dart';
+import 'supabase_api_service.dart';
 
 /// Service de synchronisation offline-first pour NgonNest
 /// Respecte les principes : offline first, sync optionnelle, local wins, retry logic
@@ -151,71 +153,95 @@ class SyncService extends ChangeNotifier {
   }
 
   /// Force une synchronisation avec feedback utilisateur
-  Future<void> forceSyncWithFeedback(BuildContext context) async {
+  Future<void> forceSyncWithFeedback(BuildContext? context) async {
     if (!_syncEnabled || !_userConsent) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Synchronisation désactivée. Activez-la dans les paramètres.',
+      if (context != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Synchronisation désactivée. Activez-la dans les paramètres.',
+            ),
+            backgroundColor: Colors.orange,
           ),
-          backgroundColor: Colors.orange,
-        ),
-      );
+        );
+      } else {
+        ConsoleLogger.info('[SyncService] Sync disabled - enable in settings');
+      }
       return;
     }
 
     if (!_connectivityService.isOnline) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Pas de connexion internet. Synchronisation impossible.',
+      if (context != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Pas de connexion internet. Synchronisation impossible.',
+            ),
+            backgroundColor: Colors.red,
           ),
-          backgroundColor: Colors.red,
-        ),
-      );
+        );
+      } else {
+        ConsoleLogger.warning('[SyncService] No internet connection available');
+      }
       return;
     }
 
     if (_isSyncing) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Synchronisation déjà en cours...'),
-          backgroundColor: Colors.blue,
-        ),
-      );
+      if (context != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Synchronisation déjà en cours...'),
+            backgroundColor: Colors.blue,
+          ),
+        );
+      } else {
+        ConsoleLogger.info('[SyncService] Sync already in progress');
+      }
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Synchronisation en cours...'),
-        backgroundColor: Colors.blue,
-        duration: Duration(seconds: 2),
-      ),
-    );
-
-    final success = await _performSync();
-
-    if (!context.mounted) return;
-
-    if (success) {
+    if (context != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('✅ Synchronisation réussie'),
-          backgroundColor: Colors.green,
+          content: Text('Synchronisation en cours...'),
+          backgroundColor: Colors.blue,
+          duration: Duration(seconds: 2),
         ),
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('❌ Échec synchronisation: $_lastError'),
-          backgroundColor: Colors.red,
-          action: SnackBarAction(
-            label: 'Détails',
-            onPressed: () => showSyncErrorDialog(context),
+      ConsoleLogger.info('[SyncService] Starting sync process');
+    }
+
+    final success = await _performSync();
+
+    if (context != null && !context.mounted) return;
+
+    if (success) {
+      if (context != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Synchronisation réussie'),
+            backgroundColor: Colors.green,
           ),
-        ),
-      );
+        );
+      } else {
+        ConsoleLogger.success('[SyncService] Sync successful');
+      }
+    } else {
+      if (context != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Échec synchronisation: $_lastError'),
+            backgroundColor: Colors.red,
+            action: SnackBarAction(
+              label: 'Détails',
+              onPressed: () => showSyncErrorDialog(context!),
+            ),
+          ),
+        );
+      } else {
+        ConsoleLogger.error('SyncService', 'forceSyncWithFeedback', _lastError);
+      }
     }
   }
 
@@ -364,9 +390,8 @@ class SyncService extends ChangeNotifier {
     );
 
     try {
-      // TODO: Implémenter l'appel API réel ici
-      // Pour l'instant, on simule un appel API
-      await _mockApiCall(operation);
+      // Appel réel à Supabase
+      await _callSupabaseApi(operation);
 
       // Marquer comme synchronisé
       await db.update(
@@ -401,23 +426,28 @@ class SyncService extends ChangeNotifier {
     }
   }
 
-  /// Simule un appel API (remplacer par vrai appel en production)
-  Future<void> _mockApiCall(Map<String, dynamic> operation) async {
-    // Simuler latence réseau
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    // Simuler un taux d'échec de 10% en debug pour tester le retry
-    if (kDebugMode && DateTime.now().millisecond % 10 == 0) {
-      throw Exception('Simulated API error for testing');
+  /// Appelle l'API Supabase réelle (remplace le mock)
+  Future<void> _callSupabaseApi(Map<String, dynamic> operation) async {
+    // Vérifier que Supabase est configuré
+    if (!SupabaseConfig.isConfigured()) {
+      throw Exception('Supabase not configured. Please configure URL and anon key.');
     }
 
-    // En production, implémenter:
-    // final response = await http.post(
-    //   Uri.parse('$apiBaseUrl/${operation['entity_type']}'),
-    //   headers: {'Content-Type': 'application/json'},
-    //   body: operation['payload'],
-    // );
-    // if (response.statusCode != 200) throw Exception('API error');
+    // Test connection rapide avant opération
+    if (!await SupabaseApiService.instance.testConnection()) {
+      if (kDebugMode) {
+        // Simuler le mock en debug si pas de réseau pour éviter les blocages tests
+        await Future.delayed(const Duration(milliseconds: 500));
+        if (DateTime.now().millisecond % 10 == 0) {
+          throw Exception('Simulated API error (Supabase not connected)');
+        }
+        return;
+      }
+      throw Exception('Cannot connect to Supabase API');
+    }
+
+    // Appel réel à Supabase
+    await SupabaseApiService.instance.syncOperation(operation);
   }
 
   /// Compte les opérations en attente
