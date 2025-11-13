@@ -364,104 +364,128 @@ class AppLocalizationsEs extends AppLocalizations {
       'Error de red. Por favor verifica tu conexión a internet.';
 
   @override
-  String get welcome => 'Welcome!';
+  String get welcome => '¡Bienvenido!';
 
   @override
   String get email => 'Email';
 
   @override
-  String get password => 'Password';
+  String get password => 'Contraseña';
 
   @override
-  String get confirmPassword => 'Confirm password';
+  String get confirmPassword => 'Confirmar contraseña';
 
   @override
-  String get fullName => 'Full name';
+  String get fullName => 'Nombre completo';
 
   @override
-  String get signIn => 'Sign in';
+  String get signIn => 'Iniciar sesión';
 
   @override
-  String get signUp => 'Create account';
+  String get signUp => 'Crear cuenta';
 
   @override
-  String get continueWithGoogle => 'Continue with Google';
+  String get continueWithGoogle => 'Continuar con Google';
 
   @override
-  String get continueWithApple => 'Continue with Apple';
+  String get continueWithApple => 'Continuar con Apple';
 
   @override
-  String get useYourEmail => 'Use your email';
+  String get useYourEmail => 'Usa tu email';
 
   @override
-  String get alreadyHaveAccount => 'Already have an account? Sign in';
+  String get alreadyHaveAccount => '¿Ya tienes cuenta? Inicia sesión';
 
   @override
-  String get noAccount => 'No account? Create account';
+  String get noAccount => '¿No tienes cuenta? Crear cuenta';
 
   @override
-  String get invalidEmail => 'Invalid email';
+  String get invalidEmail => 'Email inválido';
 
   @override
-  String get passwordTooShort => 'Password too short (min 6 characters)';
+  String get passwordTooShort =>
+      'Contraseña demasiado corta (mín 8 caracteres)';
 
   @override
-  String get passwordsDoNotMatch => 'Passwords do not match';
+  String get passwordsDoNotMatch => 'Las contraseñas no coinciden';
 
   @override
-  String get pleaseEnterFullName => 'Please enter your full name';
+  String get pleaseEnterFullName => 'Por favor ingresa tu nombre completo';
 
   @override
   String get pleaseEnterFirstAndLastName =>
-      'Please enter your first and last name';
+      'Por favor ingresa tu nombre y apellido';
 
   @override
-  String get pleaseEnterEmail => 'Please enter your email';
+  String get pleaseEnterEmail => 'Por favor ingresa tu email';
 
   @override
-  String get pleaseEnterPassword => 'Please enter your password';
+  String get pleaseEnterPassword => 'Por favor ingresa tu contraseña';
 
   @override
-  String get pleaseConfirmPassword => 'Please confirm your password';
+  String get pleaseConfirmPassword => 'Por favor confirma tu contraseña';
 
   @override
-  String get accountCreatedSuccessfully => 'Account created successfully!';
+  String get accountCreatedSuccessfully => '¡Cuenta creada exitosamente!';
 
   @override
-  String get signInSuccessful => 'Sign in successful!';
+  String get pleaseCheckEmailToConfirmAccount =>
+      'Por favor verifica tu email para confirmar tu cuenta.';
 
   @override
-  String get googleSignInSuccessful => 'Google sign in successful!';
+  String get signInSuccessful => '¡Inicio de sesión exitoso!';
 
   @override
-  String get appleSignInSuccessful => 'Apple sign in successful!';
+  String get googleSignInSuccessful => '¡Inicio de sesión con Google exitoso!';
+
+  @override
+  String get appleSignInSuccessful => '¡Inicio de sesión con Apple exitoso!';
+
+  @override
+  String get checkYourEmailToConfirm =>
+      'Verifica tu email para confirmar tu cuenta.';
+
+  @override
+  String get emailConfirmedYouCanSignIn =>
+      'Email confirmado. Ya puedes iniciar sesión.';
+
+  @override
+  String get resendConfirmationEmail => 'Reenviar email de confirmación';
+
+  @override
+  String get confirmationEmailResent => 'Email de confirmación reenviado.';
+
+  @override
+  String resendInSeconds(int seconds) {
+    return 'Reenviar en ${seconds}s';
+  }
 
   @override
   String get connectQuicklyWithExistingAccount =>
-      'Connect quickly with your existing account';
+      'Conéctate rápidamente con tu cuenta existente';
 
   @override
-  String get or => 'or';
+  String get or => 'o';
 
   @override
-  String get socialNetworks => 'Social networks';
+  String get socialNetworks => 'Redes sociales';
 
   @override
-  String get syncDataQuestion => 'Do you want to synchronize your data?';
+  String get syncDataQuestion => '¿Quieres sincronizar tus datos?';
 
   @override
   String get syncDataExplanation =>
-      'Cloud synchronization allows you to backup your data online and access it from all your devices.';
+      'La sincronización en la nube te permite respaldar tus datos en línea y accederlos desde todos tus dispositivos.';
 
   @override
-  String get yes => 'Yes';
+  String get yes => 'Sí';
 
   @override
-  String get noLater => 'No, later';
+  String get noLater => 'No, más tarde';
 
   @override
   String get syncLaterMessage =>
-      'You can enable synchronization later in settings';
+      'Puedes activar la sincronización más tarde en configuración';
 
   @override
   String get synchronization => 'Sincronización';

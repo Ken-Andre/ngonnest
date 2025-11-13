@@ -411,12 +411,18 @@ class SyncService extends ChangeNotifier {
       // Incrémenter le compteur de retry
       final retryCount = (operation['retry_count'] as int) + 1;
 
+      // Limiter la taille du message d'erreur (500 chars max, mais vérifier la longueur)
+      final errorMessage = e.toString();
+      final truncatedMessage = errorMessage.length > 500 
+          ? errorMessage.substring(0, 500) 
+          : errorMessage;
+      
       await db.update(
         'sync_outbox',
         {
           'status': 'failed',
           'retry_count': retryCount,
-          'error_message': e.toString().substring(0, 500), // Limiter la taille
+          'error_message': truncatedMessage,
         },
         where: 'id = ?',
         whereArgs: [opId],

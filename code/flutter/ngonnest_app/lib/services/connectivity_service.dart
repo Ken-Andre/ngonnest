@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'analytics_service.dart';
@@ -157,6 +158,74 @@ class ConnectivityService extends ChangeNotifier {
       print('[ConnectivityService] Erreur vérification manuelle: $e');
       _showOfflineBanner();
     }
+  }
+
+  /// Vérification de pré-vol pour les opérations réseau critiques
+  /// Retourne true si le réseau semble opérationnel
+  Future<bool> preFlightCheck() async {
+    try {
+      // Vérification rapide de la connectivité
+      final results = await _connectivity.checkConnectivity();
+      final hasConnectivity = results.any((result) =>
+          result != ConnectivityResult.none);
+
+      if (!hasConnectivity) {
+        print('[ConnectivityService] Pré-vol: Pas de connectivité détectée');
+        return false;
+      }
+
+      // Test DNS rapide (ping-like) pour Supabase
+      final supabaseUrl = 'https://twihbdmgqrsvfpyuhkoz.supabase.co';
+      final uri = Uri.parse(supabaseUrl);
+
+      // Timeout court pour éviter de bloquer l'UI
+      final client = HttpClient();
+      client.connectionTimeout = const Duration(seconds: 3);
+
+      try {
+        final request = await client.headUrl(uri);
+        final response = await request.close();
+        await response.drain();
+        client.close();
+
+        print('[ConnectivityService] Pré-vol: Supabase accessible');
+        return true;
+      } catch (e) {
+        print('[ConnectivityService] Pré-vol: Supabase inaccessible - $e');
+        client.close();
+        return false;
+      }
+    } catch (e) {
+      print('[ConnectivityService] Pré-vol: Erreur générale - $e');
+      return false;
+    }
+  }
+
+  /// Vérifie si une erreur est liée au réseau
+  bool isNetworkError(dynamic error) {
+    if (error == null) return false;
+
+    final errorString = error.toString().toLowerCase();
+    return errorString.contains('network') ||
+           errorString.contains('socket') ||
+           errorString.contains('connection') ||
+           errorString.contains('timeout') ||
+           errorString.contains('dns') ||
+           errorString.contains('host lookup') ||
+           errorString.contains('no address associated');
+  }
+
+  /// Obtient un message d'erreur réseau convivial
+  String getNetworkErrorMessage(dynamic error) {
+    if (!isOnline) {
+      return 'Vous êtes hors ligne. Vérifiez votre connexion internet.';
+    }
+
+    if (isNetworkError(error)) {
+      return 'Problème de connexion réseau. Réessayez dans quelques instants.';
+    }
+
+    return 'Erreur de connexion. Vérifiez votre réseau.';
   }
 
   /// Libère les ressources

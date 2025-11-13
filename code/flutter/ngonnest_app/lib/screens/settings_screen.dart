@@ -927,9 +927,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   /// Check for cloud data and show import options
   Future<void> _checkCloudDataAndShowOptions(SyncService syncService) async {
+    if (!mounted) return; // Safety check
+    
     try {
       final cloudImportService = CloudImportService();
       final hasCloudData = await cloudImportService.checkCloudData();
+
+      if (!mounted) return; // Check again after async operation
 
       if (hasCloudData) {
         // Show import options dialog with enhanced options
@@ -944,12 +948,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         );
 
+        if (!mounted) return; // Check after dialog
+
         if (result != null) {
           // User made a choice, enable sync
           await syncService.enableSync(userConsent: true);
           
+          if (!mounted) return;
+          
           // Handle each option appropriately
           await _handleImportOption(result, syncService);
+          
+          if (!mounted) return;
           
           // Show appropriate success message based on choice
           _showImportSuccessMessage(result);
@@ -958,19 +968,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
         // No cloud data, enable sync and trigger initial sync to upload local data
         await syncService.enableSync(userConsent: true);
         
+        if (!mounted) return;
+        
         // Trigger initial sync to upload local data
         await syncService.forceSyncWithFeedback(context);
+        
+        if (!mounted) return;
         
         _showSuccessMessage(
           'Synchronisation activée. Vos données locales seront sauvegardées dans le cloud.',
         );
       }
     } catch (e) {
+      if (!mounted) return;
+      
       // Handle error gracefully
       await syncService.enableSync(userConsent: true);
       
+      if (!mounted) return;
+      
       // Still try to trigger initial sync
       await syncService.forceSyncWithFeedback(context);
+      
+      if (!mounted) return;
       
       _showSuccessMessage(
         AppLocalizations.of(context)?.syncSuccessMessage ?? 

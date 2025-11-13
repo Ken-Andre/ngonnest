@@ -6,10 +6,13 @@ import '../services/auth_service.dart';
 import '../services/cloud_import_service.dart';
 import '../services/sync_service.dart';
 import '../theme/app_theme.dart';
+import '../utils/autofill_utils.dart';
 import '../widgets/cloud_import_dialog.dart';
+import 'package:app_links/app_links.dart';
+import 'dart:async';
 
-/// Écran d'authentification pour NgonNest
-/// Permet la connexion via email/mot de passe ou OAuth (Google, Apple)
+/// Écran d'authentification unifié pour NgonNest
+/// Interface unique avec email/mot de passe et OAuth (Google, Apple)
 class AuthenticationScreen extends StatefulWidget {
   final String? contextMessage;
   final String? source;
@@ -20,29 +23,50 @@ class AuthenticationScreen extends StatefulWidget {
   State<AuthenticationScreen> createState() => _AuthenticationScreenState();
 }
 
-class _AuthenticationScreenState extends State<AuthenticationScreen>
-    with TickerProviderStateMixin {
-  late TabController _tabController;
+class _AuthenticationScreenState extends State<AuthenticationScreen> {
   late AuthService _authService;
+  final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  final _fullNameController = TextEditingController();
 
   bool _isLoading = false;
+  bool _isSignUpMode = false;
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
+  bool _isGoogleLoading = false;
+  bool _isAppleLoading = false;
   String? _errorMessage;
   String? _successMessage;
+  late final AppLinks _appLinks;
+  StreamSubscription<Uri>? _linkSub;
+  bool _awaitingEmailConfirmation = false;
+  int _resendCooldownSeconds = 0;
+  Timer? _resendTimer;
+  bool _isNavigating = false; // Prevent multiple navigation attempts
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
     _authService = AuthService.instance;
 
     // Listen to auth service changes
     _authService.addListener(_onAuthStateChanged);
+
+    // Listen for deep links for email confirmation
+    _setupDeepLinkListener();
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    _fullNameController.dispose();
     _authService.removeListener(_onAuthStateChanged);
+    _linkSub?.cancel();
+    _resendTimer?.cancel();
     super.dispose();
   }
 
@@ -54,13 +78,77 @@ class _AuthenticationScreenState extends State<AuthenticationScreen>
       });
 
       // Handle successful authentication from onboarding
-      if (_authService.isAuthenticated && widget.source == 'onboarding') {
+      if (_authService.isAuthenticated && widget.source == 'onboarding' && !_isNavigating) {
+        _isNavigating = true;
         _handleOnboardingAuthSuccess();
+        return;
       }
 
       // Handle successful authentication from settings
-      if (_authService.isAuthenticated && widget.source == 'settings') {
+      if (_authService.isAuthenticated && widget.source == 'settings' && !_isNavigating) {
+        _isNavigating = true;
         _handleSettingsAuthSuccess();
+        return;
+      }
+
+      // Handle successful authentication from regular login/signup (no specific source)
+      if (_authService.isAuthenticated && widget.source == null && !_isNavigating) {
+        _isNavigating = true;
+        _handleRegularAuthSuccess();
+        return;
+      }
+    }
+  }
+
+  void _setupDeepLinkListener() {
+    _appLinks = AppLinks();
+    // Stream listener
+    _linkSub = _appLinks.uriLinkStream.listen((uri) {
+      _handleIncomingLink(uri);
+    }, onError: (_) {});
+  }
+
+  void _handleIncomingLink(Uri uri) async {
+    // Expecting: io.supabase.ngonnest:/login-callback/ or http://localhost:3000/?code=...
+    // Handle both the app deep link and the localhost redirect (when user clicks email on different device)
+    if (uri.scheme == 'io.supabase.ngonnest' && uri.path.contains('login-callback')) {
+      if (!mounted) return;
+      // Exchange code for session if there's a code parameter
+      final code = uri.queryParameters['code'];
+      if (code != null) {
+        try {
+          await _authService.exchangeCodeForSession(code);
+        } catch (e) {
+          // Error already handled by AuthService
+        }
+      }
+      setState(() {
+        _isSignUpMode = false; // Switch to sign-in
+        _awaitingEmailConfirmation = false;
+        _successMessage = AppLocalizations.of(context)!.signInSuccessful;
+        _errorMessage = null;
+      });
+    } else if (uri.host == 'localhost' && uri.queryParameters.containsKey('code')) {
+      // Handle localhost redirect (from email clicked on different device)
+      final code = uri.queryParameters['code'];
+      if (code != null && mounted) {
+        try {
+          await _authService.exchangeCodeForSession(code);
+          if (mounted && _authService.isAuthenticated) {
+            setState(() {
+              _isSignUpMode = false;
+              _awaitingEmailConfirmation = false;
+              _successMessage = AppLocalizations.of(context)!.signInSuccessful;
+              _errorMessage = null;
+            });
+          }
+        } catch (e) {
+          if (mounted) {
+            setState(() {
+              _errorMessage = 'Erreur lors de la confirmation. Veuillez réessayer de vous connecter.';
+            });
+          }
+        }
       }
     }
   }
@@ -144,6 +232,30 @@ class _AuthenticationScreenState extends State<AuthenticationScreen>
     Navigator.of(context).pop(true);
   }
 
+  /// Handle successful authentication from regular login/signup flow
+  Future<void> _handleRegularAuthSuccess() async {
+    try {
+      // Check for cloud data
+      final cloudImportService = CloudImportService();
+      final hasCloudData = await cloudImportService.checkCloudData();
+
+      if (!mounted) return;
+
+      if (hasCloudData) {
+        // Show cloud import dialog
+        await _showCloudImportDialog(cloudImportService);
+      } else {
+        // No cloud data, enable sync and navigate to dashboard
+        await _enableSyncAndNavigate();
+      }
+    } catch (e) {
+      // Handle error gracefully - still navigate to dashboard
+      if (mounted) {
+        await _enableSyncAndNavigate();
+      }
+    }
+  }
+
   /// Enable sync service and navigate to dashboard
   Future<void> _enableSyncAndNavigate() async {
     try {
@@ -182,6 +294,291 @@ class _AuthenticationScreenState extends State<AuthenticationScreen>
     _authService.clearError();
   }
 
+  bool get _isAnyLoading => _isLoading || _isGoogleLoading || _isAppleLoading;
+
+  String? _validateEmail(String? value) {
+    final l10n = AppLocalizations.of(context)!;
+
+    if (value == null || value.isEmpty) {
+      return l10n.pleaseEnterEmail;
+    }
+
+    final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
+    if (!emailRegex.hasMatch(value)) {
+      return l10n.invalidEmail;
+    }
+
+    return null;
+  }
+
+  String? _validatePassword(String? value) {
+    final l10n = AppLocalizations.of(context)!;
+
+    if (value == null || value.isEmpty) {
+      return l10n.pleaseEnterPassword;
+    }
+
+    if (value.length < 8) {
+      return l10n.passwordTooShort;
+    }
+
+    return null;
+  }
+
+  String? _validateConfirmPassword(String? value) {
+    final l10n = AppLocalizations.of(context)!;
+
+    if (_isSignUpMode) {
+      if (value == null || value.isEmpty) {
+        return l10n.pleaseConfirmPassword;
+      }
+
+      if (value != _passwordController.text) {
+        return l10n.passwordsDoNotMatch;
+      }
+    }
+
+    return null;
+  }
+
+  String? _validateFullName(String? value) {
+    final l10n = AppLocalizations.of(context)!;
+
+    if (_isSignUpMode) {
+      if (value == null || value.isEmpty) {
+        return l10n.pleaseEnterFullName;
+      }
+
+      if (value.trim().split(' ').length < 2) {
+        return l10n.pleaseEnterFirstAndLastName;
+      }
+    }
+
+    return null;
+  }
+
+  Future<void> _handleEmailSubmit() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    _clearMessages();
+
+    try {
+      final authService = AuthService.instance;
+      final l10n = AppLocalizations.of(context)!;
+
+      if (_isSignUpMode) {
+        await authService.signUpWithEmail(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+          fullName: _fullNameController.text.trim(),
+        );
+        // Always show email confirmation guidance after signup
+        // Supabase may return a session but email still needs confirmation
+        if (mounted) {
+          setState(() {
+            _awaitingEmailConfirmation = true;
+            // Show both success and guidance message
+            _successMessage = '${l10n.accountCreatedSuccessfully}\n\n${l10n.checkYourEmailToConfirm}';
+          });
+        }
+      } else {
+        await authService.signInWithEmail(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        );
+      }
+
+      if (mounted && authService.isAuthenticated) {
+        // Success - navigation will be handled by parent
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              _isSignUpMode
+                  ? l10n.accountCreatedSuccessfully
+                  : l10n.signInSuccessful,
+            ),
+            backgroundColor: AppTheme.primaryGreen,
+          ),
+        );
+      }
+    } catch (e) {
+      // Error handling is done by AuthService and displayed in parent
+    }
+  }
+
+  Future<void> _handleResendConfirmation() async {
+    if (_resendCooldownSeconds > 0) return;
+    setState(() {
+      _errorMessage = null;
+      _successMessage = null;
+    });
+
+    final email = _emailController.text.trim();
+    if (email.isEmpty) return;
+
+    final ok = await _authService.resendConfirmationEmail(email);
+    if (!mounted) return;
+    final l10n = AppLocalizations.of(context)!;
+    setState(() {
+      if (ok) {
+        _successMessage = l10n.success;
+        _startResendCooldown(60);
+      } else {
+        _errorMessage = _authService.errorMessage ?? l10n.networkError;
+        _startResendCooldown(60);
+      }
+    });
+  }
+
+  void _startResendCooldown(int seconds) {
+    _resendCooldownSeconds = seconds;
+    _resendTimer?.cancel();
+    _resendTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!mounted) return;
+      setState(() {
+        _resendCooldownSeconds--;
+        if (_resendCooldownSeconds <= 0) {
+          _resendCooldownSeconds = 0;
+          t.cancel();
+        }
+      });
+    });
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    setState(() {
+      _isGoogleLoading = true;
+    });
+
+    _clearMessages();
+
+    try {
+      final authService = AuthService.instance;
+      final l10n = AppLocalizations.of(context)!;
+      final success = await authService.signInWithGoogle();
+
+      if (mounted && success && authService.isAuthenticated) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.googleSignInSuccessful),
+            backgroundColor: AppTheme.primaryGreen,
+          ),
+        );
+      }
+    } catch (e) {
+      // Error handling is done by AuthService and displayed in parent
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isGoogleLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleAppleSignIn() async {
+    setState(() {
+      _isAppleLoading = true;
+    });
+
+    _clearMessages();
+
+    try {
+      final authService = AuthService.instance;
+      final l10n = AppLocalizations.of(context)!;
+      final success = await authService.signInWithApple();
+
+      if (mounted && success && authService.isAuthenticated) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.appleSignInSuccessful),
+            backgroundColor: AppTheme.primaryGreen,
+          ),
+        );
+      }
+    } catch (e) {
+      // Error handling is done by AuthService and displayed in parent
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isAppleLoading = false;
+        });
+      }
+    }
+  }
+
+  void _toggleMode() {
+    setState(() {
+      _isSignUpMode = !_isSignUpMode;
+      // Clear form when switching modes
+      _formKey.currentState?.reset();
+      _emailController.clear();
+      _passwordController.clear();
+      _confirmPasswordController.clear();
+      _fullNameController.clear();
+    });
+    _clearMessages();
+  }
+
+  Widget _buildGoogleIcon() {
+    // Use a simple icon for tests to avoid network issues
+    return const Icon(Icons.g_mobiledata, color: Colors.blue, size: 24);
+  }
+
+  Widget _buildOAuthButton({
+    required VoidCallback? onPressed,
+    required bool isLoading,
+    required Widget icon,
+    required String text,
+    required Color backgroundColor,
+    required Color textColor,
+    required Color borderColor,
+  }) {
+    return SizedBox(
+      height: 56,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: backgroundColor,
+          foregroundColor: textColor,
+          elevation: 2,
+          shadowColor: Colors.black.withValues(alpha: 0.1),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: borderColor),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        ),
+        child: isLoading
+            ? SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(textColor),
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  icon,
+                  const SizedBox(width: 12),
+                  Text(
+                    text,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: textColor,
+                    ),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -214,43 +611,25 @@ class _AuthenticationScreenState extends State<AuthenticationScreen>
                 const SizedBox(height: 24),
               ],
 
-              // Tab bar for Email and OAuth
-              _buildTabBar(context, l10n),
+              // Unified authentication form
+              _buildAuthForm(context, l10n),
 
               const SizedBox(height: 24),
 
-              // Tab view content
-              ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: 300,
-                  maxHeight: MediaQuery.of(context).size.height * 0.6,
-                ),
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    SingleChildScrollView(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 24),
-                        child: _EmailAuthTab(
-                          onClearMessages: _clearMessages,
-                          isLoading: _isLoading,
-                        ),
-                      ),
-                    ),
-                    SingleChildScrollView(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 24),
-                        child: _OAuthTab(
-                          onClearMessages: _clearMessages,
-                          isLoading: _isLoading,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              // Social login divider
+              _buildSocialDivider(context, l10n),
 
               const SizedBox(height: 24),
+
+              // Social login buttons
+              _buildSocialButtons(context, l10n),
+
+              const SizedBox(height: 24),
+
+              // Sign up toggle
+              _buildSignUpToggle(context, l10n),
+
+              const SizedBox(height: 16),
 
               // Error message display
               if (_errorMessage != null) _buildErrorMessage(context),
@@ -293,9 +672,9 @@ class _AuthenticationScreenState extends State<AuthenticationScreen>
 
         const SizedBox(height: 8),
 
-        // Welcome message
+        // Welcome message - now localized
         Text(
-          'Bienvenue !',
+          l10n.welcome,
           style: theme.textTheme.titleLarge?.copyWith(
             color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
           ),
@@ -331,37 +710,245 @@ class _AuthenticationScreenState extends State<AuthenticationScreen>
     );
   }
 
-  Widget _buildTabBar(BuildContext context, AppLocalizations l10n) {
-    final theme = Theme.of(context);
+  Widget _buildAuthForm(BuildContext context, AppLocalizations l10n) {
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Full name field (only in sign-up mode)
+          if (_isSignUpMode) ...[
+            TextFormField(
+              controller: _fullNameController,
+              decoration: AutofillUtils.applyAutofillDecoration(
+                InputDecoration(
+                  labelText: l10n.fullName,
+                  hintText: l10n.pleaseEnterFirstAndLastName,
+                  prefixIcon: const Icon(Icons.person_outline),
+                ),
+                label: l10n.fullName,
+                icon: Icons.person_outline,
+              ),
+              textInputAction: TextInputAction.next,
+              autofillHints: AutofillUtils.getFullNameAutofillHints(),
+              keyboardType: AutofillUtils.getFullNameInputType(),
+              validator: _validateFullName,
+              enabled: !_isAnyLoading,
+            ),
+            const SizedBox(height: 16),
+          ],
 
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+          // Email field
+          TextFormField(
+            controller: _emailController,
+            decoration: AutofillUtils.applyAutofillDecoration(
+              InputDecoration(
+                labelText: l10n.email,
+                hintText: 'votre@email.com',
+                prefixIcon: const Icon(Icons.email_outlined),
+              ),
+              label: l10n.email,
+              icon: Icons.email_outlined,
+            ),
+            keyboardType: AutofillUtils.getEmailInputType(),
+            textInputAction: TextInputAction.next,
+            autofillHints: AutofillUtils.getEmailAutofillHints(),
+            validator: _validateEmail,
+            enabled: !_isAnyLoading,
           ),
+
+          const SizedBox(height: 16),
+
+          // Password field
+          TextFormField(
+            controller: _passwordController,
+            decoration: AutofillUtils.applyAutofillDecoration(
+              InputDecoration(
+                labelText: l10n.password,
+                hintText: l10n.passwordTooShort,
+                prefixIcon: const Icon(Icons.lock_outline),
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _obscurePassword = !_obscurePassword;
+                    });
+                  },
+                ),
+              ),
+              label: l10n.password,
+              icon: Icons.lock_outline,
+            ),
+            obscureText: _obscurePassword,
+            textInputAction: _isSignUpMode
+                ? TextInputAction.next
+                : TextInputAction.done,
+            autofillHints: AutofillUtils.getPasswordAutofillHints(),
+            keyboardType: AutofillUtils.getPasswordInputType(),
+            validator: _validatePassword,
+            enabled: !_isAnyLoading,
+            onFieldSubmitted: _isSignUpMode
+                ? null
+                : (_) => _handleEmailSubmit(),
+          ),
+
+          // Confirm password field (only in sign-up mode)
+          if (_isSignUpMode) ...[
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _confirmPasswordController,
+              decoration: AutofillUtils.applyAutofillDecoration(
+                InputDecoration(
+                  labelText: l10n.confirmPassword,
+                  hintText: l10n.pleaseConfirmPassword,
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureConfirmPassword
+                          ? Icons.visibility
+                          : Icons.visibility_off,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscureConfirmPassword = !_obscureConfirmPassword;
+                      });
+                    },
+                  ),
+                ),
+                label: l10n.confirmPassword,
+                icon: Icons.lock_outline,
+              ),
+              obscureText: _obscureConfirmPassword,
+              textInputAction: TextInputAction.done,
+              autofillHints: AutofillUtils.getConfirmPasswordAutofillHints(),
+              keyboardType: AutofillUtils.getPasswordInputType(),
+              validator: _validateConfirmPassword,
+              enabled: !_isAnyLoading,
+              onFieldSubmitted: (_) => _handleEmailSubmit(),
+            ),
+          ],
+
+          const SizedBox(height: 24),
+
+          // Submit button
+          ElevatedButton(
+            onPressed: _isAnyLoading ? null : _handleEmailSubmit,
+            child: _isLoading
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : Text(
+                    _isSignUpMode ? l10n.signUp : l10n.signIn,
+                    style: const TextStyle(fontSize: 18),
+                  ),
+          ),
+
+          // Post-signup guidance and resend
+          if (_isSignUpMode && _awaitingEmailConfirmation) ...[
+            const SizedBox(height: 12),
+            Text(
+              l10n.accountCreatedSuccessfully,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                onPressed: (_isAnyLoading || _resendCooldownSeconds > 0)
+                    ? null
+                    : _handleResendConfirmation,
+                child: Text(
+                  _resendCooldownSeconds > 0
+                      ? '${l10n.retry} (${_resendCooldownSeconds}s)'
+                      : l10n.retry,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
-      child: TabBar(
-        controller: _tabController,
-        indicator: BoxDecoration(
+    );
+  }
+
+  Widget _buildSocialDivider(BuildContext context, AppLocalizations l10n) {
+    final theme = Theme.of(context);
+
+    return Row(
+      children: [
+        Expanded(
+          child: Divider(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            l10n.or,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+            ),
+          ),
+        ),
+        Expanded(
+          child: Divider(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSocialButtons(BuildContext context, AppLocalizations l10n) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Google Sign-In Button
+        _buildOAuthButton(
+          onPressed: _isAnyLoading ? null : _handleGoogleSignIn,
+          isLoading: _isGoogleLoading,
+          icon: _buildGoogleIcon(),
+          text: l10n.continueWithGoogle,
+          backgroundColor: Colors.white,
+          textColor: Colors.black87,
+          borderColor: Colors.grey.shade300,
+        ),
+
+        const SizedBox(height: 16),
+
+        // Apple Sign-In Button
+        _buildOAuthButton(
+          onPressed: _isAnyLoading ? null : _handleAppleSignIn,
+          isLoading: _isAppleLoading,
+          icon: const Icon(Icons.apple, color: Colors.white, size: 24),
+          text: l10n.continueWithApple,
+          backgroundColor: Colors.black,
+          textColor: Colors.white,
+          borderColor: Colors.black,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSignUpToggle(BuildContext context, AppLocalizations l10n) {
+    final theme = Theme.of(context);
+
+    return TextButton(
+      onPressed: _isAnyLoading ? null : _toggleMode,
+      child: Text(
+        _isSignUpMode ? l10n.alreadyHaveAccount : l10n.noAccount,
+        style: theme.textTheme.bodyMedium?.copyWith(
           color: AppTheme.primaryGreen,
-          borderRadius: BorderRadius.circular(12),
+          fontWeight: FontWeight.w500,
         ),
-        labelColor: Colors.white,
-        unselectedLabelColor: theme.colorScheme.onSurface,
-        labelStyle: theme.textTheme.titleMedium?.copyWith(
-          fontWeight: FontWeight.w600,
-        ),
-        unselectedLabelStyle: theme.textTheme.titleMedium,
-        tabs: const [
-          Tab(text: 'Email', icon: Icon(Icons.email_outlined)),
-          Tab(text: 'Réseaux sociaux', icon: Icon(Icons.share_outlined)),
-        ],
       ),
     );
   }
@@ -420,535 +1007,6 @@ class _AuthenticationScreenState extends State<AuthenticationScreen>
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// Email authentication tab with form validation
-class _EmailAuthTab extends StatefulWidget {
-  final VoidCallback onClearMessages;
-  final bool isLoading;
-
-  const _EmailAuthTab({required this.onClearMessages, required this.isLoading});
-
-  @override
-  State<_EmailAuthTab> createState() => _EmailAuthTabState();
-}
-
-class _EmailAuthTabState extends State<_EmailAuthTab> {
-  final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
-  final _fullNameController = TextEditingController();
-
-  bool _isSignUpMode = false;
-  bool _obscurePassword = true;
-  bool _obscureConfirmPassword = true;
-
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
-    _fullNameController.dispose();
-    super.dispose();
-  }
-
-  String? _validateEmail(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Veuillez saisir votre email';
-    }
-
-    final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
-    if (!emailRegex.hasMatch(value)) {
-      return 'Email invalide';
-    }
-
-    return null;
-  }
-
-  String? _validatePassword(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Veuillez saisir votre mot de passe';
-    }
-
-    if (value.length < 6) {
-      return 'Mot de passe trop court (min 6 caractères)';
-    }
-
-    return null;
-  }
-
-  String? _validateConfirmPassword(String? value) {
-    if (_isSignUpMode) {
-      if (value == null || value.isEmpty) {
-        return 'Veuillez confirmer votre mot de passe';
-      }
-
-      if (value != _passwordController.text) {
-        return 'Les mots de passe ne correspondent pas';
-      }
-    }
-
-    return null;
-  }
-
-  String? _validateFullName(String? value) {
-    if (_isSignUpMode) {
-      if (value == null || value.isEmpty) {
-        return 'Veuillez saisir votre nom complet';
-      }
-
-      if (value.trim().split(' ').length < 2) {
-        return 'Veuillez saisir votre prénom et nom';
-      }
-    }
-
-    return null;
-  }
-
-  Future<void> _handleSubmit() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    widget.onClearMessages();
-
-    try {
-      final authService = AuthService.instance;
-
-      if (_isSignUpMode) {
-        await authService.signUpWithEmail(
-          email: _emailController.text.trim(),
-          password: _passwordController.text,
-          fullName: _fullNameController.text.trim(),
-        );
-      } else {
-        await authService.signInWithEmail(
-          email: _emailController.text.trim(),
-          password: _passwordController.text,
-        );
-      }
-
-      if (mounted && authService.isAuthenticated) {
-        // Success - navigation will be handled by parent
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              _isSignUpMode
-                  ? 'Compte créé avec succès !'
-                  : 'Connexion réussie !',
-            ),
-            backgroundColor: AppTheme.primaryGreen,
-          ),
-        );
-      }
-    } catch (e) {
-      // Error handling is done by AuthService and displayed in parent
-    }
-  }
-
-  void _toggleMode() {
-    setState(() {
-      _isSignUpMode = !_isSignUpMode;
-      // Clear form when switching modes
-      _formKey.currentState?.reset();
-      _emailController.clear();
-      _passwordController.clear();
-      _confirmPasswordController.clear();
-      _fullNameController.clear();
-    });
-    widget.onClearMessages();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Form(
-      key: _formKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Full name field (only in sign-up mode)
-          if (_isSignUpMode) ...[
-            TextFormField(
-              controller: _fullNameController,
-              decoration: const InputDecoration(
-                labelText: 'Nom complet',
-                hintText: 'Prénom Nom',
-                prefixIcon: Icon(Icons.person_outline),
-              ),
-              textInputAction: TextInputAction.next,
-              validator: _validateFullName,
-              enabled: !widget.isLoading,
-            ),
-            const SizedBox(height: 16),
-          ],
-
-          // Email field
-          TextFormField(
-            controller: _emailController,
-            decoration: const InputDecoration(
-              labelText: 'Email',
-              hintText: 'votre@email.com',
-              prefixIcon: Icon(Icons.email_outlined),
-            ),
-            keyboardType: TextInputType.emailAddress,
-            textInputAction: TextInputAction.next,
-            validator: _validateEmail,
-            enabled: !widget.isLoading,
-          ),
-
-          const SizedBox(height: 16),
-
-          // Password field
-          TextFormField(
-            controller: _passwordController,
-            decoration: InputDecoration(
-              labelText: 'Mot de passe',
-              hintText: 'Minimum 6 caractères',
-              prefixIcon: const Icon(Icons.lock_outline),
-              suffixIcon: IconButton(
-                icon: Icon(
-                  _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                ),
-                onPressed: () {
-                  setState(() {
-                    _obscurePassword = !_obscurePassword;
-                  });
-                },
-              ),
-            ),
-            obscureText: _obscurePassword,
-            textInputAction: _isSignUpMode
-                ? TextInputAction.next
-                : TextInputAction.done,
-            validator: _validatePassword,
-            enabled: !widget.isLoading,
-            onFieldSubmitted: _isSignUpMode ? null : (_) => _handleSubmit(),
-          ),
-
-          // Confirm password field (only in sign-up mode)
-          if (_isSignUpMode) ...[
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _confirmPasswordController,
-              decoration: InputDecoration(
-                labelText: 'Confirmer le mot de passe',
-                hintText: 'Retapez votre mot de passe',
-                prefixIcon: const Icon(Icons.lock_outline),
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscureConfirmPassword
-                        ? Icons.visibility
-                        : Icons.visibility_off,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _obscureConfirmPassword = !_obscureConfirmPassword;
-                    });
-                  },
-                ),
-              ),
-              obscureText: _obscureConfirmPassword,
-              textInputAction: TextInputAction.done,
-              validator: _validateConfirmPassword,
-              enabled: !widget.isLoading,
-              onFieldSubmitted: (_) => _handleSubmit(),
-            ),
-          ],
-
-          const SizedBox(height: 24),
-
-          // Submit button
-          ElevatedButton(
-            onPressed: widget.isLoading ? null : _handleSubmit,
-            child: widget.isLoading
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  )
-                : Text(
-                    _isSignUpMode ? 'Créer un compte' : 'Se connecter',
-                    style: const TextStyle(fontSize: 18),
-                  ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // Toggle between sign-in and sign-up
-          TextButton(
-            onPressed: widget.isLoading ? null : _toggleMode,
-            child: Text(
-              _isSignUpMode
-                  ? 'Déjà un compte ? Se connecter'
-                  : 'Pas de compte ? Créer un compte',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: AppTheme.primaryGreen,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// OAuth authentication tab with Google and Apple sign-in buttons
-class _OAuthTab extends StatefulWidget {
-  final VoidCallback onClearMessages;
-  final bool isLoading;
-
-  const _OAuthTab({required this.onClearMessages, required this.isLoading});
-
-  @override
-  State<_OAuthTab> createState() => _OAuthTabState();
-}
-
-class _OAuthTabState extends State<_OAuthTab> {
-  bool _isGoogleLoading = false;
-  bool _isAppleLoading = false;
-
-  Future<void> _handleGoogleSignIn() async {
-    setState(() {
-      _isGoogleLoading = true;
-    });
-
-    widget.onClearMessages();
-
-    try {
-      final authService = AuthService.instance;
-      final success = await authService.signInWithGoogle();
-
-      if (mounted && success && authService.isAuthenticated) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Connexion Google réussie !'),
-            backgroundColor: AppTheme.primaryGreen,
-          ),
-        );
-      }
-    } catch (e) {
-      // Error handling is done by AuthService and displayed in parent
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isGoogleLoading = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _handleAppleSignIn() async {
-    setState(() {
-      _isAppleLoading = true;
-    });
-
-    widget.onClearMessages();
-
-    try {
-      final authService = AuthService.instance;
-      final success = await authService.signInWithApple();
-
-      if (mounted && success && authService.isAuthenticated) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Connexion Apple réussie !'),
-            backgroundColor: AppTheme.primaryGreen,
-          ),
-        );
-      }
-    } catch (e) {
-      // Error handling is done by AuthService and displayed in parent
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isAppleLoading = false;
-        });
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isAnyLoading =
-        widget.isLoading || _isGoogleLoading || _isAppleLoading;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // Information text
-        Text(
-          'Connectez-vous rapidement avec votre compte existant',
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-          ),
-          textAlign: TextAlign.center,
-        ),
-
-        const SizedBox(height: 32),
-
-        // Google Sign-In Button
-        _OAuthButton(
-          onPressed: isAnyLoading ? null : _handleGoogleSignIn,
-          isLoading: _isGoogleLoading,
-          icon: _buildGoogleIcon(),
-          text: 'Continuer avec Google',
-          backgroundColor: Colors.white,
-          textColor: Colors.black87,
-          borderColor: Colors.grey.shade300,
-        ),
-
-        const SizedBox(height: 16),
-
-        // Apple Sign-In Button
-        _OAuthButton(
-          onPressed: isAnyLoading ? null : _handleAppleSignIn,
-          isLoading: _isAppleLoading,
-          icon: const Icon(Icons.apple, color: Colors.white, size: 24),
-          text: 'Continuer avec Apple',
-          backgroundColor: Colors.black,
-          textColor: Colors.white,
-          borderColor: Colors.black,
-        ),
-
-        const SizedBox(height: 32),
-
-        // Divider with "ou" text
-        Row(
-          children: [
-            Expanded(
-              child: Divider(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                'ou',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                ),
-              ),
-            ),
-            Expanded(
-              child: Divider(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-              ),
-            ),
-          ],
-        ),
-
-        const SizedBox(height: 16),
-
-        // Link to email tab
-        TextButton(
-          onPressed: isAnyLoading
-              ? null
-              : () {
-                  // Switch to email tab
-                  final authScreen = context
-                      .findAncestorStateOfType<_AuthenticationScreenState>();
-                  authScreen?._tabController.animateTo(0);
-                },
-          child: Text(
-            'Utiliser votre email',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: AppTheme.primaryGreen,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildGoogleIcon() {
-    return Container(
-      width: 24,
-      height: 24,
-      decoration: const BoxDecoration(
-        image: DecorationImage(
-          image: NetworkImage(
-            'https://developers.google.com/identity/images/g-logo.png',
-          ),
-          fit: BoxFit.contain,
-        ),
-      ),
-    );
-  }
-}
-
-/// Custom OAuth button widget
-class _OAuthButton extends StatelessWidget {
-  final VoidCallback? onPressed;
-  final bool isLoading;
-  final Widget icon;
-  final String text;
-  final Color backgroundColor;
-  final Color textColor;
-  final Color borderColor;
-
-  const _OAuthButton({
-    required this.onPressed,
-    required this.isLoading,
-    required this.icon,
-    required this.text,
-    required this.backgroundColor,
-    required this.textColor,
-    required this.borderColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 56,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: backgroundColor,
-          foregroundColor: textColor,
-          elevation: 2,
-          shadowColor: Colors.black.withValues(alpha: 0.1),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: borderColor),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        ),
-        child: isLoading
-            ? SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(textColor),
-                ),
-              )
-            : Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  icon,
-                  const SizedBox(width: 12),
-                  Text(
-                    text,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: textColor,
-                    ),
-                  ),
-                ],
-              ),
       ),
     );
   }

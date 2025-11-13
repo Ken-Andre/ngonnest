@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import '../models/alert.dart';
 import 'calendar_sync_service.dart';
@@ -10,6 +11,21 @@ class NotificationService {
   _flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
   static Future<void> initialize() async {
+    // Initialize timezone database (required for scheduled notifications)
+    tz.initializeTimeZones();
+    try {
+      // Set local timezone (default to UTC if unable to detect)
+      // For Android/iOS, we'll use UTC as default, but the system will handle timezone conversion
+      tz.setLocalLocation(tz.getLocation('UTC'));
+    } catch (e) {
+      // If timezone initialization fails, use UTC as fallback
+      try {
+        tz.setLocalLocation(tz.getLocation('UTC'));
+      } catch (_) {
+        // If even UTC fails, continue without timezone (will use system time)
+      }
+    }
+
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
 
@@ -165,13 +181,15 @@ class NotificationService {
       tz.local,
     );
 
+    // Use inexact scheduling to avoid requiring SCHEDULE_EXACT_ALARM permission
+    // Android will schedule the notification at the best possible time
     await _flutterLocalNotificationsPlugin.zonedSchedule(
       id,
       title,
       body,
       tzScheduledDate,
       platformChannelSpecifics,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle, // Changed from exactAllowWhileIdle
       matchDateTimeComponents: DateTimeComponents.dateAndTime,
     );
 

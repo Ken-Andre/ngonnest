@@ -7,6 +7,7 @@ import '../config/supabase_config.dart';
 import '../models/userprofile.dart';
 import 'console_logger.dart';
 import 'error_logger_service.dart';
+import 'settings_service.dart';
 
 /// Service d'authentification Supabase pour NgonNest
 /// Gère l'authentification utilisateur et les sessions
@@ -31,6 +32,97 @@ class AuthService extends ChangeNotifier {
     _setupAuthListener();
   }
 
+  /// Exchange email confirmation code for a session
+  Future<bool> exchangeCodeForSession(String code) async {
+    try {
+      _isLoading = true;
+      _errorMessage = null;
+      notifyListeners();
+
+      // Exchange the code for a session using Supabase
+      // For email confirmation after signup, use OtpType.signup
+      final response = await _supabase.auth.verifyOTP(
+        type: OtpType.signup,
+        token: code,
+      );
+
+      if (response.session != null) {
+        _isAuthenticated = true;
+        _currentUser = response.user;
+        await _storeSession(response.session!);
+        ConsoleLogger.info(
+          '[AuthService] Email confirmed and session created: ${response.user?.email}',
+        );
+
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      }
+
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e, stackTrace) {
+      ConsoleLogger.error(
+        'AuthService',
+        'exchangeCodeForSession',
+        e,
+        stackTrace: stackTrace,
+      );
+
+      await ErrorLoggerService.logError(
+        component: 'AuthService',
+        operation: 'exchangeCodeForSession',
+        error: e,
+        stackTrace: stackTrace,
+        severity: ErrorSeverity.medium,
+        metadata: {'code_provided': code.isNotEmpty},
+      );
+
+      _errorMessage = _getReadableErrorMessage(e);
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Renvoyer l'email de confirmation d'inscription
+  Future<bool> resendConfirmationEmail(String email) async {
+    try {
+      _isLoading = true;
+      _errorMessage = null;
+      notifyListeners();
+
+      // Supabase v2 – renvoi d'OTP pour confirmation de signup
+      await _supabase.auth.resend(type: OtpType.signup, email: email);
+
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e, stackTrace) {
+      ConsoleLogger.error(
+        'AuthService',
+        'resendConfirmationEmail',
+        e,
+        stackTrace: stackTrace,
+      );
+
+      await ErrorLoggerService.logError(
+        component: 'AuthService',
+        operation: 'resendConfirmationEmail',
+        error: e,
+        stackTrace: stackTrace,
+        severity: ErrorSeverity.low,
+        metadata: {'email': email},
+      );
+
+      _errorMessage = _getReadableErrorMessage(e);
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
   void _initializeSupabase() {
     try {
       _supabase = Supabase.instance.client;
@@ -38,11 +130,15 @@ class AuthService extends ChangeNotifier {
         '[AuthService] Supabase client initialized successfully',
       );
 
-      // Verify configuration is valid
+      // Verify configuration is valid and restore session if available
       final config = _supabase.auth.currentSession;
       if (config == null) {
         ConsoleLogger.info('[AuthService] No active session found');
+        // Essayer de restaurer depuis secure storage
+        _restoreSessionFromStorage();
       } else {
+        _isAuthenticated = true;
+        _currentUser = config.user;
         ConsoleLogger.info(
           '[AuthService] Existing session found for: ${config.user.email}',
         );
@@ -177,6 +273,7 @@ class AuthService extends ChangeNotifier {
       final response = await _supabase.auth.signUp(
         email: email,
         password: password,
+        emailRedirectTo: 'io.supabase.ngonnest:/login-callback/',
         data: {
           'full_name': fullName,
           'first_name': firstName,
@@ -394,6 +491,38 @@ class AuthService extends ChangeNotifier {
     ConsoleLogger.info('[AuthService] User profile created in Supabase');
   }
 
+  /// Ensure user profile exists in Supabase
+  Future<UserProfile?> _ensureUserProfileExists(User user) async {
+    try {
+      final response = await _supabase
+          .from(SupabaseConfig.profilesTable)
+          .select()
+          .eq('id', user.id)
+          .maybeSingle();
+
+      if (response != null) {
+        return UserProfile.fromJson(response);
+      }
+
+      // Create minimal profile
+      final fullName = user.userMetadata?['full_name'] ?? user.email ?? '';
+      final nameParts = fullName.split(' ');
+      final firstName = nameParts.isNotEmpty ? nameParts.first : '';
+      final lastName = nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '';
+
+      await _createUserProfile(user, firstName, lastName);
+      return await getUserProfile();
+    } catch (e, stackTrace) {
+      ConsoleLogger.error(
+        'AuthService',
+        '_ensureUserProfileExists',
+        e,
+        stackTrace: stackTrace,
+      );
+      return null;
+    }
+  }
+
   /// Obtenir le profil utilisateur
   Future<UserProfile?> getUserProfile() async {
     if (_currentUser == null) return null;
@@ -403,9 +532,9 @@ class AuthService extends ChangeNotifier {
           .from(SupabaseConfig.profilesTable)
           .select()
           .eq('id', _currentUser!.id)
-          .single();
+          .maybeSingle();
 
-      return UserProfile.fromJson(response as Map<String, dynamic>);
+      return UserProfile.fromJson(response!);
     } catch (e, stackTrace) {
       ConsoleLogger.error(
         'AuthService',
@@ -438,6 +567,7 @@ class AuthService extends ChangeNotifier {
       if (session != null) {
         _isAuthenticated = true;
         _currentUser = session.user;
+        await _fetchAndStoreHouseholdId(session.user);
         ConsoleLogger.info(
           '[AuthService] Session restored for user: ${_currentUser!.email}',
         );
@@ -484,6 +614,8 @@ class AuthService extends ChangeNotifier {
         value: session.refreshToken,
       );
       await _secureStorage.write(key: 'user_id', value: session.user.id);
+      // Fetch and store household ID from user profile
+      await _fetchAndStoreHouseholdId(session.user);
       ConsoleLogger.info('[AuthService] Session stored securely');
     } catch (e, stackTrace) {
       ConsoleLogger.error(
@@ -491,6 +623,142 @@ class AuthService extends ChangeNotifier {
         '_storeSession',
         e,
         stackTrace: stackTrace,
+      );
+    }
+  }
+
+  /// Fetch user profile and store household ID locally
+  Future<void> _fetchAndStoreHouseholdId(User user) async {
+    try {
+      // Ensure user profile exists first
+      final userProfile = await _ensureUserProfileExists(user);
+      if (userProfile != null) {
+        // Query households table directly using profiles.id -> households.user_id relationship
+        final householdResponse = await _supabase
+            .from('households')
+            .select('id')
+            .eq('user_id', userProfile.id)
+            .maybeSingle();
+
+        if (householdResponse != null) {
+          final householdId = householdResponse['id'] as String;
+          await SettingsService.initialize();
+          await SettingsService.setHouseholdId(householdId);
+          ConsoleLogger.info(
+            '[AuthService] Household ID found and stored locally: $householdId',
+          );
+        } else {
+          // If no household exists, create a new household for the user
+          final newHouseholdId = await _createHouseholdForUser(userProfile);
+          if (newHouseholdId != null) {
+            await SettingsService.initialize();
+            await SettingsService.setHouseholdId(newHouseholdId);
+            ConsoleLogger.info(
+              '[AuthService] New household created and stored: $newHouseholdId',
+            );
+          } else {
+            ConsoleLogger.warning(
+              '[AuthService] Failed to create household for user: ${user.id}',
+            );
+          }
+        }
+      }
+    } catch (e, stackTrace) {
+      ConsoleLogger.error(
+        'AuthService',
+        '_fetchAndStoreHouseholdId',
+        e,
+        stackTrace: stackTrace,
+      );
+
+      await ErrorLoggerService.logError(
+        component: 'AuthService',
+        operation: '_fetchAndStoreHouseholdId',
+        error: e,
+        stackTrace: stackTrace,
+        severity: ErrorSeverity.medium,
+        metadata: {'user_id': user.id},
+      );
+    }
+  }
+
+  /// Create a new household for the user and update their profile
+  Future<String?> _createHouseholdForUser(UserProfile userProfile) async {
+    try {
+      // Create a new household in the database
+      final householdResponse = await _supabase
+          .from('households')
+          .insert({
+            'user_id': userProfile.id,
+            'nb_personnes': userProfile.nbPersonnes ?? 4,
+            'nb_pieces': userProfile.nbPieces ?? 3,
+            'type_logement': userProfile.typeLogement ?? 'appartement',
+            'langue': userProfile.langue ?? 'fr',
+            'budget_mensuel_estime': userProfile.budgetMensuelEstime ?? 0.0,
+            'created_at': DateTime.now().toIso8601String(),
+          })
+          .select('id')
+          .single();
+
+      final newHouseholdId = householdResponse['id'] as String;
+
+      // Update the user's profile with the new household ID
+      await _supabase
+          .from(SupabaseConfig.profilesTable)
+          .update({'household_id': newHouseholdId})
+          .eq('id', userProfile.id);
+
+      ConsoleLogger.info(
+        '[AuthService] Household created for user: $newHouseholdId',
+      );
+      return newHouseholdId;
+    } catch (e, stackTrace) {
+      ConsoleLogger.error(
+        'AuthService',
+        '_createHouseholdForUser',
+        e,
+        stackTrace: stackTrace,
+      );
+
+      await ErrorLoggerService.logError(
+        component: 'AuthService',
+        operation: '_createHouseholdForUser',
+        error: e,
+        stackTrace: stackTrace,
+        severity: ErrorSeverity.high,
+        metadata: {'user_id': userProfile.id},
+      );
+      return null;
+    }
+  }
+
+  /// Public method to ensure household exists for current user
+  Future<String?> ensureHouseholdExists() async {
+    if (_currentUser == null) {
+      throw Exception('User must be authenticated to ensure household exists');
+    }
+
+    await _fetchAndStoreHouseholdId(_currentUser!);
+    await SettingsService.initialize();
+    return await SettingsService.getHouseholdId();
+  }
+
+  /// Restaure la session depuis secure storage si possible
+  Future<void> _restoreSessionFromStorage() async {
+    try {
+      final accessToken = await _secureStorage.read(key: 'access_token');
+      final refreshToken = await _secureStorage.read(key: 'refresh_token');
+
+      if (accessToken != null && refreshToken != null) {
+        // Essayer de rafraîchir la session
+        final refreshed = await refreshSession();
+        if (refreshed) {
+          ConsoleLogger.info('[AuthService] Session restored from storage');
+        }
+      }
+    } catch (e) {
+      ConsoleLogger.warning(
+        '[AuthService] Could not restore session from storage: $e',
       );
     }
   }
@@ -651,7 +919,32 @@ class AuthService extends ChangeNotifier {
 
   /// Convertir erreurs Supabase en messages français lisibles
   String _getReadableErrorMessage(dynamic error) {
+    // Gestion spécifique des AuthApiException (rate limiting, etc.)
     if (error is AuthException) {
+      // Vérifier si c'est un rate limit (429) avec code spécifique
+      final errorString = error.toString();
+      if (errorString.contains('over_email_send_rate_limit') ||
+          errorString.contains('429')) {
+        // Extraire le temps d'attente du message si disponible
+        final secondsMatch = RegExp(
+          r'after (\d+) seconds?',
+        ).firstMatch(errorString);
+        if (secondsMatch != null) {
+          final seconds = int.tryParse(secondsMatch.group(1) ?? '');
+          if (seconds != null) {
+            final minutes = seconds ~/ 60;
+            final remainingSeconds = seconds % 60;
+            if (minutes > 0) {
+              return 'Trop de tentatives. Veuillez réessayer dans $minutes minute${minutes > 1 ? 's' : ''}${remainingSeconds > 0 ? ' et $remainingSeconds seconde${remainingSeconds > 1 ? 's' : ''}' : ''}.';
+            } else {
+              return 'Trop de tentatives. Veuillez réessayer dans $seconds seconde${seconds > 1 ? 's' : ''}.';
+            }
+          }
+        }
+        return 'Trop de tentatives. Veuillez réessayer dans quelques minutes.';
+      }
+
+      // Autres cas d'AuthException
       switch (error.message) {
         case 'User already registered':
           return 'Cet email est déjà utilisé';
@@ -660,7 +953,9 @@ class AuthService extends ChangeNotifier {
         case 'Email not confirmed':
           return 'Veuillez confirmer votre email avant de vous connecter';
         case 'Password should be at least 6 characters':
-          return 'Le mot de passe doit contenir au moins 6 caractères';
+          return 'Le mot de passe doit contenir au moins 8 caractères';
+        case 'Password should be at least 8 characters.':
+          return 'Le mot de passe doit contenir au moins 8 caractères';
         case 'Invalid email':
           return 'Adresse email invalide';
         case 'Too many requests':
@@ -668,12 +963,48 @@ class AuthService extends ChangeNotifier {
         case 'OAuth provider error':
           return 'Erreur de connexion avec le fournisseur. Vérifiez vos autorisations.';
         default:
+          // Vérifier si c'est un problème réseau dans le message
+          if (error.message.toLowerCase().contains('network') ||
+              error.message.toLowerCase().contains('connection') ||
+              error.message.toLowerCase().contains('timeout')) {
+            return 'Problème de connexion. Vérifiez votre réseau internet.';
+          }
           return 'Erreur d\'authentification: ${error.message}';
       }
     }
 
-    if (error.toString().contains('network')) {
-      return 'Erreur de connexion internet';
+    // Gestion des erreurs réseau (AuthRetryableFetchException, SocketException, etc.)
+    final errorString = error.toString().toLowerCase();
+
+    // Erreurs de résolution DNS / connexion
+    if (errorString.contains('failed host lookup') ||
+        errorString.contains('no address associated') ||
+        errorString.contains('socketexception') ||
+        errorString.contains('connection refused') ||
+        errorString.contains('connection timed out') ||
+        errorString.contains('network is unreachable')) {
+      return 'Impossible de se connecter au serveur. Vérifiez votre connexion internet.';
+    }
+
+    // Erreurs réseau génériques
+    if (errorString.contains('network') ||
+        errorString.contains('connection') ||
+        errorString.contains('internet')) {
+      return 'Erreur de connexion internet. Vérifiez votre réseau.';
+    }
+
+    // Timeout
+    if (errorString.contains('timeout') ||
+        errorString.contains('deadline exceeded')) {
+      return 'Délai d\'attente dépassé. Vérifiez votre connexion.';
+    }
+
+    // Erreur serveur (5xx)
+    if (errorString.contains('500') ||
+        errorString.contains('502') ||
+        errorString.contains('503') ||
+        errorString.contains('504')) {
+      return 'Le serveur est temporairement indisponible. Réessayez plus tard.';
     }
 
     return 'Une erreur inattendue s\'est produite';

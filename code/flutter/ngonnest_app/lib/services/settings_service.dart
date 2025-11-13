@@ -154,4 +154,21 @@ class SettingsService {
     }
     return settings;
   }
+
+  static const String _householdIdKey = 'household_id';
+
+  /// Get the user's household ID
+  static Future<String?> getHouseholdId() async {
+    await initialize();
+    return _prefs!.getString(_householdIdKey);
+  }
+
+  /// Set the user's household ID
+  static Future<bool> setHouseholdId(String? householdId) async {
+    await initialize();
+    if (householdId == null) {
+      return _prefs!.remove(_householdIdKey);
+    }
+    return _prefs!.setString(_householdIdKey, householdId);
+  }
 }

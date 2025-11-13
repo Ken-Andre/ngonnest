@@ -18,6 +18,10 @@ import '../services/household_service.dart';
 import '../services/navigation_service.dart';
 import '../services/product_suggestion_service.dart';
 import '../services/smart_validator.dart';
+import '../services/sync_service.dart';
+import '../services/notification_service.dart';
+import '../services/calendar_sync_service.dart';
+import '../services/settings_service.dart';
 import '../widgets/dropdown_categories_durables.dart';
 import '../widgets/error_feedback_widget.dart';
 import '../widgets/main_navigation_wrapper.dart';
@@ -25,6 +29,7 @@ import '../widgets/smart_product_search.dart';
 // import '../services/budget_service.dart';
 
 import '../widgets/smart_quantity_selector.dart';
+import 'package:intl/intl.dart';
 
 class AddProductScreen extends StatefulWidget {
   final bool isConsumable;
@@ -251,6 +256,68 @@ class _AddProductScreenState extends State<AddProductScreen> {
   //       _packagingValidation = result;
   //     });
 
+  /// Create expiry reminders and calendar events for a product
+  Future<void> _createExpiryReminders(Objet objet, int productId) async {
+    if (objet.dateRupturePrev == null) return;
+
+    final expiryDate = objet.dateRupturePrev!;
+    final now = DateTime.now();
+    final daysUntilExpiry = expiryDate.difference(now).inDays;
+
+    ConsoleLogger.info('REMINDERS: Creating reminders for ${objet.nom}, expiry: $expiryDate, daysUntilExpiry: $daysUntilExpiry');
+
+    // Create notification 1 day before expiry (or today if expiring tomorrow)
+    if (daysUntilExpiry >= 0) {
+      // Si expiration dans 1 jour ou moins, créer notification aujourd'hui
+      // Sinon, créer notification 1 jour avant
+      final reminderDate = daysUntilExpiry <= 1 
+          ? now.add(const Duration(hours: 1)) // Notifier dans 1h si expire demain
+          : expiryDate.subtract(const Duration(days: 1));
+      
+      if (reminderDate.isAfter(now)) {
+        try {
+          await NotificationService.showScheduledNotification(
+            id: productId + 1000000, // Use high ID to avoid conflicts
+            title: '⏰ Expiration proche',
+            body: daysUntilExpiry == 0 
+                ? '${objet.nom} expire aujourd\'hui'
+                : '${objet.nom} expire ${daysUntilExpiry == 1 ? 'demain' : 'dans $daysUntilExpiry jours'} (${DateFormat('dd/MM/yyyy').format(expiryDate)})',
+            scheduledDate: reminderDate,
+            addToCalendar: false, // Ne pas ajouter au calendrier via notification (on le fait séparément)
+            context: context,
+          );
+          ConsoleLogger.success('REMINDERS: Notification scheduled for ${objet.nom} at $reminderDate');
+        } catch (e, stackTrace) {
+          ConsoleLogger.warning('REMINDERS: Failed to schedule notification: $e');
+          ConsoleLogger.error('REMINDERS', 'showScheduledNotification', e, stackTrace: stackTrace);
+        }
+      } else {
+        ConsoleLogger.warning('REMINDERS: Reminder date $reminderDate is in the past, skipping notification');
+      }
+    }
+
+    // Add calendar event as all-day event if enabled
+    if (await SettingsService.getCalendarSyncEnabled()) {
+      try {
+        final calendarService = CalendarSyncService();
+        // Créer un événement all-day en utilisant le début de la journée et la fin de la journée
+        final startOfDay = DateTime(expiryDate.year, expiryDate.month, expiryDate.day);
+        final endOfDay = startOfDay.add(const Duration(days: 1)); // Fin de journée = début du jour suivant
+        
+        await calendarService.addEvent(
+          title: 'Expiration: ${objet.nom}',
+          description: 'Produit ${objet.categorie} - ${objet.nom}',
+          start: startOfDay,
+          end: endOfDay, // All-day event: start of day to start of next day
+        );
+        ConsoleLogger.success('REMINDERS: Calendar event (all-day) added for ${objet.nom} on ${DateFormat('dd/MM/yyyy').format(startOfDay)}');
+      } catch (e, stackTrace) {
+        ConsoleLogger.warning('REMINDERS: Failed to add calendar event: $e');
+        ConsoleLogger.error('REMINDERS', 'addCalendarEvent', e, stackTrace: stackTrace);
+      }
+    }
+  }
+
   /// Gère la sélection d'une suggestion de produit
   void _onSuggestionSelected(ProductSuggestion suggestion) {
     setState(() {
@@ -374,6 +441,31 @@ class _AddProductScreenState extends State<AddProductScreen> {
       ConsoleLogger.success(
         'SAVE PRODUCT: Product created with ID: $productId',
       );
+
+      // Enqueue sync operation
+      try {
+        final syncService = Provider.of<SyncService>(context, listen: false);
+        await syncService.enqueueOperation(
+          operationType: 'CREATE',
+          entityType: 'objet',
+          entityId: productId,
+          payload: objet.toMap(),
+        );
+        ConsoleLogger.info('SYNC: Product creation queued for sync');
+      } catch (e) {
+        ConsoleLogger.warning('SYNC: Failed to queue sync operation: $e');
+        // Ne pas bloquer l'ajout du produit si la sync échoue
+      }
+
+      // Create expiry reminder and calendar event if product has expiry date
+      if (_isConsumable && objet.dateRupturePrev != null) {
+        try {
+          await _createExpiryReminders(objet, productId);
+        } catch (e) {
+          ConsoleLogger.warning('REMINDERS: Failed to create expiry reminders: $e');
+          // Ne pas bloquer l'ajout du produit si les rappels échouent
+        }
+      }
 
       // Track core action - item added
       final analyticsService = context.read<AnalyticsService>();
@@ -534,7 +626,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 SmartProductSearch(
                   category: _isConsumable ? _selectedCategory : '',
                   onProductSelected: _onProductSelected,
-
+                  controller: _productNameController, // Passer le controller pour synchronisation
                   onTextChanged: (text) {
                     // Le controller externe est déjà synchronisé
                     // Pas besoin de faire _productNameController.text = text;
@@ -543,6 +635,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                       ? 'Tapez pour voir les suggestions de consommables...'
                       : 'Tapez pour voir les suggestions de durables...',
                   enabled: !_isLoading,
+                  isConsumable: _isConsumable,
                 ),
 
                 // Dropdown Categories Durables - only for durables

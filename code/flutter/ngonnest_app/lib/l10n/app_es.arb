@@ -183,5 +183,50 @@
   "mergeDataDescription": "Combinar datos locales y de la nube",
   "syncSuccessMessage": "Sincronización activada exitosamente",
   "importOptionsTitle": "Opciones de importación",
-  "chooseImportOption": "Elige cómo manejar tus datos existentes"
+  "chooseImportOption": "Elige cómo manejar tus datos existentes",
+  "welcome": "¡Bienvenido!",
+  "email": "Email",
+  "password": "Contraseña",
+  "confirmPassword": "Confirmar contraseña",
+  "fullName": "Nombre completo",
+  "signIn": "Iniciar sesión",
+  "signUp": "Crear cuenta",
+  "continueWithGoogle": "Continuar con Google",
+  "continueWithApple": "Continuar con Apple",
+  "useYourEmail": "Usa tu email",
+  "alreadyHaveAccount": "¿Ya tienes cuenta? Inicia sesión",
+  "noAccount": "¿No tienes cuenta? Crear cuenta",
+  "invalidEmail": "Email inválido",
+  "passwordTooShort": "Contraseña demasiado corta (mín 8 caracteres)",
+  "passwordsDoNotMatch": "Las contraseñas no coinciden",
+  "pleaseEnterFullName": "Por favor ingresa tu nombre completo",
+  "pleaseEnterFirstAndLastName": "Por favor ingresa tu nombre y apellido",
+  "pleaseEnterEmail": "Por favor ingresa tu email",
+  "pleaseEnterPassword": "Por favor ingresa tu contraseña",
+  "pleaseConfirmPassword": "Por favor confirma tu contraseña",
+  "accountCreatedSuccessfully": "¡Cuenta creada exitosamente!",
+  "pleaseCheckEmailToConfirmAccount": "Por favor verifica tu email para confirmar tu cuenta.",
+  "signInSuccessful": "¡Inicio de sesión exitoso!",
+  "googleSignInSuccessful": "¡Inicio de sesión con Google exitoso!",
+  "appleSignInSuccessful": "¡Inicio de sesión con Apple exitoso!",
+  "checkYourEmailToConfirm": "Verifica tu email para confirmar tu cuenta.",
+  "emailConfirmedYouCanSignIn": "Email confirmado. Ya puedes iniciar sesión.",
+  "resendConfirmationEmail": "Reenviar email de confirmación",
+  "confirmationEmailResent": "Email de confirmación reenviado.",
+  "resendInSeconds": "Reenviar en {seconds}s",
+  "@resendInSeconds": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "connectQuicklyWithExistingAccount": "Conéctate rápidamente con tu cuenta existente",
+  "or": "o",
+  "socialNetworks": "Redes sociales",
+  "syncDataQuestion": "¿Quieres sincronizar tus datos?",
+  "syncDataExplanation": "La sincronización en la nube te permite respaldar tus datos en línea y accederlos desde todos tus dispositivos.",
+  "yes": "Sí",
+  "noLater": "No, más tarde",
+  "syncLaterMessage": "Puedes activar la sincronización más tarde en configuración"
 }

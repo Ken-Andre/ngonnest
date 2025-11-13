@@ -133,7 +133,10 @@ class ProductIntelligenceService {
   ) async {
     final categories = ProductPresets.categories;
     try {
-      final category = categories.firstWhere((cat) => cat['id'] == categoryId);
+      final category = categories.firstWhere(
+        (cat) => cat['id'] == categoryId,
+        orElse: () => {'products': []},
+      );
 
       return List<Map<String, dynamic>>.from(category['products'] ?? []);
     } catch (e) {
@@ -271,6 +274,7 @@ class ProductIntelligenceService {
 
       final categoryData = ProductPresets.categories.firstWhere(
         (cat) => cat['id'] == actualCategory,
+        orElse: () => {'products': []},
       );
 
       final products = <ProductTemplate>[];

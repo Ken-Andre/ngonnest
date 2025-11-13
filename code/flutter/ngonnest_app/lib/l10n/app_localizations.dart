@@ -823,7 +823,7 @@ abstract class AppLocalizations {
   /// No description provided for @passwordTooShort.
   ///
   /// In en, this message translates to:
-  /// **'Password too short (min 6 characters)'**
+  /// **'Password too short (min 8 characters)'**
   String get passwordTooShort;
 
   /// No description provided for @passwordsDoNotMatch.
@@ -868,6 +868,12 @@ abstract class AppLocalizations {
   /// **'Account created successfully!'**
   String get accountCreatedSuccessfully;
 
+  /// No description provided for @pleaseCheckEmailToConfirmAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Please check your email to confirm your account.'**
+  String get pleaseCheckEmailToConfirmAccount;
+
   /// No description provided for @signInSuccessful.
   ///
   /// In en, this message translates to:
@@ -885,6 +891,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Apple sign in successful!'**
   String get appleSignInSuccessful;
+
+  /// No description provided for @checkYourEmailToConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your email to confirm your account.'**
+  String get checkYourEmailToConfirm;
+
+  /// No description provided for @emailConfirmedYouCanSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Email confirmed. You can now sign in.'**
+  String get emailConfirmedYouCanSignIn;
+
+  /// No description provided for @resendConfirmationEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend confirmation email'**
+  String get resendConfirmationEmail;
+
+  /// No description provided for @confirmationEmailResent.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirmation email resent.'**
+  String get confirmationEmailResent;
+
+  /// No description provided for @resendInSeconds.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend in {seconds}s'**
+  String resendInSeconds(int seconds);
 
   /// No description provided for @connectQuicklyWithExistingAccount.
   ///

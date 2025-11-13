@@ -403,7 +403,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get invalidEmail => 'Email invalide';
 
   @override
-  String get passwordTooShort => 'Mot de passe trop court (min 6 caractères)';
+  String get passwordTooShort => 'Mot de passe trop court (min 8 caractères)';
 
   @override
   String get passwordsDoNotMatch => 'Les mots de passe ne correspondent pas';
@@ -428,6 +428,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get accountCreatedSuccessfully => 'Compte créé avec succès !';
 
   @override
+  String get pleaseCheckEmailToConfirmAccount =>
+      'Veuillez vérifier votre email pour confirmer votre compte.';
+
+  @override
   String get signInSuccessful => 'Connexion réussie !';
 
   @override
@@ -435,6 +439,25 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get appleSignInSuccessful => 'Connexion Apple réussie !';
+
+  @override
+  String get checkYourEmailToConfirm =>
+      'Vérifiez votre email pour confirmer votre compte.';
+
+  @override
+  String get emailConfirmedYouCanSignIn =>
+      'Email confirmé. Vous pouvez maintenant vous connecter.';
+
+  @override
+  String get resendConfirmationEmail => 'Renvoyer l\'email de confirmation';
+
+  @override
+  String get confirmationEmailResent => 'Email de confirmation renvoyé.';
+
+  @override
+  String resendInSeconds(int seconds) {
+    return 'Renvoyer dans ${seconds}s';
+  }
 
   @override
   String get connectQuicklyWithExistingAccount =>

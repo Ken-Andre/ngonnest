@@ -53,6 +53,79 @@ import 'services/sync_service.dart';
 import 'theme/app_theme.dart';
 import 'theme/theme_mode_notifier.dart';
 import 'widgets/connectivity_banner.dart';
+import 'package:app_links/app_links.dart';
+import 'dart:async';
+
+final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
+StreamSubscription<Uri>? _deepLinkSub;
+
+void _setupGlobalDeepLinkListener() {
+  final appLinks = AppLinks();
+  _deepLinkSub?.cancel();
+  _deepLinkSub = appLinks.uriLinkStream.listen((uri) async {
+    try {
+      final ctx = _rootNavigatorKey.currentContext;
+      if (ctx == null) return;
+
+      // Handle app deep link: io.supabase.ngonnest:/login-callback/
+      if (uri.scheme == 'io.supabase.ngonnest' && uri.path.contains('login-callback')) {
+        final code = uri.queryParameters['code'];
+        if (code != null) {
+          // Exchange code for session
+          final authService = AuthService.instance;
+          final success = await authService.exchangeCodeForSession(code);
+          if (success && authService.isAuthenticated) {
+            Navigator.of(ctx).pushNamedAndRemoveUntil('/dashboard', (route) => false);
+            return;
+          }
+        } else {
+          // No code, try to refresh session
+          try {
+            await Supabase.instance.client.auth.refreshSession();
+          } catch (_) {}
+        }
+
+        final isAuthed = Supabase.instance.client.auth.currentUser != null;
+        if (isAuthed) {
+          Navigator.of(ctx).pushNamedAndRemoveUntil('/dashboard', (route) => false);
+        } else {
+          Navigator.of(ctx).pushNamed('/authentication', arguments: {
+            'contextMessage': 'Email confirmé. Connectez-vous pour continuer.',
+            'source': 'deeplink',
+          });
+        }
+      }
+      // Handle localhost redirect (from email clicked on different device)
+      else if (uri.host == 'localhost' && uri.queryParameters.containsKey('code')) {
+        final code = uri.queryParameters['code'];
+        if (code != null) {
+          final authService = AuthService.instance;
+          final success = await authService.exchangeCodeForSession(code);
+          if (success && authService.isAuthenticated) {
+            Navigator.of(ctx).pushNamedAndRemoveUntil('/dashboard', (route) => false);
+          } else {
+            Navigator.of(ctx).pushNamed('/authentication', arguments: {
+              'contextMessage': 'Erreur lors de la confirmation. Veuillez réessayer.',
+              'source': 'deeplink',
+            });
+          }
+        }
+      }
+    } catch (e) {
+      ConsoleLogger.error('[Main]', 'Deep link handling failed', e);
+      // Navigate to auth screen on error
+      final ctx = _rootNavigatorKey.currentContext;
+      if (ctx != null) {
+        Navigator.of(ctx).pushNamed('/authentication', arguments: {
+          'contextMessage': 'Erreur lors du traitement du lien. Veuillez réessayer.',
+          'source': 'deeplink',
+        });
+      }
+    }
+  }, onError: (e) {
+    ConsoleLogger.error('[Main]', 'Deep link stream error', e);
+  });
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -281,6 +354,7 @@ void main() async {
           });
 
           return MaterialApp(
+            navigatorKey: _rootNavigatorKey,
             navigatorObservers: [
               if (AnalyticsService().observer != null)
                 AnalyticsService().observer!,
@@ -348,6 +422,9 @@ void main() async {
       ),
     ),
   );
+
+  // Start global deep link listener after the app is up
+  _setupGlobalDeepLinkListener();
 }
 
 class MyApp extends StatelessWidget {
