@@ -7,12 +7,8 @@ import '../models/foyer.dart';
 import '../models/household_profile.dart';
 import '../providers/foyer_provider.dart';
 import '../services/analytics_service.dart';
-import '../services/auth_service.dart';
-import '../services/cloud_import_service.dart';
 import '../services/household_service.dart';
-import '../services/sync_service.dart';
 import '../theme/app_theme.dart';
-import '../widgets/cloud_import_dialog.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -239,7 +235,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   decoration: BoxDecoration(
                     color: index <= _currentStep
                         ? AppTheme.primaryGreen
-                        : AppTheme.neutralGrey.withOpacity(0.3),
+                        : AppTheme.neutralGrey.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(1.5),
                   ),
                 ),
@@ -270,7 +266,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -328,7 +324,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryGreen.withOpacity(0.1),
+                  color: AppTheme.primaryGreen.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
@@ -378,7 +374,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             border: Border.all(
               color: isSelected
                   ? AppTheme.primaryGreen
-                  : AppTheme.neutralGrey.withOpacity(0.3),
+                  : AppTheme.neutralGrey.withValues(alpha: 0.3),
               width: 2,
             ),
           ),
@@ -463,12 +459,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             border: Border.all(
               color: isSelected
                   ? AppTheme.primaryGreen
-                  : AppTheme.neutralGrey.withOpacity(0.3),
+                  : AppTheme.neutralGrey.withValues(alpha: 0.3),
               width: 2,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -481,8 +477,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 height: 50,
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? Colors.white.withOpacity(0.2)
-                      : AppTheme.primaryGreen.withOpacity(0.1),
+                      ? Colors.white.withValues(alpha: 0.2)
+                      : AppTheme.primaryGreen.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Center(
@@ -510,7 +506,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       style: TextStyle(
                         fontSize: 14,
                         color: isSelected
-                            ? Colors.white.withOpacity(0.8)
+                            ? Colors.white.withValues(alpha: 0.8)
                             : AppTheme.neutralGrey,
                       ),
                     ),
@@ -588,12 +584,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             border: Border.all(
               color: isSelected
                   ? AppTheme.primaryGreen
-                  : AppTheme.neutralGrey.withOpacity(0.3),
+                  : AppTheme.neutralGrey.withValues(alpha: 0.3),
               width: 2,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -606,8 +602,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 height: 50,
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? Colors.white.withOpacity(0.2)
-                      : AppTheme.primaryGreen.withOpacity(0.1),
+                      ? Colors.white.withValues(alpha: 0.2)
+                      : AppTheme.primaryGreen.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -772,18 +768,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   /// Show sync offer dialog after profile creation
   Future<void> _showSyncOfferDialog() async {
     final l10n = AppLocalizations.of(context)!;
-    
+
     final result = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         title: Row(
           children: [
-            Icon(
-              CupertinoIcons.cloud,
-              color: AppTheme.primaryGreen,
-              size: 24,
-            ),
+            Icon(CupertinoIcons.cloud, color: AppTheme.primaryGreen, size: 24),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
@@ -813,10 +805,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppTheme.primaryGreen.withOpacity(0.1),
+                color: AppTheme.primaryGreen.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: AppTheme.primaryGreen.withOpacity(0.3),
+                  color: AppTheme.primaryGreen.withValues(alpha: 0.3),
                 ),
               ),
               child: Row(
@@ -847,10 +839,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             onPressed: () => Navigator.of(context).pop(false),
             child: Text(
               l10n.noLater,
-              style: TextStyle(
-                color: AppTheme.neutralGrey,
-                fontSize: 16,
-              ),
+              style: TextStyle(color: AppTheme.neutralGrey, fontSize: 16),
             ),
           ),
           ElevatedButton(
@@ -865,10 +854,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
             child: Text(
               l10n.yes,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
           ),
         ],
@@ -887,7 +873,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   /// Handle when user accepts sync offer
   Future<void> _handleSyncAccepted() async {
     if (!mounted) return;
-    
+
     // Navigate to authentication screen with onboarding context
     Navigator.of(context).pushReplacementNamed(
       '/authentication',
@@ -901,7 +887,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   /// Handle when user declines sync offer
   Future<void> _handleSyncDeclined() async {
     final l10n = AppLocalizations.of(context)!;
-    
+
     // Show message about enabling sync later
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -911,11 +897,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           duration: const Duration(seconds: 3),
         ),
       );
-      
+
       // Log analytics event
       final analyticsService = context.read<AnalyticsService>();
       await analyticsService.logEvent('onboarding_sync_declined');
-      
+
       // Navigate to dashboard
       Navigator.of(context).pushReplacementNamed('/dashboard');
     }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import '../models/objet.dart';
 
 class QuickQuantityUpdate extends StatefulWidget {
@@ -86,11 +87,13 @@ class _QuickQuantityUpdateState extends State<QuickQuantityUpdate> {
         _isEditing = false;
         _isLoading = false;
       });
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Quantité mise à jour: ${newQuantity.toString()} ${widget.objet.unite}'),
+            content: Text(
+              'Quantité mise à jour: ${newQuantity.toString()} ${widget.objet.unite}',
+            ),
             backgroundColor: Colors.green,
             duration: const Duration(seconds: 2),
           ),
@@ -100,7 +103,7 @@ class _QuickQuantityUpdateState extends State<QuickQuantityUpdate> {
       setState(() {
         _isLoading = false;
       });
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -131,7 +134,9 @@ class _QuickQuantityUpdateState extends State<QuickQuantityUpdate> {
     if (_isEditing) {
       return ConstrainedBox(
         constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.6, // Max 60% of screen width
+          maxWidth:
+              MediaQuery.of(context).size.width *
+              0.6, // Max 60% of screen width
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -142,13 +147,18 @@ class _QuickQuantityUpdateState extends State<QuickQuantityUpdate> {
                 height: 36,
                 child: TextField(
                   controller: _controller,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   inputFormatters: [
                     FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
                   ],
                   decoration: InputDecoration(
                     isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(4),
                     ),
@@ -156,7 +166,9 @@ class _QuickQuantityUpdateState extends State<QuickQuantityUpdate> {
                       widget.objet.unite,
                       style: TextStyle(
                         fontSize: 12,
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -192,10 +204,12 @@ class _QuickQuantityUpdateState extends State<QuickQuantityUpdate> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
+          color: Theme.of(
+            context,
+          ).colorScheme.primaryContainer.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(4),
           border: Border.all(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
           ),
         ),
         child: Row(
@@ -216,7 +230,9 @@ class _QuickQuantityUpdateState extends State<QuickQuantityUpdate> {
             Icon(
               Icons.edit,
               size: 14,
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.7),
+              color: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.7),
             ),
           ],
         ),

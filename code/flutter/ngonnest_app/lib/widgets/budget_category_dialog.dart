@@ -1,6 +1,7 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import '../models/budget_category.dart';
 import '../services/budget_service.dart';
 
@@ -8,11 +9,7 @@ class BudgetCategoryDialog extends StatefulWidget {
   final BudgetCategory? category; // null for create, non-null for edit
   final String? month;
 
-  const BudgetCategoryDialog({
-    super.key,
-    this.category,
-    this.month,
-  });
+  const BudgetCategoryDialog({super.key, this.category, this.month});
 
   @override
   State<BudgetCategoryDialog> createState() => _BudgetCategoryDialogState();
@@ -22,7 +19,7 @@ class _BudgetCategoryDialogState extends State<BudgetCategoryDialog> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _limitController = TextEditingController();
-  
+
   bool _isLoading = false;
   bool get _isEditing => widget.category != null;
 
@@ -160,7 +157,9 @@ class _BudgetCategoryDialogState extends State<BudgetCategoryDialog> {
                   ),
                 ),
               ),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
               ],
@@ -188,7 +187,9 @@ class _BudgetCategoryDialogState extends State<BudgetCategoryDialog> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -221,7 +222,9 @@ class _BudgetCategoryDialogState extends State<BudgetCategoryDialog> {
           child: Text(
             'Annuler',
             style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.7),
             ),
           ),
         ),

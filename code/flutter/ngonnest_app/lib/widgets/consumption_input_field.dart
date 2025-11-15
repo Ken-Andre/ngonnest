@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+
 import '../services/smart_validator.dart';
 import 'error_feedback_widget.dart';
 
@@ -72,7 +73,7 @@ class _ConsumptionInputFieldState extends State<ConsumptionInputField> {
         border: Border.all(
           color: _validationResult?.isValid == false
               ? Theme.of(context).colorScheme.error
-              : Theme.of(context).colorScheme.outline.withOpacity(0.5),
+              : Theme.of(context).colorScheme.outline.withValues(alpha: 0.5),
           width: _validationResult?.isValid == false ? 2 : 1,
         ),
       ),
@@ -96,7 +97,9 @@ class _ConsumptionInputFieldState extends State<ConsumptionInputField> {
                 child: Icon(
                   CupertinoIcons.question_circle,
                   size: 16,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.5),
                 ),
               ),
             ],
@@ -108,21 +111,27 @@ class _ConsumptionInputFieldState extends State<ConsumptionInputField> {
             children: [
               Icon(
                 CupertinoIcons.chart_bar,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.7),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: TextFormField(
                   controller: _controller,
                   enabled: widget.enabled,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   onChanged: _validateConsumption,
                   decoration: InputDecoration(
                     hintText: 'Ex: 2.5',
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.zero,
                     hintStyle: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
                   style: TextStyle(
@@ -143,7 +152,9 @@ class _ConsumptionInputFieldState extends State<ConsumptionInputField> {
                 '${widget.unit}/jour',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.7),
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -156,7 +167,9 @@ class _ConsumptionInputFieldState extends State<ConsumptionInputField> {
             'Ex: Si vous utilisez 2 unités par jour, entrez "2"',
             style: TextStyle(
               fontSize: 12,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.6),
               fontStyle: FontStyle.italic,
             ),
           ),

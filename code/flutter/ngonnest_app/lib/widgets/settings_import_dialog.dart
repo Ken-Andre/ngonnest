@@ -29,7 +29,7 @@ class _SettingsImportDialogState extends State<SettingsImportDialog> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    
+
     return CupertinoAlertDialog(
       title: Text(l10n?.importOptionsTitle ?? 'Import options'),
       content: Column(
@@ -37,17 +37,15 @@ class _SettingsImportDialogState extends State<SettingsImportDialog> {
         children: [
           const SizedBox(height: 16),
           Text(
-            l10n?.chooseImportOption ?? 'Choose how to handle your existing data',
+            l10n?.chooseImportOption ??
+                'Choose how to handle your existing data',
             style: const TextStyle(fontSize: 14),
           ),
           if (_errorMessage != null) ...[
             const SizedBox(height: 12),
             Text(
               _errorMessage!,
-              style: const TextStyle(
-                color: Colors.red,
-                fontSize: 12,
-              ),
+              style: const TextStyle(color: Colors.red, fontSize: 12),
             ),
           ],
         ],
@@ -77,7 +75,8 @@ class _SettingsImportDialogState extends State<SettingsImportDialog> {
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
                 Text(
-                  l10n?.importFromCloudDescription ?? 'Download data from cloud',
+                  l10n?.importFromCloudDescription ??
+                      'Download data from cloud',
                   style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ],
@@ -101,8 +100,8 @@ class _SettingsImportDialogState extends State<SettingsImportDialog> {
           ),
         ] else ...[
           CupertinoDialogAction(
-            child: const CupertinoActivityIndicator(),
             onPressed: null,
+            child: const CupertinoActivityIndicator(),
           ),
         ],
       ],
@@ -119,8 +118,10 @@ class _SettingsImportDialogState extends State<SettingsImportDialog> {
     try {
       // For "keep local", we don't import anything
       // The sync service will upload local data when enabled
-      ConsoleLogger.info('[SettingsImportDialog] User chose to keep local data');
-      
+      ConsoleLogger.info(
+        '[SettingsImportDialog] User chose to keep local data',
+      );
+
       if (mounted) {
         Navigator.of(context).pop('keep_local');
         widget.onComplete?.call();
@@ -152,12 +153,12 @@ class _SettingsImportDialogState extends State<SettingsImportDialog> {
 
     try {
       ConsoleLogger.info('[SettingsImportDialog] Starting cloud data import');
-      
+
       final result = await widget.cloudImportService.importAllData();
-      
+
       if (result.success) {
         ConsoleLogger.info('[SettingsImportDialog] Cloud import successful');
-        
+
         if (mounted) {
           Navigator.of(context).pop('import_cloud');
           widget.onComplete?.call();
@@ -192,13 +193,13 @@ class _SettingsImportDialogState extends State<SettingsImportDialog> {
 
     try {
       ConsoleLogger.info('[SettingsImportDialog] Starting data merge');
-      
+
       // For merge, we import cloud data and let conflict resolution handle duplicates
       final result = await widget.cloudImportService.importAllData();
-      
+
       if (result.success) {
         ConsoleLogger.info('[SettingsImportDialog] Data merge successful');
-        
+
         if (mounted) {
           Navigator.of(context).pop('merge');
           widget.onComplete?.call();

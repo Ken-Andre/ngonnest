@@ -228,7 +228,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       decoration: BoxDecoration(
                         color: Theme.of(
                           context,
-                        ).colorScheme.primary.withOpacity(0.1),
+                        ).colorScheme.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
@@ -349,7 +349,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     : (value) async {
                                         await _handleNotificationToggle(value);
                                       },
-                                activeColor: Theme.of(
+                                activeTrackColor: Theme.of(
                                   context,
                                 ).colorScheme.primary,
                               ),
@@ -435,7 +435,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             onChanged: (value) async {
                               await _handleCalendarSyncToggle(value);
                             },
-                            activeColor: Theme.of(context).colorScheme.primary,
+                            activeTrackColor: Theme.of(
+                              context,
+                            ).colorScheme.primary,
                           ),
                         ),
                         const SizedBox(height: 24),
@@ -480,7 +482,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     );
                                   }
                                 },
-                                activeColor: Theme.of(
+                                activeTrackColor: Theme.of(
                                   context,
                                 ).colorScheme.primary,
                               ),
@@ -511,7 +513,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             onChanged: (value) {
                               themeModeNotifier.toggleTheme();
                             },
-                            activeColor: Theme.of(context).colorScheme.primary,
+                            activeTrackColor: Theme.of(
+                              context,
+                            ).colorScheme.primary,
                           ),
                         ),
                         const SizedBox(height: 32),
@@ -619,9 +623,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: _isExporting
-                                  ? Theme.of(
-                                      context,
-                                    ).colorScheme.secondary.withOpacity(0.6)
+                                  ? Theme.of(context).colorScheme.secondary
+                                        .withValues(alpha: 0.6)
                                   : Theme.of(context).colorScheme.secondary,
                               foregroundColor: Theme.of(
                                 context,
@@ -670,9 +673,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: _isImporting
-                                  ? Theme.of(
-                                      context,
-                                    ).colorScheme.secondary.withOpacity(0.6)
+                                  ? Theme.of(context).colorScheme.secondary
+                                        .withValues(alpha: 0.6)
                                   : Theme.of(context).colorScheme.secondary,
                               foregroundColor: Theme.of(
                                 context,
@@ -784,7 +786,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -811,7 +815,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     fontSize: 14,
                     color: Theme.of(
                       context,
-                    ).colorScheme.onSurface.withOpacity(0.7),
+                    ).colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                 ),
               ],
@@ -831,24 +835,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
         return Column(
           children: [
             // Sync status indicator
-            SyncStatusIndicator(
-              onTap: () => SyncStatusDialog.show(context),
-            ),
+            SyncStatusIndicator(onTap: () => SyncStatusDialog.show(context)),
             const SizedBox(height: 16),
             // Sync toggle
             _buildSettingCard(
               title: syncService.syncEnabled
-                  ? (AppLocalizations.of(context)?.enableCloudSync ?? 'Cloud sync enabled')
-                  : (AppLocalizations.of(context)?.disableCloudSync ?? 'Cloud sync disabled'),
+                  ? (AppLocalizations.of(context)?.enableCloudSync ??
+                        'Cloud sync enabled')
+                  : (AppLocalizations.of(context)?.disableCloudSync ??
+                        'Cloud sync disabled'),
               subtitle: authService.isAuthenticated
-                  ? (syncService.syncEnabled 
-                      ? 'Vos données sont sauvegardées dans le cloud'
-                      : 'Activez pour sauvegarder vos données')
-                  : (AppLocalizations.of(context)?.connectToEnableSync ?? 'Connect to enable sync'),
+                  ? (syncService.syncEnabled
+                        ? 'Vos données sont sauvegardées dans le cloud'
+                        : 'Activez pour sauvegarder vos données')
+                  : (AppLocalizations.of(context)?.connectToEnableSync ??
+                        'Connect to enable sync'),
               child: CupertinoSwitch(
                 value: syncService.syncEnabled && authService.isAuthenticated,
-                onChanged: (value) => _handleSyncToggle(value, syncService, authService),
-                activeColor: Theme.of(context).colorScheme.primary,
+                onChanged: (value) =>
+                    _handleSyncToggle(value, syncService, authService),
+                activeTrackColor: Theme.of(context).colorScheme.primary,
               ),
             ),
           ],
@@ -890,8 +896,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       // If cloud check fails, still enable sync
       await syncService.enableSync(userConsent: true);
       _showSuccessMessage(
-        AppLocalizations.of(context)?.syncSuccessMessage ?? 
-        'Synchronization enabled successfully',
+        AppLocalizations.of(context)?.syncSuccessMessage ??
+            'Synchronization enabled successfully',
       );
     }
   }
@@ -901,7 +907,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final result = await Navigator.of(context).pushNamed(
       '/authentication',
       arguments: {
-        'contextMessage': AppLocalizations.of(context)?.connectToEnableSync ?? 
+        'contextMessage':
+            AppLocalizations.of(context)?.connectToEnableSync ??
             'Connectez-vous pour activer la synchronisation',
         'source': 'settings',
       },
@@ -918,7 +925,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _handleSuccessfulAuthentication() async {
     final authService = Provider.of<AuthService>(context, listen: false);
     final syncService = Provider.of<SyncService>(context, listen: false);
-    
+
     if (authService.isAuthenticated) {
       // Check for cloud data and show import options
       await _checkCloudDataAndShowOptions(syncService);
@@ -928,7 +935,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   /// Check for cloud data and show import options
   Future<void> _checkCloudDataAndShowOptions(SyncService syncService) async {
     if (!mounted) return; // Safety check
-    
+
     try {
       final cloudImportService = CloudImportService();
       final hasCloudData = await cloudImportService.checkCloudData();
@@ -953,67 +960,70 @@ class _SettingsScreenState extends State<SettingsScreen> {
         if (result != null) {
           // User made a choice, enable sync
           await syncService.enableSync(userConsent: true);
-          
+
           if (!mounted) return;
-          
+
           // Handle each option appropriately
           await _handleImportOption(result, syncService);
-          
+
           if (!mounted) return;
-          
+
           // Show appropriate success message based on choice
           _showImportSuccessMessage(result);
         }
       } else {
         // No cloud data, enable sync and trigger initial sync to upload local data
         await syncService.enableSync(userConsent: true);
-        
+
         if (!mounted) return;
-        
+
         // Trigger initial sync to upload local data
         await syncService.forceSyncWithFeedback(context);
-        
+
         if (!mounted) return;
-        
+
         _showSuccessMessage(
           'Synchronisation activée. Vos données locales seront sauvegardées dans le cloud.',
         );
       }
     } catch (e) {
       if (!mounted) return;
-      
+
       // Handle error gracefully
       await syncService.enableSync(userConsent: true);
-      
+
       if (!mounted) return;
-      
+
       // Still try to trigger initial sync
       await syncService.forceSyncWithFeedback(context);
-      
+
       if (!mounted) return;
-      
+
       _showSuccessMessage(
-        AppLocalizations.of(context)?.syncSuccessMessage ?? 
-        'Synchronization enabled successfully',
+        AppLocalizations.of(context)?.syncSuccessMessage ??
+            'Synchronization enabled successfully',
       );
     }
   }
 
   /// Handle the selected import option
-  Future<void> _handleImportOption(String option, SyncService syncService) async {
+  Future<void> _handleImportOption(
+    String option,
+    SyncService syncService,
+  ) async {
     switch (option) {
       case 'keep_local':
         // For "Conserver local", upload local data to cloud
         // The sync service will handle uploading local data
         await syncService.forceSyncWithFeedback(context);
         break;
-        
+
       case 'import_cloud':
         // For "Importer", cloud data has already been imported by the dialog
         // Just trigger a sync to ensure everything is up to date
         await syncService.forceSyncWithFeedback(context);
         break;
-        
+
       case 'merge':
         // For "Fusionner", data has been merged by the dialog
         // Trigger sync to upload any local changes and resolve conflicts
@@ -1027,7 +1037,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     String message;
     switch (option) {
       case 'keep_local':
-        message = 'Synchronisation activée. Vos données locales seront sauvegardées dans le cloud.';
+        message =
+            'Synchronisation activée. Vos données locales seront sauvegardées dans le cloud.';
         break;
       case 'import_cloud':
         message = 'Données importées du cloud et synchronisation activée.';
@@ -1036,10 +1047,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         message = 'Données fusionnées et synchronisation activée.';
         break;
       default:
-        message = AppLocalizations.of(context)?.syncSuccessMessage ?? 
+        message =
+            AppLocalizations.of(context)?.syncSuccessMessage ??
             'Synchronization enabled successfully';
     }
-    
+
     _showSuccessMessage(message);
   }
 
@@ -1187,7 +1199,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   border: Border.all(
                     color: Theme.of(
                       context,
-                    ).colorScheme.onSurface.withOpacity(0.3),
+                    ).colorScheme.onSurface.withValues(alpha: 0.3),
                   ),
                 ),
                 child: TextField(
@@ -1317,12 +1329,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface.withOpacity(0.8),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.surface.withValues(alpha: 0.8),
                   borderRadius: BorderRadius.circular(4),
                   border: Border.all(
                     color: Theme.of(
                       context,
-                    ).colorScheme.onSurface.withOpacity(0.2),
+                    ).colorScheme.onSurface.withValues(alpha: 0.2),
                   ),
                 ),
                 child: Text(
@@ -1349,7 +1363,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   border: Border.all(
                     color: Theme.of(
                       context,
-                    ).colorScheme.onSurface.withOpacity(0.3),
+                    ).colorScheme.onSurface.withValues(alpha: 0.3),
                   ),
                 ),
                 child: TextField(
@@ -1799,7 +1813,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     decoration: const InputDecoration(
                       hintText: 'SUPPRIMER',
                       hintStyle: TextStyle(
-                        // color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                        // color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                         fontFamily: 'monospace',
                         fontWeight: FontWeight.normal,
                       ),

@@ -22,7 +22,7 @@ class SyncStatusIndicator extends StatelessWidget {
     return Consumer2<SyncService, AuthService>(
       builder: (context, syncService, authService, child) {
         final status = _getSyncStatus(context, syncService, authService);
-        
+
         return GestureDetector(
           onTap: onTap,
           child: Container(
@@ -37,11 +37,7 @@ class SyncStatusIndicator extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Icon(
-                  status.icon,
-                  color: status.iconColor,
-                  size: 20,
-                ),
+                Icon(status.icon, color: status.iconColor, size: 20),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -61,7 +57,9 @@ class SyncStatusIndicator extends StatelessWidget {
                           status.subtitle!,
                           style: TextStyle(
                             fontSize: 12,
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withOpacity(0.7),
                           ),
                         ),
                       ],
@@ -71,7 +69,9 @@ class SyncStatusIndicator extends StatelessWidget {
                           status.lastSyncText!,
                           style: TextStyle(
                             fontSize: 11,
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withOpacity(0.5),
                           ),
                         ),
                       ],
@@ -83,7 +83,9 @@ class SyncStatusIndicator extends StatelessWidget {
                   Icon(
                     CupertinoIcons.chevron_right,
                     size: 16,
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.5),
                   ),
                 ],
               ],
@@ -100,7 +102,7 @@ class SyncStatusIndicator extends StatelessWidget {
     AuthService authService,
   ) {
     final l10n = AppLocalizations.of(context);
-    
+
     // If not authenticated
     if (!authService.isAuthenticated) {
       return SyncStatusData(
@@ -149,9 +151,10 @@ class SyncStatusIndicator extends StatelessWidget {
 
     // If there are pending operations
     if (syncService.pendingOperations > 0) {
-      final pendingText = l10n?.syncPending(syncService.pendingOperations) 
-          ?? '⏳ Pending (${syncService.pendingOperations} operations)';
-      
+      final pendingText =
+          l10n?.syncPending(syncService.pendingOperations) ??
+          '⏳ Pending (${syncService.pendingOperations} operations)';
+
       return SyncStatusData(
         title: pendingText,
         subtitle: l10n?.tapForDetails ?? 'Tap for details',
@@ -180,7 +183,7 @@ class SyncStatusIndicator extends StatelessWidget {
 
     final now = DateTime.now();
     final difference = now.difference(lastSyncTime);
-    
+
     String timeText;
     if (difference.inMinutes < 1) {
       timeText = 'à l\'instant';
@@ -192,8 +195,8 @@ class SyncStatusIndicator extends StatelessWidget {
       timeText = 'il y a ${difference.inDays}j';
     }
 
-    return AppLocalizations.of(context)?.lastSyncTime(timeText) 
-        ?? 'Last sync: $timeText';
+    return AppLocalizations.of(context)?.lastSyncTime(timeText) ??
+        'Last sync: $timeText';
   }
 }
 

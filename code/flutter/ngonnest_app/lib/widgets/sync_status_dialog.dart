@@ -22,7 +22,7 @@ class SyncStatusDialog extends StatelessWidget {
     return Consumer2<SyncService, AuthService>(
       builder: (context, syncService, authService, child) {
         final l10n = AppLocalizations.of(context);
-        
+
         return CupertinoAlertDialog(
           title: Text(l10n?.syncStatusDetails ?? 'Synchronization details'),
           content: Column(
@@ -72,7 +72,9 @@ class SyncStatusDialog extends StatelessWidget {
                   syncService.lastError!,
                   style: TextStyle(
                     fontSize: 12,
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.7),
                   ),
                 ),
               ],
@@ -83,8 +85,8 @@ class SyncStatusDialog extends StatelessWidget {
               child: Text(l10n?.cancel ?? 'Cancel'),
               onPressed: () => Navigator.of(context).pop(),
             ),
-            if (syncService.syncEnabled && 
-                authService.isAuthenticated && 
+            if (syncService.syncEnabled &&
+                authService.isAuthenticated &&
                 !syncService.isSyncing &&
                 (syncService.pendingOperations > 0 || syncService.hasError))
               CupertinoDialogAction(
@@ -134,27 +136,27 @@ class SyncStatusDialog extends StatelessWidget {
     AuthService authService,
   ) {
     final l10n = AppLocalizations.of(context);
-    
+
     if (!authService.isAuthenticated) {
       return l10n?.syncDisabled ?? 'Disabled';
     }
-    
+
     if (!syncService.syncEnabled) {
       return l10n?.syncDisabled ?? 'Disabled';
     }
-    
+
     if (syncService.isSyncing) {
       return l10n?.syncInProgress ?? 'Synchronizing...';
     }
-    
+
     if (syncService.hasError) {
       return l10n?.syncError ?? 'Error';
     }
-    
+
     if (syncService.pendingOperations > 0) {
       return 'En attente';
     }
-    
+
     return l10n?.syncUpToDate ?? 'Up to date';
   }
 
@@ -162,19 +164,19 @@ class SyncStatusDialog extends StatelessWidget {
     if (!authService.isAuthenticated || !syncService.syncEnabled) {
       return Colors.orange;
     }
-    
+
     if (syncService.isSyncing) {
       return Colors.blue;
     }
-    
+
     if (syncService.hasError) {
       return Colors.red;
     }
-    
+
     if (syncService.pendingOperations > 0) {
       return Colors.blue;
     }
-    
+
     return Colors.green;
   }
 
@@ -185,7 +187,7 @@ class SyncStatusDialog extends StatelessWidget {
 
     final now = DateTime.now();
     final difference = now.difference(lastSyncTime);
-    
+
     if (difference.inMinutes < 1) {
       return 'À l\'instant';
     } else if (difference.inMinutes < 60) {

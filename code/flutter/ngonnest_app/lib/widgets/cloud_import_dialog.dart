@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
 import '../services/cloud_import_service.dart';
@@ -35,7 +35,7 @@ class _CloudImportDialogState extends State<CloudImportDialog> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return AlertDialog(
       title: Text(
         l10n.cloudImportTitle,
@@ -73,7 +73,7 @@ class _CloudImportDialogState extends State<CloudImportDialog> {
           style: Theme.of(context).textTheme.bodyMedium,
         ),
         const SizedBox(height: 24),
-        
+
         // Import option
         _buildOptionCard(
           context: context,
@@ -84,7 +84,7 @@ class _CloudImportDialogState extends State<CloudImportDialog> {
           onTap: () => _handleImport(ImportAction.import),
         ),
         const SizedBox(height: 12),
-        
+
         // Merge option
         _buildOptionCard(
           context: context,
@@ -95,7 +95,7 @@ class _CloudImportDialogState extends State<CloudImportDialog> {
           onTap: () => _handleImport(ImportAction.merge),
         ),
         const SizedBox(height: 12),
-        
+
         // Skip option
         _buildOptionCard(
           context: context,
@@ -123,10 +123,7 @@ class _CloudImportDialogState extends State<CloudImportDialog> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          border: Border.all(
-            color: color.withOpacity(0.3),
-            width: 1,
-          ),
+          border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -134,14 +131,10 @@ class _CloudImportDialogState extends State<CloudImportDialog> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(
-                icon,
-                color: color,
-                size: 20,
-              ),
+              child: Icon(icon, color: color, size: 20),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -161,17 +154,15 @@ class _CloudImportDialogState extends State<CloudImportDialog> {
                     description,
                     style: TextStyle(
                       fontSize: 14,
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
                 ],
               ),
             ),
-            Icon(
-              CupertinoIcons.chevron_right,
-              color: color,
-              size: 16,
-            ),
+            Icon(CupertinoIcons.chevron_right, color: color, size: 16),
           ],
         ),
       ),
@@ -192,7 +183,9 @@ class _CloudImportDialogState extends State<CloudImportDialog> {
               CircularProgressIndicator(
                 value: _progress,
                 strokeWidth: 4,
-                backgroundColor: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                backgroundColor: Theme.of(
+                  context,
+                ).colorScheme.outline.withValues(alpha: 0.2),
                 valueColor: AlwaysStoppedAnimation<Color>(
                   Theme.of(context).colorScheme.primary,
                 ),
@@ -209,7 +202,7 @@ class _CloudImportDialogState extends State<CloudImportDialog> {
           ),
         ),
         const SizedBox(height: 24),
-        
+
         // Progress title
         Text(
           l10n.importInProgress,
@@ -220,25 +213,27 @@ class _CloudImportDialogState extends State<CloudImportDialog> {
           ),
         ),
         const SizedBox(height: 8),
-        
+
         // Current operation
         Text(
           _currentOperation,
           style: TextStyle(
             fontSize: 14,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.7),
           ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 16),
-        
+
         // Progress steps indicator
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: List.generate(_totalSteps, (index) {
             final isCompleted = index < _currentStep;
             final isCurrent = index == _currentStep;
-            
+
             return Container(
               margin: const EdgeInsets.symmetric(horizontal: 4),
               width: 8,
@@ -247,19 +242,23 @@ class _CloudImportDialogState extends State<CloudImportDialog> {
                 shape: BoxShape.circle,
                 color: isCompleted || isCurrent
                     ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.outline.withOpacity(0.3),
+                    : Theme.of(
+                        context,
+                      ).colorScheme.outline.withValues(alpha: 0.3),
               ),
             );
           }),
         ),
         const SizedBox(height: 8),
-        
+
         // Step indicator text
         Text(
           '${_currentStep + 1} / $_totalSteps',
           style: TextStyle(
             fontSize: 12,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.5),
           ),
         ),
       ],
@@ -269,23 +268,25 @@ class _CloudImportDialogState extends State<CloudImportDialog> {
   Widget _buildSuccessContent(BuildContext context, AppLocalizations l10n) {
     final result = _importResult!;
     final isPartialSuccess = result.isPartialSuccess;
-    
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: (isPartialSuccess 
-                ? Theme.of(context).colorScheme.secondary 
-                : Theme.of(context).colorScheme.primary).withOpacity(0.1),
+            color:
+                (isPartialSuccess
+                        ? Theme.of(context).colorScheme.secondary
+                        : Theme.of(context).colorScheme.primary)
+                    .withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(50),
           ),
           child: Icon(
-            isPartialSuccess 
+            isPartialSuccess
                 ? CupertinoIcons.exclamationmark_triangle_fill
                 : CupertinoIcons.checkmark_circle_fill,
-            color: isPartialSuccess 
+            color: isPartialSuccess
                 ? Theme.of(context).colorScheme.secondary
                 : Theme.of(context).colorScheme.primary,
             size: 32,
@@ -305,12 +306,14 @@ class _CloudImportDialogState extends State<CloudImportDialog> {
           l10n.importSuccessMessage,
           style: TextStyle(
             fontSize: 14,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.7),
           ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 16),
-        
+
         // Import summary
         Container(
           padding: const EdgeInsets.all(16),
@@ -318,7 +321,9 @@ class _CloudImportDialogState extends State<CloudImportDialog> {
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+              color: Theme.of(
+                context,
+              ).colorScheme.outline.withValues(alpha: 0.2),
             ),
           ),
           child: Column(
@@ -344,7 +349,7 @@ class _CloudImportDialogState extends State<CloudImportDialog> {
                 ],
               ),
               const SizedBox(height: 12),
-              
+
               // Detailed breakdown
               if (result.householdsImported > 0)
                 _buildSummaryRow(
@@ -374,14 +379,16 @@ class _CloudImportDialogState extends State<CloudImportDialog> {
                   l10n.purchasesImported(result.purchasesImported),
                   isSuccess: true,
                 ),
-              
+
               // Show partial failure warning if applicable
               if (isPartialSuccess && result.error != null) ...[
                 const SizedBox(height: 12),
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.secondary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
@@ -413,7 +420,12 @@ class _CloudImportDialogState extends State<CloudImportDialog> {
     );
   }
 
-  Widget _buildSummaryRow(BuildContext context, IconData icon, String text, {bool isSuccess = true}) {
+  Widget _buildSummaryRow(
+    BuildContext context,
+    IconData icon,
+    String text, {
+    bool isSuccess = true,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -421,7 +433,7 @@ class _CloudImportDialogState extends State<CloudImportDialog> {
           Icon(
             icon,
             size: 16,
-            color: isSuccess 
+            color: isSuccess
                 ? Theme.of(context).colorScheme.primary
                 : Theme.of(context).colorScheme.error,
           ),
@@ -454,14 +466,14 @@ class _CloudImportDialogState extends State<CloudImportDialog> {
 
   Widget _buildErrorContent(BuildContext context, AppLocalizations l10n) {
     final result = _importResult;
-    
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.error.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(50),
           ),
           child: Icon(
@@ -480,12 +492,12 @@ class _CloudImportDialogState extends State<CloudImportDialog> {
           ),
         ),
         const SizedBox(height: 8),
-        
+
         // Error message
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.error.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
@@ -497,7 +509,7 @@ class _CloudImportDialogState extends State<CloudImportDialog> {
             textAlign: TextAlign.center,
           ),
         ),
-        
+
         // Show partial results if any data was imported before failure
         if (result != null && result.totalImported > 0) ...[
           const SizedBox(height: 16),
@@ -507,7 +519,9 @@ class _CloudImportDialogState extends State<CloudImportDialog> {
               color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                color: Theme.of(
+                  context,
+                ).colorScheme.outline.withValues(alpha: 0.2),
               ),
             ),
             child: Column(
@@ -522,7 +536,7 @@ class _CloudImportDialogState extends State<CloudImportDialog> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                
+
                 if (result.householdsImported > 0)
                   _buildSummaryRow(
                     context,
@@ -568,12 +582,14 @@ class _CloudImportDialogState extends State<CloudImportDialog> {
             child: Text(
               l10n.cancel,
               style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.7),
               ),
             ),
           ),
         ];
-      
+
       case ImportDialogState.progress:
         return [
           if (_canCancel)
@@ -582,12 +598,14 @@ class _CloudImportDialogState extends State<CloudImportDialog> {
               child: Text(
                 l10n.cancel,
                 style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
               ),
             ),
         ];
-      
+
       case ImportDialogState.success:
         return [
           ElevatedButton(
@@ -605,7 +623,7 @@ class _CloudImportDialogState extends State<CloudImportDialog> {
             child: Text(l10n.ok),
           ),
         ];
-      
+
       case ImportDialogState.error:
         return [
           TextButton(
@@ -613,7 +631,9 @@ class _CloudImportDialogState extends State<CloudImportDialog> {
             child: Text(
               l10n.cancel,
               style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.7),
               ),
             ),
           ),
@@ -650,7 +670,7 @@ class _CloudImportDialogState extends State<CloudImportDialog> {
         _progress = 0.1;
       });
       await Future.delayed(const Duration(milliseconds: 500));
-      
+
       // Step 2: Import products
       setState(() {
         _currentOperation = l10n.importingProducts;
@@ -658,7 +678,7 @@ class _CloudImportDialogState extends State<CloudImportDialog> {
         _progress = 0.4;
       });
       await Future.delayed(const Duration(milliseconds: 300));
-      
+
       // Step 3: Import budgets
       setState(() {
         _currentOperation = l10n.importingBudgets;
@@ -666,7 +686,7 @@ class _CloudImportDialogState extends State<CloudImportDialog> {
         _progress = 0.7;
       });
       await Future.delayed(const Duration(milliseconds: 300));
-      
+
       // Step 4: Import purchases
       setState(() {
         _currentOperation = l10n.importingPurchases;
@@ -677,16 +697,19 @@ class _CloudImportDialogState extends State<CloudImportDialog> {
 
       // Perform actual import
       final result = await widget.cloudImportService.importAllData();
-      
+
       setState(() {
         _progress = 1.0;
         _currentStep = _totalSteps;
         _importResult = result;
-        _state = result.success ? ImportDialogState.success : ImportDialogState.error;
+        _state = result.success
+            ? ImportDialogState.success
+            : ImportDialogState.error;
       });
 
-      ConsoleLogger.info('[CloudImportDialog] Import completed: ${result.success}');
-      
+      ConsoleLogger.info(
+        '[CloudImportDialog] Import completed: ${result.success}',
+      );
     } catch (e, stackTrace) {
       await ErrorLoggerService.logError(
         component: 'CloudImportDialog',
@@ -730,15 +753,7 @@ class _CloudImportDialogState extends State<CloudImportDialog> {
 }
 
 /// Enum representing the different states of the import dialog
-enum ImportDialogState {
-  options,
-  progress,
-  success,
-  error,
-}
+enum ImportDialogState { options, progress, success, error }
 
 /// Enum representing the different import actions
-enum ImportAction {
-  import,
-  merge,
-}
+enum ImportAction { import, merge }

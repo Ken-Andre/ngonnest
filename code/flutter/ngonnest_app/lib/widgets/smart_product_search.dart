@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../models/product_template.dart';
 import '../services/product_intelligence_service.dart';
 
@@ -46,7 +47,16 @@ class _SmartProductSearchState extends State<SmartProductSearch> {
   bool _isProductType(String category, bool isConsumable) {
     if (isConsumable) {
       // Catégories consommables
-      return ['hygiene', 'menage', 'nourriture', 'bureau', 'maintenance', 'securite', 'evenementiel', 'autre'].contains(category);
+      return [
+        'hygiene',
+        'menage',
+        'nourriture',
+        'bureau',
+        'maintenance',
+        'securite',
+        'evenementiel',
+        'autre',
+      ].contains(category);
     } else {
       // Catégorie durables
       return category == 'durables';
@@ -92,7 +102,8 @@ class _SmartProductSearchState extends State<SmartProductSearch> {
       // Retourner les produits populaires quand pas de recherche
       try {
         // Pour les durables, utiliser toujours la catégorie 'durables' générale
-        final popularCategory = widget.isConsumable == false && widget.category != 'durables'
+        final popularCategory =
+            widget.isConsumable == false && widget.category != 'durables'
             ? 'durables'
             : widget.category;
 
@@ -112,7 +123,8 @@ class _SmartProductSearchState extends State<SmartProductSearch> {
     // Recherche dans tous les produits de la catégorie actuelle d'abord
     try {
       // Pour les durables, utiliser toujours la catégorie 'durables' générale
-      final searchCategory = widget.isConsumable == false && widget.category != 'durables'
+      final searchCategory =
+          widget.isConsumable == false && widget.category != 'durables'
           ? 'durables'
           : widget.category;
 
@@ -125,7 +137,12 @@ class _SmartProductSearchState extends State<SmartProductSearch> {
 
       // Filtrer par type (consommable/durable) si spécifié
       final filteredByType = widget.isConsumable != null
-          ? products.where((product) => _isProductType(product.category, widget.isConsumable!)).toList()
+          ? products
+                .where(
+                  (product) =>
+                      _isProductType(product.category, widget.isConsumable!),
+                )
+                .toList()
           : products;
 
       final filtered = filteredByType
@@ -153,7 +170,8 @@ class _SmartProductSearchState extends State<SmartProductSearch> {
           final categoryId = category['id'] as String;
           if (categoryId != widget.category) {
             // Vérifier si cette catégorie correspond au type demandé
-            final isCorrectType = widget.isConsumable == null ||
+            final isCorrectType =
+                widget.isConsumable == null ||
                 _isProductType(categoryId, widget.isConsumable!);
 
             if (isCorrectType) {
@@ -250,7 +268,9 @@ class _SmartProductSearchState extends State<SmartProductSearch> {
                 filled: true,
                 fillColor: widget.enabled
                     ? Theme.of(context).colorScheme.surface
-                    : Theme.of(context).colorScheme.surface.withOpacity(0.5),
+                    : Theme.of(
+                        context,
+                      ).colorScheme.surface.withValues(alpha: 0.5),
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 12,
@@ -259,7 +279,9 @@ class _SmartProductSearchState extends State<SmartProductSearch> {
           style: TextStyle(
             color: widget.enabled
                 ? Theme.of(context).colorScheme.onSurface
-                : Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                : Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.5),
             fontSize: 16,
           ),
         ),
@@ -274,7 +296,7 @@ class _SmartProductSearchState extends State<SmartProductSearch> {
               color: Theme.of(context).colorScheme.surface,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -309,7 +331,9 @@ class _SmartProductSearchState extends State<SmartProductSearch> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface.withOpacity(0.8),
+              color: Theme.of(
+                context,
+              ).colorScheme.surface.withValues(alpha: 0.8),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Center(
@@ -348,7 +372,7 @@ class _SmartProductSearchState extends State<SmartProductSearch> {
                           fontSize: 12,
                           color: Theme.of(
                             context,
-                          ).colorScheme.onSurface.withOpacity(0.6),
+                          ).colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -358,7 +382,7 @@ class _SmartProductSearchState extends State<SmartProductSearch> {
                         decoration: BoxDecoration(
                           color: Theme.of(
                             context,
-                          ).colorScheme.onSurface.withOpacity(0.4),
+                          ).colorScheme.onSurface.withValues(alpha: 0.4),
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -371,7 +395,7 @@ class _SmartProductSearchState extends State<SmartProductSearch> {
                       size: 12,
                       color: Theme.of(
                         context,
-                      ).colorScheme.primary.withOpacity(0.7),
+                      ).colorScheme.primary.withValues(alpha: 0.7),
                     ),
                     const SizedBox(width: 2),
                     Text(
@@ -380,7 +404,7 @@ class _SmartProductSearchState extends State<SmartProductSearch> {
                         fontSize: 12,
                         color: Theme.of(
                           context,
-                        ).colorScheme.onSurface.withOpacity(0.6),
+                        ).colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                     ),
                   ],
@@ -407,10 +431,14 @@ class _SmartProductSearchState extends State<SmartProductSearch> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.2),
                 ),
               ),
               child: Text(
@@ -436,7 +464,9 @@ class _SmartProductSearchState extends State<SmartProductSearch> {
           Icon(
             Icons.search_off,
             size: 48,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.3),
           ),
           const SizedBox(height: 12),
           Text(
@@ -444,7 +474,9 @@ class _SmartProductSearchState extends State<SmartProductSearch> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w500,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.7),
             ),
           ),
           const SizedBox(height: 4),
@@ -452,7 +484,9 @@ class _SmartProductSearchState extends State<SmartProductSearch> {
             'Essayez une recherche différente',
             style: TextStyle(
               fontSize: 14,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.5),
             ),
           ),
         ],
@@ -481,7 +515,9 @@ class _SmartProductSearchState extends State<SmartProductSearch> {
             'Recherche en cours...',
             style: TextStyle(
               fontSize: 14,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.7),
             ),
           ),
         ],

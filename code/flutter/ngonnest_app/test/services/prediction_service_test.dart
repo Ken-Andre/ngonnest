@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ngonnest_app/models/objet.dart';
-import 'package:ngonnest_app/models/foyer.dart';
+// import 'package:ngonnest_app/models/foyer.dart';
 import 'package:ngonnest_app/services/prediction_service.dart';
 
 void main() {

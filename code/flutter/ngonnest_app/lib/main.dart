@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:io' show Platform;
 import 'dart:isolate';
 
+import 'package:app_links/app_links.dart';
 import 'package:firebase_core/firebase_core.dart';
 // import 'package:firebase_remote_config/firebase_remote_config.dart';
 // import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -21,12 +23,12 @@ import 'package:ngonnest_app/services/remote_config_service.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:workmanager/workmanager.dart';
 
+import 'config/supabase_config.dart';
 import 'firebase_options.dart';
 import 'l10n/app_localizations.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'config/supabase_config.dart';
 import 'models/objet.dart';
 import 'providers/foyer_provider.dart';
 import 'providers/locale_provider.dart';
@@ -53,8 +55,6 @@ import 'services/sync_service.dart';
 import 'theme/app_theme.dart';
 import 'theme/theme_mode_notifier.dart';
 import 'widgets/connectivity_banner.dart';
-import 'package:app_links/app_links.dart';
-import 'dart:async';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 StreamSubscription<Uri>? _deepLinkSub;
@@ -62,69 +62,92 @@ StreamSubscription<Uri>? _deepLinkSub;
 void _setupGlobalDeepLinkListener() {
   final appLinks = AppLinks();
   _deepLinkSub?.cancel();
-  _deepLinkSub = appLinks.uriLinkStream.listen((uri) async {
-    try {
-      final ctx = _rootNavigatorKey.currentContext;
-      if (ctx == null) return;
+  _deepLinkSub = appLinks.uriLinkStream.listen(
+    (uri) async {
+      try {
+        final ctx = _rootNavigatorKey.currentContext;
+        if (ctx == null) return;
 
-      // Handle app deep link: io.supabase.ngonnest:/login-callback/
-      if (uri.scheme == 'io.supabase.ngonnest' && uri.path.contains('login-callback')) {
-        final code = uri.queryParameters['code'];
-        if (code != null) {
-          // Exchange code for session
-          final authService = AuthService.instance;
-          final success = await authService.exchangeCodeForSession(code);
-          if (success && authService.isAuthenticated) {
-            Navigator.of(ctx).pushNamedAndRemoveUntil('/dashboard', (route) => false);
-            return;
-          }
-        } else {
-          // No code, try to refresh session
-          try {
-            await Supabase.instance.client.auth.refreshSession();
-          } catch (_) {}
-        }
-
-        final isAuthed = Supabase.instance.client.auth.currentUser != null;
-        if (isAuthed) {
-          Navigator.of(ctx).pushNamedAndRemoveUntil('/dashboard', (route) => false);
-        } else {
-          Navigator.of(ctx).pushNamed('/authentication', arguments: {
-            'contextMessage': 'Email confirmé. Connectez-vous pour continuer.',
-            'source': 'deeplink',
-          });
-        }
-      }
-      // Handle localhost redirect (from email clicked on different device)
-      else if (uri.host == 'localhost' && uri.queryParameters.containsKey('code')) {
-        final code = uri.queryParameters['code'];
-        if (code != null) {
-          final authService = AuthService.instance;
-          final success = await authService.exchangeCodeForSession(code);
-          if (success && authService.isAuthenticated) {
-            Navigator.of(ctx).pushNamedAndRemoveUntil('/dashboard', (route) => false);
+        // Handle app deep link: io.supabase.ngonnest:/login-callback/
+        if (uri.scheme == 'io.supabase.ngonnest' &&
+            uri.path.contains('login-callback')) {
+          final code = uri.queryParameters['code'];
+          if (code != null) {
+            // Exchange code for session
+            final authService = AuthService.instance;
+            final success = await authService.exchangeCodeForSession(code);
+            if (success && authService.isAuthenticated) {
+              Navigator.of(
+                ctx,
+              ).pushNamedAndRemoveUntil('/dashboard', (route) => false);
+              return;
+            }
           } else {
-            Navigator.of(ctx).pushNamed('/authentication', arguments: {
-              'contextMessage': 'Erreur lors de la confirmation. Veuillez réessayer.',
-              'source': 'deeplink',
-            });
+            // No code, try to refresh session
+            try {
+              await Supabase.instance.client.auth.refreshSession();
+            } catch (_) {}
+          }
+
+          final isAuthed = Supabase.instance.client.auth.currentUser != null;
+          if (isAuthed) {
+            Navigator.of(
+              ctx,
+            ).pushNamedAndRemoveUntil('/dashboard', (route) => false);
+          } else {
+            Navigator.of(ctx).pushNamed(
+              '/authentication',
+              arguments: {
+                'contextMessage':
+                    'Email confirmé. Connectez-vous pour continuer.',
+                'source': 'deeplink',
+              },
+            );
           }
         }
+        // Handle localhost redirect (from email clicked on different device)
+        else if (uri.host == 'localhost' &&
+            uri.queryParameters.containsKey('code')) {
+          final code = uri.queryParameters['code'];
+          if (code != null) {
+            final authService = AuthService.instance;
+            final success = await authService.exchangeCodeForSession(code);
+            if (success && authService.isAuthenticated) {
+              Navigator.of(
+                ctx,
+              ).pushNamedAndRemoveUntil('/dashboard', (route) => false);
+            } else {
+              Navigator.of(ctx).pushNamed(
+                '/authentication',
+                arguments: {
+                  'contextMessage':
+                      'Erreur lors de la confirmation. Veuillez réessayer.',
+                  'source': 'deeplink',
+                },
+              );
+            }
+          }
+        }
+      } catch (e) {
+        ConsoleLogger.error('[Main]', 'Deep link handling failed', e);
+        // Navigate to auth screen on error
+        final ctx = _rootNavigatorKey.currentContext;
+        if (ctx != null) {
+          Navigator.of(ctx).pushNamed(
+            '/authentication',
+            arguments: {
+              'contextMessage':
+                  'Erreur lors du traitement du lien. Veuillez réessayer.',
+              'source': 'deeplink',
+            },
+          );
+        }
       }
-    } catch (e) {
-      ConsoleLogger.error('[Main]', 'Deep link handling failed', e);
-      // Navigate to auth screen on error
-      final ctx = _rootNavigatorKey.currentContext;
-      if (ctx != null) {
-        Navigator.of(ctx).pushNamed('/authentication', arguments: {
-          'contextMessage': 'Erreur lors du traitement du lien. Veuillez réessayer.',
-          'source': 'deeplink',
-        });
-      }
-    }
-  }, onError: (e) {
-    ConsoleLogger.error('[Main]', 'Deep link stream error', e);
-  });
+    },
+    onError: (e) {
+      ConsoleLogger.error('[Main]', 'Deep link stream error', e);
+    },
+  );
 }
 
 void main() async {
@@ -174,7 +197,9 @@ void main() async {
       // Continue app startup even if Supabase fails - offline mode available
     }
   } else {
-    ConsoleLogger.warning('[Main] Supabase not configured - running in offline-only mode.');
+    ConsoleLogger.warning(
+      '[Main] Supabase not configured - running in offline-only mode.',
+    );
   }
 
   // Initialize sqflite FFI for desktop and testing environments
@@ -276,10 +301,11 @@ void main() async {
         '[Main] Workmanager initialization skipped (FLUTTER_TEST environment).',
       );
     }
-    if (kIsWeb)
+    if (kIsWeb) {
       ConsoleLogger.info(
         '[Main] Workmanager initialization skipped (Web environment).',
       );
+    }
   }
 
   // Initialize notifications
@@ -317,9 +343,7 @@ void main() async {
         ChangeNotifierProvider<AuthService>(
           create: (_) => AuthService.instance,
         ),
-        ChangeNotifierProvider<SyncService>(
-          create: (_) => SyncService(),
-        ),
+        ChangeNotifierProvider<SyncService>(create: (_) => SyncService()),
         // Firebase Remote Config Services
         // TODO: Initialize services asynchronously to avoid blocking app startup
         // TODO: Add error handling for service initialization failures
@@ -380,7 +404,9 @@ void main() async {
               '/dashboard': (context) => const DashboardScreen(),
               '/inventory': (context) => const InventoryScreen(),
               '/add-product': (context) {
-                final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+                final args =
+                    ModalRoute.of(context)?.settings.arguments
+                        as Map<String, dynamic>?;
                 final isConsumable = args?['isConsumable'] as bool? ?? true;
                 final onTypeChanged = args?['onTypeChanged'] as Function(bool)?;
                 return AddProductScreen(
@@ -417,7 +443,9 @@ void main() async {
               '/developer': (context) => const DeveloperConsoleScreen(),
               '/onboarding': (context) => const OnboardingScreen(),
               '/authentication': (context) {
-                final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+                final args =
+                    ModalRoute.of(context)?.settings.arguments
+                        as Map<String, dynamic>?;
                 return AuthenticationScreen(
                   contextMessage: args?['contextMessage'] as String?,
                   source: args?['source'] as String?,
@@ -470,7 +498,9 @@ class MyApp extends StatelessWidget {
         '/dashboard': (context) =>
             const AppWithConnectivityOverlay(child: DashboardScreen()),
         '/add-product': (context) {
-          final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+          final args =
+              ModalRoute.of(context)?.settings.arguments
+                  as Map<String, dynamic>?;
           final isConsumable = args?['isConsumable'] as bool? ?? true;
           final onTypeChanged = args?['onTypeChanged'] as Function(bool)?;
           return AppWithConnectivityOverlay(
@@ -489,7 +519,9 @@ class MyApp extends StatelessWidget {
         '/developer-console': (context) =>
             const AppWithConnectivityOverlay(child: DeveloperConsoleScreen()),
         '/authentication': (context) {
-          final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+          final args =
+              ModalRoute.of(context)?.settings.arguments
+                  as Map<String, dynamic>?;
           return AppWithConnectivityOverlay(
             child: AuthenticationScreen(
               contextMessage: args?['contextMessage'] as String?,
@@ -668,7 +700,9 @@ class _SplashScreenState extends State<SplashScreen>
       if (hasProfile) {
         final foyerId = context.read<FoyerProvider>().foyerId;
         if (foyerId != null) {
-          await BudgetService.initializeRecommendedBudgets(int.tryParse(foyerId) ?? 0);
+          await BudgetService.initializeRecommendedBudgets(
+            int.tryParse(foyerId) ?? 0,
+          );
         }
       }
     } catch (e, stackTrace) {

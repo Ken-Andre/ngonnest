@@ -23,7 +23,8 @@ class BudgetCategoryCard extends StatelessWidget {
   });
 
   void _showExpenseHistory(BuildContext context) {
-    final foyerId = idFoyer ?? int.tryParse(context.read<FoyerProvider>().foyerId ?? '');
+    final foyerId =
+        idFoyer ?? int.tryParse(context.read<FoyerProvider>().foyerId ?? '');
     if (foyerId != null) {
       Navigator.of(context).push(
         MaterialPageRoute(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../models/product_template.dart';
 import '../services/product_intelligence_service.dart';
 
@@ -19,11 +20,14 @@ class HierarchicalCategorySelector extends StatefulWidget {
   });
 
   @override
-  State<HierarchicalCategorySelector> createState() => _HierarchicalCategorySelectorState();
+  State<HierarchicalCategorySelector> createState() =>
+      _HierarchicalCategorySelectorState();
 }
 
-class _HierarchicalCategorySelectorState extends State<HierarchicalCategorySelector> {
-  final ProductIntelligenceService _intelligenceService = ProductIntelligenceService();
+class _HierarchicalCategorySelectorState
+    extends State<HierarchicalCategorySelector> {
+  final ProductIntelligenceService _intelligenceService =
+      ProductIntelligenceService();
 
   List<String> _breadcrumbPath = ['hygiene']; // Chemin de navigation
   List<Map<String, dynamic>> _currentSubcategories = [];
@@ -45,7 +49,9 @@ class _HierarchicalCategorySelectorState extends State<HierarchicalCategorySelec
       final currentCategory = _breadcrumbPath.last;
 
       // Charger les sous-catégories
-      _currentSubcategories = await _intelligenceService.getCategoryHierarchy(currentCategory);
+      _currentSubcategories = await _intelligenceService.getCategoryHierarchy(
+        currentCategory,
+      );
 
       // TODO-W2: HierarchicalCategorySelector - Complete Implementation (MEDIUM PRIORITY)
       // Description: Complete the category navigation and product selection
@@ -63,8 +69,8 @@ class _HierarchicalCategorySelectorState extends State<HierarchicalCategorySelec
       //   - Category favorites/recent selections
 
       // Charger les produits populaires de la catégorie actuelle
-      _currentProducts = await _intelligenceService.getPopularProductsByCategory(currentCategory);
-
+      _currentProducts = await _intelligenceService
+          .getPopularProductsByCategory(currentCategory);
     } catch (e, stackTrace) {
       // Log the error for debugging
       print('Init Error: $e');
@@ -139,9 +145,7 @@ class _HierarchicalCategorySelectorState extends State<HierarchicalCategorySelec
           const SizedBox(height: 12),
 
           // Contenu principal
-          Expanded(
-            child: _isLoading ? _buildLoadingState() : _buildContent(),
-          ),
+          Expanded(child: _isLoading ? _buildLoadingState() : _buildContent()),
         ],
       ),
     );
@@ -179,21 +183,34 @@ class _HierarchicalCategorySelectorState extends State<HierarchicalCategorySelec
               Icon(
                 Icons.chevron_right,
                 size: 16,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.4),
               ),
               GestureDetector(
-                onTap: i < _breadcrumbPath.length - 1 ? () => _goToBreadcrumb(_breadcrumbPath[i]) : null,
+                onTap: i < _breadcrumbPath.length - 1
+                    ? () => _goToBreadcrumb(_breadcrumbPath[i])
+                    : null,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: i == _breadcrumbPath.length - 1
-                        ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+                        ? Theme.of(
+                            context,
+                          ).colorScheme.primary.withValues(alpha: 0.1)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(16),
-                    border: i == _breadcrumbPath.length - 1 ? Border.all(
-                      color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                      width: 1,
-                    ) : null,
+                    border: i == _breadcrumbPath.length - 1
+                        ? Border.all(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.primary.withValues(alpha: 0.2),
+                            width: 1,
+                          )
+                        : null,
                   ),
                   child: Row(
                     children: [
@@ -209,7 +226,9 @@ class _HierarchicalCategorySelectorState extends State<HierarchicalCategorySelec
                           fontWeight: FontWeight.w600,
                           color: i == _breadcrumbPath.length - 1
                               ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                              : Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withValues(alpha: 0.7),
                         ),
                       ),
                     ],
@@ -262,14 +281,16 @@ class _HierarchicalCategorySelectorState extends State<HierarchicalCategorySelec
     final subcategoryName = subcategory['name'] as String? ?? 'Catégorie';
 
     return GestureDetector(
-      onTap: widget.enabled ? () => _navigateToSubcategory(subcategoryId) : null,
+      onTap: widget.enabled
+          ? () => _navigateToSubcategory(subcategoryId)
+          : null,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
             width: 1,
           ),
         ),
@@ -293,7 +314,9 @@ class _HierarchicalCategorySelectorState extends State<HierarchicalCategorySelec
             Icon(
               Icons.chevron_right,
               size: 16,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.5),
             ),
           ],
         ),
@@ -306,7 +329,9 @@ class _HierarchicalCategorySelectorState extends State<HierarchicalCategorySelec
     final recommendedQuantity = product.getRecommendedQuantity(familySize);
 
     return GestureDetector(
-      onTap: widget.enabled ? () => widget.onProductSelected?.call(product) : null,
+      onTap: widget.enabled
+          ? () => widget.onProductSelected?.call(product)
+          : null,
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(12),
@@ -314,7 +339,7 @@ class _HierarchicalCategorySelectorState extends State<HierarchicalCategorySelec
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
             width: 1,
           ),
         ),
@@ -325,14 +350,13 @@ class _HierarchicalCategorySelectorState extends State<HierarchicalCategorySelec
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface.withOpacity(0.8),
+                color: Theme.of(
+                  context,
+                ).colorScheme.surface.withValues(alpha: 0.8),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Center(
-                child: Text(
-                  product.icon,
-                  style: const TextStyle(fontSize: 18),
-                ),
+                child: Text(product.icon, style: const TextStyle(fontSize: 18)),
               ),
             ),
 
@@ -363,14 +387,18 @@ class _HierarchicalCategorySelectorState extends State<HierarchicalCategorySelec
                       Icon(
                         Icons.star,
                         size: 12,
-                        color: Theme.of(context).colorScheme.primary.withOpacity(0.7),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primary.withValues(alpha: 0.7),
                       ),
                       const SizedBox(width: 2),
                       Text(
                         '${product.popularity}',
                         style: TextStyle(
                           fontSize: 11,
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
 
@@ -380,7 +408,9 @@ class _HierarchicalCategorySelectorState extends State<HierarchicalCategorySelec
                         width: 3,
                         height: 3,
                         decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.3),
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -391,7 +421,9 @@ class _HierarchicalCategorySelectorState extends State<HierarchicalCategorySelec
                           '${recommendedQuantity.toStringAsFixed(recommendedQuantity % 1 == 0 ? 0 : 1)} ${product.unit}',
                           style: TextStyle(
                             fontSize: 11,
-                            color: Theme.of(context).colorScheme.primary.withOpacity(0.8),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.primary.withValues(alpha: 0.8),
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -422,7 +454,7 @@ class _HierarchicalCategorySelectorState extends State<HierarchicalCategorySelec
         style: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w600,
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
         ),
       ),
     );
@@ -441,7 +473,9 @@ class _HierarchicalCategorySelectorState extends State<HierarchicalCategorySelec
             'Chargement...',
             style: TextStyle(
               fontSize: 14,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.6),
             ),
           ),
         ],
@@ -457,7 +491,9 @@ class _HierarchicalCategorySelectorState extends State<HierarchicalCategorySelec
           Icon(
             Icons.category,
             size: 48,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.3),
           ),
           const SizedBox(height: 12),
           Text(
@@ -465,7 +501,9 @@ class _HierarchicalCategorySelectorState extends State<HierarchicalCategorySelec
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w500,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.7),
             ),
           ),
         ],
@@ -485,7 +523,8 @@ class _HierarchicalCategorySelectorState extends State<HierarchicalCategorySelec
   }
 
   /// Obtenir la catégorie actuelle
-  String get currentCategory => _breadcrumbPath.isNotEmpty ? _breadcrumbPath.last : 'hygiene';
+  String get currentCategory =>
+      _breadcrumbPath.isNotEmpty ? _breadcrumbPath.last : 'hygiene';
 
   /// Vérifier si on peut revenir en arrière
   bool get canGoBack => _breadcrumbPath.length > 1;

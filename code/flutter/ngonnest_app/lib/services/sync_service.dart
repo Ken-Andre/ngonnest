@@ -6,11 +6,11 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 
+import '../config/supabase_config.dart';
 import 'connectivity_service.dart';
 import 'console_logger.dart';
 import 'database_service.dart'; // For ErrorContext if ever needed elsewhere, though not directly in logError calls now
 import 'error_logger_service.dart';
-import '../config/supabase_config.dart';
 import 'supabase_api_service.dart';
 
 /// Service de synchronisation offline-first pour NgonNest
@@ -235,7 +235,7 @@ class SyncService extends ChangeNotifier {
             backgroundColor: Colors.red,
             action: SnackBarAction(
               label: 'Détails',
-              onPressed: () => showSyncErrorDialog(context!),
+              onPressed: () => showSyncErrorDialog(context),
             ),
           ),
         );
@@ -413,10 +413,10 @@ class SyncService extends ChangeNotifier {
 
       // Limiter la taille du message d'erreur (500 chars max, mais vérifier la longueur)
       final errorMessage = e.toString();
-      final truncatedMessage = errorMessage.length > 500 
-          ? errorMessage.substring(0, 500) 
+      final truncatedMessage = errorMessage.length > 500
+          ? errorMessage.substring(0, 500)
           : errorMessage;
-      
+
       await db.update(
         'sync_outbox',
         {
@@ -436,7 +436,9 @@ class SyncService extends ChangeNotifier {
   Future<void> _callSupabaseApi(Map<String, dynamic> operation) async {
     // Vérifier que Supabase est configuré
     if (!SupabaseConfig.isConfigured()) {
-      throw Exception('Supabase not configured. Please configure URL and anon key.');
+      throw Exception(
+        'Supabase not configured. Please configure URL and anon key.',
+      );
     }
 
     // Test connection rapide avant opération

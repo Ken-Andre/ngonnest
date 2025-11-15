@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+
 import '../models/objet.dart';
 
 /// Widget pour sélectionner la méthode de prévision pour les consommables
@@ -17,7 +18,8 @@ class PredictionMethodSelector extends StatefulWidget {
   });
 
   @override
-  State<PredictionMethodSelector> createState() => _PredictionMethodSelectorState();
+  State<PredictionMethodSelector> createState() =>
+      _PredictionMethodSelectorState();
 }
 
 class _PredictionMethodSelectorState extends State<PredictionMethodSelector> {
@@ -48,7 +50,7 @@ class _PredictionMethodSelectorState extends State<PredictionMethodSelector> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5),
         ),
       ),
       child: Column(
@@ -71,7 +73,9 @@ class _PredictionMethodSelectorState extends State<PredictionMethodSelector> {
                 child: Icon(
                   CupertinoIcons.question_circle,
                   size: 16,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.5),
                 ),
               ),
             ],
@@ -124,13 +128,15 @@ class _PredictionMethodSelectorState extends State<PredictionMethodSelector> {
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: isSelected
-                ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+                ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: isSelected
                   ? Theme.of(context).colorScheme.primary
-                  : Theme.of(context).colorScheme.outline.withOpacity(0.3),
+                  : Theme.of(
+                      context,
+                    ).colorScheme.outline.withValues(alpha: 0.3),
               width: isSelected ? 2 : 1,
             ),
           ),
@@ -151,11 +157,15 @@ class _PredictionMethodSelectorState extends State<PredictionMethodSelector> {
                       }
                     : null,
                 activeColor: Theme.of(context).colorScheme.primary,
-                fillColor: MaterialStateProperty.resolveWith<Color>((Set<MaterialState> states) {
-                  if (states.contains(MaterialState.selected)) {
+                fillColor: WidgetStateProperty.resolveWith<Color>((
+                  Set<WidgetState> states,
+                ) {
+                  if (states.contains(WidgetState.selected)) {
                     return Theme.of(context).colorScheme.primary;
                   }
-                  return Theme.of(context).colorScheme.outline.withOpacity(0.5);
+                  return Theme.of(
+                    context,
+                  ).colorScheme.outline.withValues(alpha: 0.5);
                 }),
               ),
               const SizedBox(width: 12),
@@ -165,7 +175,9 @@ class _PredictionMethodSelectorState extends State<PredictionMethodSelector> {
                 icon,
                 color: isSelected
                     ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    : Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.7),
                 size: 20,
               ),
               const SizedBox(width: 12),
@@ -190,7 +202,9 @@ class _PredictionMethodSelectorState extends State<PredictionMethodSelector> {
                       subtitle,
                       style: TextStyle(
                         fontSize: 12,
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -198,7 +212,9 @@ class _PredictionMethodSelectorState extends State<PredictionMethodSelector> {
                       example,
                       style: TextStyle(
                         fontSize: 11,
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.5),
                         fontStyle: FontStyle.italic,
                       ),
                     ),

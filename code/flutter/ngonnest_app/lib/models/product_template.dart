@@ -54,12 +54,14 @@ class ProductTemplate {
     if (defaultFrequency == null) return 30; // Default 30 jours
 
     // Ajustement selon taille familiale
-    if (familySize <= 2)
+    if (familySize <= 2) {
       return (defaultFrequency! * 0.8)
           .round(); // Moins fréquent pour petits foyers
-    if (familySize >= 6)
+    }
+    if (familySize >= 6) {
       return (defaultFrequency! * 1.2)
           .round(); // Plus fréquent pour gros foyers
+    }
 
     return defaultFrequency!;
   }
@@ -67,8 +69,14 @@ class ProductTemplate {
   /// Convertit un Map en ProductTemplate
   factory ProductTemplate.fromMap(Map<String, dynamic> map) {
     return ProductTemplate(
-      id: (map['id'] as num?)?.toInt() ??
-          map['name']?.toString().toLowerCase().replaceAll(' ', '_').hashCode.abs() ??
+      id:
+          (map['id'] as num?)?.toInt() ??
+          map['name']
+              ?.toString()
+              .toLowerCase()
+              .replaceAll(' ', '_')
+              .hashCode
+              .abs() ??
           'unknown'.hashCode.abs(),
       name: map['name'] ?? 'Produit inconnu',
       category: map['category'] ?? 'unknown',

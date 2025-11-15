@@ -1,14 +1,16 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'dart:async';
+
 import '../models/objet.dart';
 import '../repository/inventory_repository.dart';
 import '../services/analytics_service.dart';
 import '../services/database_service.dart';
 import '../services/navigation_service.dart';
-import '../widgets/main_navigation_wrapper.dart';
-import '../widgets/inventory_search_bar.dart';
 import '../widgets/inventory_filter_panel.dart';
+import '../widgets/inventory_search_bar.dart';
+import '../widgets/main_navigation_wrapper.dart';
 import '../widgets/quick_quantity_update.dart';
 
 class InventoryScreen extends StatefulWidget {
@@ -95,7 +97,9 @@ class _InventoryScreenState extends State<InventoryScreen>
         final consommables = await _inventoryRepository.getConsommables(
           int.tryParse(foyer.id!) ?? 0,
         );
-        final durables = await _inventoryRepository.getDurables(int.tryParse(foyer.id!) ?? 0);
+        final durables = await _inventoryRepository.getDurables(
+          int.tryParse(foyer.id!) ?? 0,
+        );
 
         setState(() {
           _consommables = consommables;
@@ -198,10 +202,12 @@ class _InventoryScreenState extends State<InventoryScreen>
             mappedCategory = 'hygiène'; // Accent dans les données
             break;
           case 'menage':
-            mappedCategory = 'nettoyage'; // 'menage' dans les filtres correspond à 'nettoyage' dans les données
+            mappedCategory =
+                'nettoyage'; // 'menage' dans les filtres correspond à 'nettoyage' dans les données
             break;
           case 'nourriture':
-            mappedCategory = 'cuisine'; // 'nourriture' dans les filtres correspond à 'cuisine' dans les données
+            mappedCategory =
+                'cuisine'; // 'nourriture' dans les filtres correspond à 'cuisine' dans les données
             break;
           // 'bureau' et 'maintenance' sont identiques
         }
@@ -551,8 +557,8 @@ class _InventoryScreenState extends State<InventoryScreen>
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: objet.type == TypeObjet.consommable
-              ? Colors.green.withOpacity(0.2)
-              : Colors.blue.withOpacity(0.2),
+              ? Colors.green.withValues(alpha: 0.2)
+              : Colors.blue.withValues(alpha: 0.2),
           child: Icon(
             objet.type == TypeObjet.consommable
                 ? Icons.shopping_cart
@@ -579,7 +585,7 @@ class _InventoryScreenState extends State<InventoryScreen>
                     size: 14,
                     color: Theme.of(
                       context,
-                    ).colorScheme.onSurface.withOpacity(0.6),
+                    ).colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                   const SizedBox(width: 4),
                   Flexible(
@@ -588,7 +594,7 @@ class _InventoryScreenState extends State<InventoryScreen>
                       style: TextStyle(
                         color: Theme.of(
                           context,
-                        ).colorScheme.onSurface.withOpacity(0.8),
+                        ).colorScheme.onSurface.withValues(alpha: 0.8),
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -837,9 +843,11 @@ class _InventoryScreenState extends State<InventoryScreen>
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.blue.withOpacity(0.1),
+                      color: Colors.blue.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                      border: Border.all(
+                        color: Colors.blue.withValues(alpha: 0.3),
+                      ),
                     ),
                     child: Text(
                       objet.commentaires!,
@@ -855,9 +863,11 @@ class _InventoryScreenState extends State<InventoryScreen>
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.grey.withOpacity(0.1),
+                      color: Colors.grey.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                      border: Border.all(
+                        color: Colors.grey.withValues(alpha: 0.3),
+                      ),
                     ),
                     child: Row(
                       children: [
@@ -991,7 +1001,9 @@ class _InventoryScreenState extends State<InventoryScreen>
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.8),
               ),
             ),
           ),
@@ -1019,7 +1031,9 @@ class _InventoryScreenState extends State<InventoryScreen>
     } else if (daysUntilExpiry <= 7) {
       return Colors.orange; // Expiring soon
     } else {
-      return Theme.of(context).colorScheme.onSurface.withOpacity(0.6); // Normal
+      return Theme.of(
+        context,
+      ).colorScheme.onSurface.withValues(alpha: 0.6); // Normal
     }
   }
 }

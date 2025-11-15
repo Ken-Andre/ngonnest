@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/budget_service.dart';
+
 import '../providers/foyer_provider.dart';
-import '../widgets/main_navigation_wrapper.dart';
+import '../services/budget_service.dart';
 import '../services/navigation_service.dart';
+import '../widgets/main_navigation_wrapper.dart';
 
 /// ⚠️ CRITICAL TODOs FOR CLIENT DELIVERY:
 /// TODO: SAVINGS_TIPS_DATA - Savings tips generation may not work
@@ -30,7 +31,8 @@ class SavingsTipsScreen extends StatefulWidget {
   State<SavingsTipsScreen> createState() => _SavingsTipsScreenState();
 }
 
-class _SavingsTipsScreenState extends State<SavingsTipsScreen> with TickerProviderStateMixin {
+class _SavingsTipsScreenState extends State<SavingsTipsScreen>
+    with TickerProviderStateMixin {
   List<Map<String, dynamic>> _savingsTips = [];
   Map<String, dynamic> _spendingHistory = {};
   bool _isLoading = true;
@@ -91,7 +93,9 @@ class _SavingsTipsScreenState extends State<SavingsTipsScreen> with TickerProvid
           bottom: TabBar(
             controller: _tabController,
             labelColor: Theme.of(context).colorScheme.onPrimary,
-            unselectedLabelColor: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
+            unselectedLabelColor: Theme.of(
+              context,
+            ).colorScheme.onPrimary.withValues(alpha: 0.7),
             indicatorColor: Theme.of(context).colorScheme.onPrimary,
             tabs: const [
               Tab(icon: Icon(CupertinoIcons.lightbulb), text: 'Conseils'),
@@ -103,10 +107,7 @@ class _SavingsTipsScreenState extends State<SavingsTipsScreen> with TickerProvid
             ? const Center(child: CircularProgressIndicator())
             : TabBarView(
                 controller: _tabController,
-                children: [
-                  _buildSavingsTipsTab(),
-                  _buildSpendingHistoryTab(),
-                ],
+                children: [_buildSavingsTipsTab(), _buildSpendingHistoryTab()],
               ),
       ),
     );
@@ -126,7 +127,7 @@ class _SavingsTipsScreenState extends State<SavingsTipsScreen> with TickerProvid
           if (index == 0) {
             return _buildTipsHeader();
           }
-          
+
           final tip = _savingsTips[index - 1];
           return _buildTipCard(tip);
         },
@@ -142,7 +143,7 @@ class _SavingsTipsScreenState extends State<SavingsTipsScreen> with TickerProvid
         gradient: LinearGradient(
           colors: [
             Theme.of(context).colorScheme.primary,
-            Theme.of(context).colorScheme.primary.withOpacity(0.8),
+            Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -155,7 +156,9 @@ class _SavingsTipsScreenState extends State<SavingsTipsScreen> with TickerProvid
             width: 50,
             height: 50,
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.2),
+              color: Theme.of(
+                context,
+              ).colorScheme.onPrimary.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
@@ -182,7 +185,9 @@ class _SavingsTipsScreenState extends State<SavingsTipsScreen> with TickerProvid
                   'Basés sur vos habitudes de consommation',
                   style: TextStyle(
                     fontSize: 12,
-                    color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.9),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onPrimary.withValues(alpha: 0.9),
                   ),
                 ),
               ],
@@ -196,10 +201,10 @@ class _SavingsTipsScreenState extends State<SavingsTipsScreen> with TickerProvid
   Widget _buildTipCard(Map<String, dynamic> tip) {
     final urgency = tip['urgency'] as String;
     final priority = tip['priority'] as int;
-    
+
     Color urgencyColor;
     IconData urgencyIcon;
-    
+
     switch (urgency) {
       case 'high':
         urgencyColor = Theme.of(context).colorScheme.error;
@@ -221,7 +226,9 @@ class _SavingsTipsScreenState extends State<SavingsTipsScreen> with TickerProvid
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -238,7 +245,7 @@ class _SavingsTipsScreenState extends State<SavingsTipsScreen> with TickerProvid
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    color: urgencyColor.withOpacity(0.1),
+                    color: urgencyColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(urgencyIcon, size: 16, color: urgencyColor),
@@ -255,9 +262,14 @@ class _SavingsTipsScreenState extends State<SavingsTipsScreen> with TickerProvid
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -276,7 +288,9 @@ class _SavingsTipsScreenState extends State<SavingsTipsScreen> with TickerProvid
               tip['description'] as String,
               style: TextStyle(
                 fontSize: 14,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.8),
                 height: 1.4,
               ),
             ),
@@ -284,9 +298,14 @@ class _SavingsTipsScreenState extends State<SavingsTipsScreen> with TickerProvid
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.secondary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -303,7 +322,9 @@ class _SavingsTipsScreenState extends State<SavingsTipsScreen> with TickerProvid
                   children: List.generate(
                     5,
                     (index) => Icon(
-                      index < priority ? CupertinoIcons.star_fill : CupertinoIcons.star,
+                      index < priority
+                          ? CupertinoIcons.star_fill
+                          : CupertinoIcons.star,
                       size: 12,
                       color: Colors.amber,
                     ),
@@ -325,7 +346,9 @@ class _SavingsTipsScreenState extends State<SavingsTipsScreen> with TickerProvid
           Icon(
             CupertinoIcons.lightbulb,
             size: 64,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.3),
           ),
           const SizedBox(height: 16),
           Text(
@@ -333,7 +356,9 @@ class _SavingsTipsScreenState extends State<SavingsTipsScreen> with TickerProvid
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.7),
             ),
           ),
           const SizedBox(height: 8),
@@ -342,7 +367,9 @@ class _SavingsTipsScreenState extends State<SavingsTipsScreen> with TickerProvid
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 14,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.5),
             ),
           ),
         ],
@@ -374,7 +401,10 @@ class _SavingsTipsScreenState extends State<SavingsTipsScreen> with TickerProvid
     );
   }
 
-  Widget _buildHistoryHeader(Map<String, dynamic> trends, Map<String, dynamic> summary) {
+  Widget _buildHistoryHeader(
+    Map<String, dynamic> trends,
+    Map<String, dynamic> summary,
+  ) {
     final direction = trends['direction'] as String? ?? 'stable';
     final percentage = trends['percentage'] as double? ?? 0.0;
     final avgMonthly = summary['averageMonthly'] as double? ?? 0.0;
@@ -407,7 +437,9 @@ class _SavingsTipsScreenState extends State<SavingsTipsScreen> with TickerProvid
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -425,7 +457,9 @@ class _SavingsTipsScreenState extends State<SavingsTipsScreen> with TickerProvid
                       'Moyenne mensuelle',
                       style: TextStyle(
                         fontSize: 14,
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -441,9 +475,12 @@ class _SavingsTipsScreenState extends State<SavingsTipsScreen> with TickerProvid
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
-                  color: trendColor.withOpacity(0.1),
+                  color: trendColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
@@ -478,7 +515,9 @@ class _SavingsTipsScreenState extends State<SavingsTipsScreen> with TickerProvid
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -496,9 +535,7 @@ class _SavingsTipsScreenState extends State<SavingsTipsScreen> with TickerProvid
             ),
           ),
           const SizedBox(height: 16),
-          Expanded(
-            child: _buildSimpleChart(history),
-          ),
+          Expanded(child: _buildSimpleChart(history)),
         ],
       ),
     );
@@ -529,7 +566,9 @@ class _SavingsTipsScreenState extends State<SavingsTipsScreen> with TickerProvid
                   height: height,
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.primary,
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(4),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -537,7 +576,9 @@ class _SavingsTipsScreenState extends State<SavingsTipsScreen> with TickerProvid
                   monthName,
                   style: TextStyle(
                     fontSize: 10,
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
               ],
@@ -561,7 +602,10 @@ class _SavingsTipsScreenState extends State<SavingsTipsScreen> with TickerProvid
           ),
         ),
         const SizedBox(height: 12),
-        ...history.take(3).map<Widget>((month) => _buildMonthCard(month)).toList(),
+        ...history
+            .take(3)
+            .map<Widget>((month) => _buildMonthCard(month))
+            .toList(),
       ],
     );
   }
@@ -580,7 +624,9 @@ class _SavingsTipsScreenState extends State<SavingsTipsScreen> with TickerProvid
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -616,7 +662,9 @@ class _SavingsTipsScreenState extends State<SavingsTipsScreen> with TickerProvid
             '$totalItems achats',
             style: TextStyle(
               fontSize: 12,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.6),
             ),
           ),
           if (categories.isNotEmpty) ...[
@@ -628,9 +676,14 @@ class _SavingsTipsScreenState extends State<SavingsTipsScreen> with TickerProvid
                 final name = category['categorie'] as String;
                 final spent = (category['total_spent'] as double?) ?? 0.0;
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.secondary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -657,7 +710,9 @@ class _SavingsTipsScreenState extends State<SavingsTipsScreen> with TickerProvid
           Icon(
             CupertinoIcons.chart_bar,
             size: 64,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.3),
           ),
           const SizedBox(height: 16),
           Text(
@@ -665,7 +720,9 @@ class _SavingsTipsScreenState extends State<SavingsTipsScreen> with TickerProvid
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.7),
             ),
           ),
           const SizedBox(height: 8),
@@ -674,7 +731,9 @@ class _SavingsTipsScreenState extends State<SavingsTipsScreen> with TickerProvid
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 14,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.5),
             ),
           ),
         ],

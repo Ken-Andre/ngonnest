@@ -1,7 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+
 import '../services/error_logger_service.dart';
-import '../models/alert.dart';
+// import '../models/alert.dart';
 
 class DeveloperConsoleScreen extends StatefulWidget {
   const DeveloperConsoleScreen({super.key});
@@ -47,9 +48,9 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur chargement logs: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erreur chargement logs: $e')));
       }
     }
   }
@@ -78,10 +79,7 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
         leading: CupertinoButton(
           padding: EdgeInsets.zero,
           onPressed: () => Navigator.of(context).pop(),
-          child: const Icon(
-            CupertinoIcons.back,
-            color: Colors.white,
-          ),
+          child: const Icon(CupertinoIcons.back, color: Colors.white),
         ),
         actions: [
           // Filtres de sévérité
@@ -92,10 +90,7 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
               _loadLogs();
             },
             itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: null,
-                child: Text('Tous les logs'),
-              ),
+              const PopupMenuItem(value: null, child: Text('Tous les logs')),
               const PopupMenuItem(
                 value: ErrorSeverity.critical,
                 child: Row(
@@ -133,10 +128,7 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
           CupertinoButton(
             padding: EdgeInsets.zero,
             onPressed: _loadLogs,
-            child: const Icon(
-              CupertinoIcons.refresh,
-              color: Colors.white,
-            ),
+            child: const Icon(CupertinoIcons.refresh, color: Colors.white),
           ),
 
           // Menu actions
@@ -168,7 +160,11 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
                 value: 'toggle_auto_refresh',
                 child: Row(
                   children: [
-                    Icon(_autoRefresh ? Icons.check_box : Icons.check_box_outline_blank),
+                    Icon(
+                      _autoRefresh
+                          ? Icons.check_box
+                          : Icons.check_box_outline_blank,
+                    ),
                     const SizedBox(width: 8),
                     const Text('Auto-refresh'),
                   ],
@@ -179,9 +175,7 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
         ],
       ),
       body: _isLoading
-          ? const Center(
-              child: CupertinoActivityIndicator(color: Colors.white),
-            )
+          ? const Center(child: CupertinoActivityIndicator(color: Colors.white))
           : _buildLogsList(),
     );
   }
@@ -192,11 +186,7 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              CupertinoIcons.tray,
-              size: 64,
-              color: Colors.grey,
-            ),
+            const Icon(CupertinoIcons.tray, size: 64, color: Colors.grey),
             const SizedBox(height: 16),
             Text(
               'Aucun log disponible',
@@ -236,10 +226,7 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
       color: const Color(0xFF2D2D2D),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
-        side: BorderSide(
-          color: _getSeverityColor(log.severity),
-          width: 2,
-        ),
+        side: BorderSide(color: _getSeverityColor(log.severity), width: 2),
       ),
       child: ExpansionTile(
         title: Row(
@@ -266,10 +253,7 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
                   ),
                   Text(
                     log.operation,
-                    style: TextStyle(
-                      color: Colors.grey[400],
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: Colors.grey[400], fontSize: 12),
                   ),
                 ],
               ),
@@ -277,19 +261,13 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
             // Timestamp
             Text(
               _formatTimestamp(log.timestamp),
-              style: TextStyle(
-                color: Colors.grey[500],
-                fontSize: 10,
-              ),
+              style: TextStyle(color: Colors.grey[500], fontSize: 10),
             ),
           ],
         ),
         subtitle: Text(
           log.userMessage,
-          style: const TextStyle(
-            color: Colors.white70,
-            fontSize: 12,
-          ),
+          style: const TextStyle(color: Colors.white70, fontSize: 12),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
         ),
@@ -313,10 +291,7 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
                 const SizedBox(height: 4),
                 Text(
                   log.technicalMessage,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                  ),
+                  style: const TextStyle(color: Colors.white, fontSize: 12),
                 ),
 
                 const SizedBox(height: 12),
@@ -354,10 +329,7 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
                   const SizedBox(height: 4),
                   Text(
                     log.metadata.toString(),
-                    style: TextStyle(
-                      color: Colors.grey[300],
-                      fontSize: 11,
-                    ),
+                    style: TextStyle(color: Colors.grey[300], fontSize: 11),
                   ),
                 ],
 
@@ -374,10 +346,7 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
                 const SizedBox(height: 4),
                 Text(
                   '${log.deviceInfo['platform'] ?? 'unknown'} • v${log.appVersion}',
-                  style: TextStyle(
-                    color: Colors.grey[300],
-                    fontSize: 11,
-                  ),
+                  style: TextStyle(color: Colors.grey[300], fontSize: 11),
                 ),
               ],
             ),

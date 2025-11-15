@@ -189,8 +189,9 @@ class AlertGenerationService {
 
       for (final item in inventory) {
         if (item.type != TypeObjet.consommable ||
-            item.frequenceAchatJours == null)
+            item.frequenceAchatJours == null) {
           continue;
+        }
 
         final monthlyQuantity =
             (30.0 / item.frequenceAchatJours!) * item.quantiteInitiale;

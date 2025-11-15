@@ -1,10 +1,11 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'dart:io';
-import 'package:ngonnest_app/services/database_service.dart';
-import 'package:ngonnest_app/services/error_logger_service.dart';
+
+import 'package:flutter_test/flutter_test.dart';
+// import 'package:ngonnest_app/services/error_logger_service.dart';
 import 'package:ngonnest_app/repository/foyer_repository.dart';
 import 'package:ngonnest_app/repository/inventory_repository.dart';
+import 'package:ngonnest_app/services/database_service.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 /// Test suite to verify database connection stability improvements
 /// Tests the enhanced singleton pattern with automatic recovery mechanisms
@@ -20,10 +21,14 @@ void main() {
       if (!Platform.isAndroid && !Platform.isIOS) {
         sqfliteFfiInit();
         databaseFactory = databaseFactoryFfi;
-        print('[TEST:INIT] Sqflite FFI initialized for ${Platform.operatingSystem}');
+        print(
+          '[TEST:INIT] Sqflite FFI initialized for ${Platform.operatingSystem}',
+        );
       }
 
-      print('[TEST:INIT] Database factory set to: ${databaseFactory.runtimeType}');
+      print(
+        '[TEST:INIT] Database factory set to: ${databaseFactory.runtimeType}',
+      );
     } catch (e) {
       print('[TEST:INIT] Database factory fallback: $e');
       // Continue with default factory for tests
@@ -45,17 +50,20 @@ void main() {
   });
 
   group('Database Connection Stability Tests', () {
-    test('Singleton pattern maintained across multiple instantiations', () async {
-      final db1 = DatabaseService();
-      final db2 = DatabaseService();
+    test(
+      'Singleton pattern maintained across multiple instantiations',
+      () async {
+        final db1 = DatabaseService();
+        final db2 = DatabaseService();
 
-      // Both should return the same database instance
-      final database1 = await db1.database;
-      final database2 = await db2.database;
+        // Both should return the same database instance
+        final database1 = await db1.database;
+        final database2 = await db2.database;
 
-      expect(database1.path, equals(database2.path));
-      print('[TEST] ✓ Singleton pattern verified');
-    });
+        expect(database1.path, equals(database2.path));
+        print('[TEST] ✓ Singleton pattern verified');
+      },
+    );
 
     test('Connection validity check works', () async {
       final isValid = await databaseService.isConnectionValid();
@@ -118,20 +126,23 @@ void main() {
   });
 
   group('Background Task Compatibility', () {
-    test('Database service can be instantiated multiple times (background compatible)', () async {
-      // This simulates what happens when background tasks create new instances
-      final backgroundService1 = DatabaseService();
-      final backgroundService2 = DatabaseService();
+    test(
+      'Database service can be instantiated multiple times (background compatible)',
+      () async {
+        // This simulates what happens when background tasks create new instances
+        final backgroundService1 = DatabaseService();
+        final backgroundService2 = DatabaseService();
 
-      // Both should be able to get the database without issues
-      final db1 = await backgroundService1.database;
-      final db2 = await backgroundService2.database;
+        // Both should be able to get the database without issues
+        final db1 = await backgroundService1.database;
+        final db2 = await backgroundService2.database;
 
-      expect(db1.isOpen, isTrue);
-      expect(db2.isOpen, isTrue);
-      expect(db1.path, equals(db2.path)); // Same database file
-      print('[TEST] ✓ Multiple instances compatible with background tasks');
-    });
+        expect(db1.isOpen, isTrue);
+        expect(db2.isOpen, isTrue);
+        expect(db1.path, equals(db2.path)); // Same database file
+        print('[TEST] ✓ Multiple instances compatible with background tasks');
+      },
+    );
 
     test('Connection validation works across instances', () async {
       final instance1 = DatabaseService();

@@ -1,15 +1,16 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
+
 import '../models/objet.dart';
 import '../repository/inventory_repository.dart';
-import '../services/database_service.dart';
-import '../services/smart_validator.dart';
-import '../services/error_logger_service.dart';
 import '../services/budget_service.dart';
-import '../widgets/main_navigation_wrapper.dart';
+import '../services/database_service.dart';
+import '../services/error_logger_service.dart';
 import '../services/navigation_service.dart';
+import '../services/smart_validator.dart';
+import '../widgets/main_navigation_wrapper.dart';
 
 /// ⚠️ CRITICAL TODOs FOR CLIENT DELIVERY:
 /// TODO: EDIT_VALIDATION - Form validation may not work properly
@@ -237,7 +238,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
       currentIndex: 1, // Inventory index
       onTabChanged: (index) => NavigationService.navigateToTab(context, index),
       body: Scaffold(
-        backgroundColor: Theme.of(context).colorScheme.background,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         appBar: AppBar(
           backgroundColor: Theme.of(context).colorScheme.surface,
           elevation: 0,
@@ -388,7 +389,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           filled: true,
           fillColor: readOnly
-              ? Theme.of(context).colorScheme.surface.withOpacity(0.5)
+              ? Theme.of(context).colorScheme.surface.withValues(alpha: 0.5)
               : Theme.of(context).colorScheme.surface,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
@@ -419,7 +420,9 @@ class _EditProductScreenState extends State<EditProductScreen> {
             children: [
               Icon(
                 CupertinoIcons.calendar,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.7),
               ),
               const SizedBox(width: 12),
               Text(
@@ -431,7 +434,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
                       ? Theme.of(context).colorScheme.onSurface
                       : Theme.of(
                           context,
-                        ).colorScheme.onSurface.withOpacity(0.7),
+                        ).colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
               ),
             ],

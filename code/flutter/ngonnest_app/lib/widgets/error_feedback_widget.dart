@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+
 import '../services/error_logger_service.dart';
 
 /// Widget d'affichage intelligent des erreurs et feedback utilisateur
@@ -30,7 +31,8 @@ class ErrorFeedbackWidget extends StatelessWidget {
     }
 
     final hasSuggestions = validationResult.suggestions?.isNotEmpty == true;
-    final hasDebugInfo = kDebugMode && showDebugInfo && validationResult.errorCode != null;
+    final hasDebugInfo =
+        kDebugMode && showDebugInfo && validationResult.errorCode != null;
 
     return Container(
       padding: padding ?? const EdgeInsets.only(top: 8),
@@ -43,8 +45,8 @@ class ErrorFeedbackWidget extends StatelessWidget {
 
           // Suggestions de correction
           if (hasSuggestions) ...[
-            ...validationResult.suggestions.map((suggestion) =>
-              _buildSuggestionChip(suggestion, context)
+            ...validationResult.suggestions.map(
+              (suggestion) => _buildSuggestionChip(suggestion, context),
             ),
           ],
 
@@ -63,20 +65,18 @@ class ErrorFeedbackWidget extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(
-          _getSeverityIcon(severity),
-          size: 16,
-          color: color,
-        ),
+        Icon(_getSeverityIcon(severity), size: 16, color: color),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
             validationResult.userMessage ?? 'Une erreur s\'est produite',
-            style: userMessageStyle ?? TextStyle(
-              color: color,
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
+            style:
+                userMessageStyle ??
+                TextStyle(
+                  color: color,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
           ),
         ),
       ],
@@ -94,7 +94,7 @@ class ErrorFeedbackWidget extends StatelessWidget {
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
           ),
         ),
         child: Row(
@@ -128,10 +128,12 @@ class ErrorFeedbackWidget extends StatelessWidget {
       margin: const EdgeInsets.only(top: 16),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        color: Theme.of(
+          context,
+        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5),
           style: BorderStyle.solid,
         ),
       ),
@@ -148,13 +150,15 @@ class ErrorFeedbackWidget extends StatelessWidget {
               const SizedBox(width: 6),
               Text(
                 'DEBUG INFO',
-                style: debugTextStyle ?? TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontFamily: 'monospace',
-                  letterSpacing: 0.5,
-                ),
+                style:
+                    debugTextStyle ??
+                    TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontFamily: 'monospace',
+                      letterSpacing: 0.5,
+                    ),
               ),
             ],
           ),
@@ -166,13 +170,22 @@ class ErrorFeedbackWidget extends StatelessWidget {
           ],
 
           // Champ concerné
-          if (validationResult.field != null && validationResult.field.isNotEmpty) ...[
+          if (validationResult.field != null &&
+              validationResult.field.isNotEmpty) ...[
             _buildDebugRow('Champ:', validationResult.field, context),
           ],
 
           // Gravité
           if (validationResult.severity != null) ...[
-_buildDebugRow('Gravité:', validationResult.severity.toString().split('.').last.toUpperCase(), context),
+            _buildDebugRow(
+              'Gravité:',
+              validationResult.severity
+                  .toString()
+                  .split('.')
+                  .last
+                  .toUpperCase(),
+              context,
+            ),
           ],
 
           const SizedBox(height: 8),
@@ -215,23 +228,29 @@ _buildDebugRow('Gravité:', validationResult.severity.toString().split('.').last
             width: 60,
             child: Text(
               label,
-              style: debugTextStyle ?? TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.8),
-                fontFamily: 'monospace',
-              ),
+              style:
+                  debugTextStyle ??
+                  TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                    fontFamily: 'monospace',
+                  ),
             ),
           ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               value,
-              style: debugTextStyle ?? TextStyle(
-                fontSize: 10,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                fontFamily: 'monospace',
-              ),
+              style:
+                  debugTextStyle ??
+                  TextStyle(
+                    fontSize: 10,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontFamily: 'monospace',
+                  ),
             ),
           ),
         ],
@@ -268,7 +287,10 @@ _buildDebugRow('Gravité:', validationResult.severity.toString().split('.').last
             children: [
               // Message technique
               if (validationResult.technicalMessage != null) ...[
-                _buildTechDetailRow('Message Technique:', validationResult.technicalMessage),
+                _buildTechDetailRow(
+                  'Message Technique:',
+                  validationResult.technicalMessage,
+                ),
                 const Divider(height: 16),
               ],
 
@@ -276,7 +298,10 @@ _buildDebugRow('Gravité:', validationResult.severity.toString().split('.').last
               if (validationResult.metadata != null) ...[
                 Text(
                   'Métadonnées:',
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Container(
@@ -284,13 +309,20 @@ _buildDebugRow('Gravité:', validationResult.severity.toString().split('.').last
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
+                    border: Border.all(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.outline.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: Text(
                     validationResult.metadata.entries
                         .map((e) => '${e.key}: ${e.value}')
                         .join('\n'),
-                    style: const TextStyle(fontSize: 10, fontFamily: 'monospace'),
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontFamily: 'monospace',
+                    ),
                   ),
                 ),
                 const Divider(height: 16),
@@ -299,7 +331,10 @@ _buildDebugRow('Gravité:', validationResult.severity.toString().split('.').last
               // Actions disponibles
               Text(
                 'Actions Débogage:',
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               const SizedBox(height: 8),
               Wrap(
@@ -322,32 +357,52 @@ _buildDebugRow('Gravité:', validationResult.severity.toString().split('.').last
                       );
                     },
                     icon: const Icon(Icons.bug_report, size: 14),
-                    label: const Text('Test Error', style: TextStyle(fontSize: 12)),
+                    label: const Text(
+                      'Test Error',
+                      style: TextStyle(fontSize: 12),
+                    ),
                     style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       minimumSize: Size.zero,
                     ),
                   ),
                   OutlinedButton.icon(
                     onPressed: () async {
                       final logs = await ErrorLoggerService.getAllLogs();
-                      final recentLogs = logs.where((log) =>
-                        log.timestamp.isAfter(DateTime.now().subtract(const Duration(minutes: 5)))
-                      ).toList();
+                      final recentLogs = logs
+                          .where(
+                            (log) => log.timestamp.isAfter(
+                              DateTime.now().subtract(
+                                const Duration(minutes: 5),
+                              ),
+                            ),
+                          )
+                          .toList();
 
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('${recentLogs.length} erreurs dans les 5 dernières minutes'),
+                            content: Text(
+                              '${recentLogs.length} erreurs dans les 5 dernières minutes',
+                            ),
                             duration: const Duration(seconds: 3),
                           ),
                         );
                       }
                     },
                     icon: const Icon(Icons.history, size: 14),
-                    label: const Text('View Logs', style: TextStyle(fontSize: 12)),
+                    label: const Text(
+                      'View Logs',
+                      style: TextStyle(fontSize: 12),
+                    ),
                     style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       minimumSize: Size.zero,
                     ),
                   ),
@@ -382,7 +437,7 @@ _buildDebugRow('Gravité:', validationResult.severity.toString().split('.').last
             decoration: BoxDecoration(
               color: const Color(0xFFF5F5F5),
               borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: Colors.grey.withOpacity(0.3)),
+              border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
             ),
             child: Text(
               value,

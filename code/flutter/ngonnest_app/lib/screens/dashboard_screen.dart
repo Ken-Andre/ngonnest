@@ -216,7 +216,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         gradient: LinearGradient(
           colors: [
             Theme.of(context).colorScheme.primary,
-            Theme.of(context).colorScheme.primary.withOpacity(0.8),
+            Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -243,7 +243,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     fontSize: 14,
                     color: Theme.of(
                       context,
-                    ).colorScheme.onPrimary.withOpacity(0.9),
+                    ).colorScheme.onPrimary.withValues(alpha: 0.9),
                   ),
                 ),
                 TextButton(
@@ -417,7 +417,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       BoxShadow(
                         color: Theme.of(
                           context,
-                        ).colorScheme.onSurface.withOpacity(0.05),
+                        ).colorScheme.onSurface.withValues(alpha: 0.05),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -452,7 +452,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             fontSize: 10,
                             color: Theme.of(
                               context,
-                            ).colorScheme.onSurface.withOpacity(0.7),
+                            ).colorScheme.onSurface.withValues(alpha: 0.7),
                           ),
                           textAlign: TextAlign.center,
                           maxLines: 2,
@@ -478,7 +478,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -526,7 +528,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
@@ -557,12 +561,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 decoration: BoxDecoration(
                   color: _getNotificationColor(
                     notification.urgences,
-                  ).withOpacity(0.1),
+                  ).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: _getNotificationColor(
                       notification.urgences,
-                    ).withOpacity(0.3),
+                    ).withValues(alpha: 0.3),
                     width: 1,
                   ),
                 ),
@@ -593,7 +597,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               fontSize: 14,
                               color: Theme.of(
                                 context,
-                              ).colorScheme.onSurface.withOpacity(0.7),
+                              ).colorScheme.onSurface.withValues(alpha: 0.7),
                             ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -611,7 +615,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           CupertinoIcons.checkmark_circle,
                           color: Theme.of(
                             context,
-                          ).colorScheme.onSurface.withOpacity(0.7),
+                          ).colorScheme.onSurface.withValues(alpha: 0.7),
                           size: 18,
                         ),
                       ),
@@ -672,7 +676,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         BoxShadow(
                           color: Theme.of(
                             context,
-                          ).colorScheme.onSurface.withOpacity(0.05),
+                          ).colorScheme.onSurface.withValues(alpha: 0.05),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -685,7 +689,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
-                            color: (action['color'] as Color).withOpacity(0.1),
+                            color: (action['color'] as Color).withValues(
+                              alpha: 0.1,
+                            ),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Icon(
@@ -715,7 +721,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               fontSize: 12,
                               color: Theme.of(
                                 context,
-                              ).colorScheme.onSurface.withOpacity(0.7),
+                              ).colorScheme.onSurface.withValues(alpha: 0.7),
                             ),
                             textAlign: TextAlign.center,
                             maxLines: 2,
@@ -742,7 +748,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -801,7 +809,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               label,
               style: TextStyle(
                 fontSize: 16,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.7),
               ),
               overflow: TextOverflow.ellipsis,
             ),
@@ -833,7 +843,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -873,7 +885,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   CupertinoIcons.cube_box,
                   color: Theme.of(
                     context,
-                  ).colorScheme.onBackground.withOpacity(0.7),
+                  ).colorScheme.onSurface.withValues(alpha: 0.7),
                   size: 20,
                 ),
                 const SizedBox(width: 12),
@@ -885,7 +897,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       fontSize: 16,
                       color: Theme.of(
                         context,
-                      ).colorScheme.onBackground.withOpacity(0.7),
+                      ).colorScheme.onBackground.withValues(alpha: 0.7),
                     ),
                   ),
                 ),
@@ -905,7 +917,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Icon(
             CupertinoIcons.cube_box,
             size: 64,
-            color: Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.7),
           ),
           const SizedBox(height: 16),
           Text(
@@ -914,7 +928,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               fontSize: 18,
               color: Theme.of(
                 context,
-              ).colorScheme.onBackground.withOpacity(0.7),
+              ).colorScheme.onBackground.withValues(alpha: 0.7),
             ),
           ),
         ],
@@ -1007,7 +1021,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         border: Border.all(
                           color: _getNotificationColor(
                             notification.urgences,
-                          ).withOpacity(0.3),
+                          ).withValues(alpha: 0.3),
                         ),
                       ),
                       child: Row(
@@ -1037,9 +1051,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   notification.message,
                                   style: TextStyle(
                                     fontSize: 14,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface.withOpacity(0.7),
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withValues(alpha: 0.7),
                                   ),
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
@@ -1057,7 +1072,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 CupertinoIcons.checkmark_circle,
                                 color: Theme.of(
                                   context,
-                                ).colorScheme.onSurface.withOpacity(0.7),
+                                ).colorScheme.onSurface.withValues(alpha: 0.7),
                                 size: 18,
                               ),
                             ),

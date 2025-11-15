@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:developer';
+// import 'dart:developer';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -27,7 +27,8 @@ class RemoteConfigService {
 
     // Premium Banner Content
     'premium_banner_title': 'Upgrade to Premium',
-    'premium_banner_description': 'Unlock advanced features and unlimited storage',
+    'premium_banner_description':
+        'Unlock advanced features and unlimited storage',
 
     // Dynamic Content
     'welcome_message': 'Welcome to NgonNest',
@@ -42,10 +43,12 @@ class RemoteConfigService {
     'app_version_required': '1.0.0',
 
     // Onboarding Flow
-    'onboarding_steps': '{"steps": ["Welcome", "Setup Profile", "Add Items", "Done"]}',
+    'onboarding_steps':
+        '{"steps": ["Welcome", "Setup Profile", "Add Items", "Done"]}',
 
     // Premium Features List
-    'premium_features_list': '{"features": ["Unlimited Items", "Advanced Analytics", "Priority Support"]}',
+    'premium_features_list':
+        '{"features": ["Unlimited Items", "Advanced Analytics", "Priority Support"]}',
   };
 
   Future<void> initialize() async {
@@ -97,10 +100,13 @@ class RemoteConfigService {
 
       // Simulate fetch delay
       if (now - lastFetchTime > _minimumFetchInterval.inMilliseconds) {
-        await Future.delayed(const Duration(seconds: 1)); // Simulate network delay
+        await Future.delayed(
+          const Duration(seconds: 1),
+        ); // Simulate network delay
 
         // In development, you can modify these values to test different scenarios
-        _configCache['feature_premium_banner_enabled'] = true; // Enable for testing
+        _configCache['feature_premium_banner_enabled'] =
+            true; // Enable for testing
         _configCache['welcome_message'] = 'Welcome to NgonNest (Dev Mode)';
 
         await prefs.setInt(_lastFetchTimeKey, now);
@@ -124,10 +130,14 @@ class RemoteConfigService {
   }
 
   // Getters for different value types
-  bool getBool(String key) => _configCache[key] as bool? ?? _defaults[key] as bool? ?? false;
-  String getString(String key) => _configCache[key] as String? ?? _defaults[key] as String? ?? '';
-  int getInt(String key) => _configCache[key] as int? ?? _defaults[key] as int? ?? 0;
-  double getDouble(String key) => _configCache[key] as double? ?? _defaults[key] as double? ?? 0.0;
+  bool getBool(String key) =>
+      _configCache[key] as bool? ?? _defaults[key] as bool? ?? false;
+  String getString(String key) =>
+      _configCache[key] as String? ?? _defaults[key] as String? ?? '';
+  int getInt(String key) =>
+      _configCache[key] as int? ?? _defaults[key] as int? ?? 0;
+  double getDouble(String key) =>
+      _configCache[key] as double? ?? _defaults[key] as double? ?? 0.0;
 
   // Helper methods for specific features
   bool get isPremiumBannerEnabled => getBool('feature_premium_banner_enabled');
@@ -157,10 +167,13 @@ class RemoteConfigService {
       await _simulateRemoteConfigFetch();
     } else {
       // In production, this would trigger actual Firebase Remote Config fetch
-      debugPrint('Force fetch called (production mode - implement Firebase Remote Config)');
+      debugPrint(
+        'Force fetch called (production mode - implement Firebase Remote Config)',
+      );
     }
   }
 
   // Get all config values for debugging
-  Map<String, dynamic> getAllConfig() => Map<String, dynamic>.from(_configCache);
+  Map<String, dynamic> getAllConfig() =>
+      Map<String, dynamic>.from(_configCache);
 }

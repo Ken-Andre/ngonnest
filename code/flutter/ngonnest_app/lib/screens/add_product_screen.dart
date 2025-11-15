@@ -33,7 +33,8 @@ import '../widgets/smart_quantity_selector.dart';
 
 class AddProductScreen extends StatefulWidget {
   final bool isConsumable;
-  final Function(bool)? onTypeChanged; // Callback pour notifier le changement de type
+  final Function(bool)?
+  onTypeChanged; // Callback pour notifier le changement de type
 
   const AddProductScreen({
     super.key,
@@ -399,8 +400,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
       if (product.defaultQuantity != null) {
         _initialQuantityController.text = product.defaultQuantity.toString();
       }
-      if (product.category != null && product.category != _selectedCategory) {
-        _selectedCategory = product.category!;
+      if (product.category != _selectedCategory) {
+        _selectedCategory = product.category;
       }
     });
 
@@ -710,7 +711,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                     border: Border.all(
                       color: Theme.of(
                         context,
-                      ).colorScheme.outline.withOpacity(0.5),
+                      ).colorScheme.outline.withValues(alpha: 0.5),
                     ),
                   ),
                   child: Row(
@@ -805,7 +806,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                       border: Border.all(
                         color: Theme.of(
                           context,
-                        ).colorScheme.outline.withOpacity(0.5),
+                        ).colorScheme.outline.withValues(alpha: 0.5),
                       ),
                     ),
                     child: Column(
@@ -817,7 +818,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                               CupertinoIcons.text_bubble,
                               color: Theme.of(
                                 context,
-                              ).colorScheme.onSurface.withOpacity(0.7),
+                              ).colorScheme.onSurface.withValues(alpha: 0.7),
                               size: 18,
                             ),
                             const SizedBox(width: 12),
@@ -828,7 +829,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                                 fontWeight: FontWeight.w500,
                                 color: Theme.of(
                                   context,
-                                ).colorScheme.onSurface.withOpacity(0.9),
+                                ).colorScheme.onSurface.withValues(alpha: 0.9),
                               ),
                             ),
                           ],
@@ -844,7 +845,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                             hintStyle: TextStyle(
                               color: Theme.of(
                                 context,
-                              ).colorScheme.onSurface.withOpacity(0.5),
+                              ).colorScheme.onSurface.withValues(alpha: 0.5),
                               fontSize: 14,
                             ),
                             border: OutlineInputBorder(
@@ -852,7 +853,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                               borderSide: BorderSide(
                                 color: Theme.of(
                                   context,
-                                ).colorScheme.outline.withOpacity(0.3),
+                                ).colorScheme.outline.withValues(alpha: 0.3),
                               ),
                             ),
                             focusedBorder: OutlineInputBorder(
@@ -876,7 +877,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                             fontSize: 12,
                             color: Theme.of(
                               context,
-                            ).colorScheme.onSurface.withOpacity(0.6),
+                            ).colorScheme.onSurface.withValues(alpha: 0.6),
                             fontStyle: FontStyle.italic,
                           ),
                         ),
@@ -897,7 +898,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                       border: Border.all(
                         color: Theme.of(
                           context,
-                        ).colorScheme.outline.withOpacity(0.5),
+                        ).colorScheme.outline.withValues(alpha: 0.5),
                       ),
                     ),
                     child: DropdownButtonFormField<String>(
@@ -967,7 +968,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                       border: Border.all(
                         color: Theme.of(
                           context,
-                        ).colorScheme.outline.withOpacity(0.5),
+                        ).colorScheme.outline.withValues(alpha: 0.5),
                       ),
                     ),
                     child: Row(
@@ -976,7 +977,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                           CupertinoIcons.tv,
                           color: Theme.of(
                             context,
-                          ).colorScheme.onSurface.withOpacity(0.7),
+                          ).colorScheme.onSurface.withValues(alpha: 0.7),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -991,7 +992,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                               hintStyle: TextStyle(
                                 color: Theme.of(
                                   context,
-                                ).colorScheme.onSurface.withOpacity(0.7),
+                                ).colorScheme.onSurface.withValues(alpha: 0.7),
                               ),
                             ),
                             style: TextStyle(
@@ -1014,7 +1015,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                             fontSize: 12,
                             color: Theme.of(
                               context,
-                            ).colorScheme.onSurface.withOpacity(0.7),
+                            ).colorScheme.onSurface.withValues(alpha: 0.7),
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -1037,7 +1038,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                             ? Theme.of(context).colorScheme.error
                             : Theme.of(
                                 context,
-                              ).colorScheme.outline.withOpacity(0.5),
+                              ).colorScheme.outline.withValues(alpha: 0.5),
                         width: _packagingValidation?.isValid == false ? 2 : 1,
                       ),
                     ),
@@ -1050,7 +1051,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                               CupertinoIcons.cube_box,
                               color: Theme.of(
                                 context,
-                              ).colorScheme.onSurface.withOpacity(0.7),
+                              ).colorScheme.onSurface.withValues(alpha: 0.7),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -1066,9 +1067,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
                                   border: InputBorder.none,
                                   contentPadding: EdgeInsets.zero,
                                   hintStyle: TextStyle(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface.withOpacity(0.7),
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withValues(alpha: 0.7),
                                   ),
                                 ),
                                 style: TextStyle(
@@ -1094,7 +1096,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                                 fontSize: 12,
                                 color: Theme.of(
                                   context,
-                                ).colorScheme.onSurface.withOpacity(0.7),
+                                ).colorScheme.onSurface.withValues(alpha: 0.7),
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -1121,7 +1123,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                             ? Theme.of(context).colorScheme.error
                             : Theme.of(
                                 context,
-                              ).colorScheme.outline.withOpacity(0.5),
+                              ).colorScheme.outline.withValues(alpha: 0.5),
                         width: _priceValidation?.isValid == false ? 2 : 1,
                       ),
                     ),
@@ -1134,7 +1136,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                               CupertinoIcons.money_euro,
                               color: Theme.of(
                                 context,
-                              ).colorScheme.onSurface.withOpacity(0.7),
+                              ).colorScheme.onSurface.withValues(alpha: 0.7),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -1150,9 +1152,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
                                   border: InputBorder.none,
                                   contentPadding: EdgeInsets.zero,
                                   hintStyle: TextStyle(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface.withOpacity(0.7),
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withValues(alpha: 0.7),
                                   ),
                                 ),
                                 style: TextStyle(
@@ -1178,7 +1181,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                                 fontSize: 12,
                                 color: Theme.of(
                                   context,
-                                ).colorScheme.onSurface.withOpacity(0.7),
+                                ).colorScheme.onSurface.withValues(alpha: 0.7),
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -1208,7 +1211,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                             ? Theme.of(context).colorScheme.error
                             : Theme.of(
                                 context,
-                              ).colorScheme.outline.withOpacity(0.5),
+                              ).colorScheme.outline.withValues(alpha: 0.5),
                         width: _frequencyValidation?.isValid == false ? 2 : 1,
                       ),
                     ),
@@ -1221,7 +1224,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                               CupertinoIcons.time,
                               color: Theme.of(
                                 context,
-                              ).colorScheme.onSurface.withOpacity(0.7),
+                              ).colorScheme.onSurface.withValues(alpha: 0.7),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -1234,9 +1237,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
                                   border: InputBorder.none,
                                   contentPadding: EdgeInsets.zero,
                                   hintStyle: TextStyle(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface.withOpacity(0.7),
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withValues(alpha: 0.7),
                                   ),
                                 ),
                                 style: TextStyle(
@@ -1262,7 +1266,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                               style: TextStyle(
                                 color: Theme.of(
                                   context,
-                                ).colorScheme.onSurface.withOpacity(0.7),
+                                ).colorScheme.onSurface.withValues(alpha: 0.7),
                               ),
                             ),
                           ],
@@ -1292,7 +1296,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                       border: Border.all(
                         color: Theme.of(
                           context,
-                        ).colorScheme.outline.withOpacity(0.5),
+                        ).colorScheme.outline.withValues(alpha: 0.5),
                       ), // Use theme color
                     ),
                     child: CupertinoButton(
@@ -1304,8 +1308,11 @@ class _AddProductScreenState extends State<AddProductScreen> {
                             CupertinoIcons.calendar,
                             color: _expiryDate == null
                                 ? Theme.of(context).colorScheme.outline
-                                : Theme.of(context).colorScheme.onSurface
-                                      .withOpacity(0.7), // Use theme color
+                                : Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface.withValues(
+                                    alpha: 0.7,
+                                  ), // Use theme color
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -1315,9 +1322,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
                                   : '${_expiryDate!.day}/${_expiryDate!.month}/${_expiryDate!.year}',
                               style: TextStyle(
                                 color: _expiryDate == null
-                                    ? Theme.of(
-                                        context,
-                                      ).colorScheme.onSurface.withOpacity(0.5)
+                                    ? Theme.of(context).colorScheme.onSurface
+                                          .withValues(alpha: 0.5)
                                     : Theme.of(context)
                                           .colorScheme
                                           .onSurface, // Use theme color
@@ -1356,7 +1362,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                       border: Border.all(
                         color: Theme.of(
                           context,
-                        ).colorScheme.outline.withOpacity(0.5),
+                        ).colorScheme.outline.withValues(alpha: 0.5),
                       ), // Use theme color
                     ),
                     child: CupertinoButton(
@@ -1368,8 +1374,11 @@ class _AddProductScreenState extends State<AddProductScreen> {
                             CupertinoIcons.calendar,
                             color: _purchaseDate == null
                                 ? Theme.of(context).colorScheme.outline
-                                : Theme.of(context).colorScheme.onSurface
-                                      .withOpacity(0.7), // Use theme color
+                                : Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface.withValues(
+                                    alpha: 0.7,
+                                  ), // Use theme color
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -1379,9 +1388,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
                                   : '${_purchaseDate!.day}/${_purchaseDate!.month}/${_purchaseDate!.year}',
                               style: TextStyle(
                                 color: _purchaseDate == null
-                                    ? Theme.of(
-                                        context,
-                                      ).colorScheme.onSurface.withOpacity(0.5)
+                                    ? Theme.of(context).colorScheme.onSurface
+                                          .withValues(alpha: 0.5)
                                     : Theme.of(context)
                                           .colorScheme
                                           .onSurface, // Use theme color
@@ -1483,15 +1491,15 @@ class _AddProductScreenState extends State<AddProductScreen> {
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             color: selected
-                ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+                ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
                 : Colors.transparent, // Use theme color
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: selected
                   ? Theme.of(context).colorScheme.primary
-                  : Theme.of(
-                      context,
-                    ).colorScheme.outline.withOpacity(0.5), // Use theme color
+                  : Theme.of(context).colorScheme.outline.withValues(
+                      alpha: 0.5,
+                    ), // Use theme color
               width: selected ? 2 : 1,
             ),
           ),
@@ -1502,8 +1510,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 icon,
                 color: selected
                     ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.onSurface.withOpacity(
-                        0.7,
+                    : Theme.of(context).colorScheme.onSurface.withValues(
+                        alpha: 0.7,
                       ), // Use theme color
                 size: 20,
               ),
@@ -1524,10 +1532,12 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 style: TextStyle(
                   fontSize: 10,
                   color: selected
-                      ? Theme.of(context).colorScheme.primary.withOpacity(0.8)
+                      ? Theme.of(
+                          context,
+                        ).colorScheme.primary.withValues(alpha: 0.8)
                       : Theme.of(
                           context,
-                        ).colorScheme.onSurface.withOpacity(0.7),
+                        ).colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
                 textAlign: TextAlign.center,
                 maxLines: 2,
@@ -1540,48 +1550,48 @@ class _AddProductScreenState extends State<AddProductScreen> {
     );
   }
 
-  Widget _buildCategoryCard(Map<String, String> category, bool isSelected) {
-    return CupertinoButton(
-      padding: EdgeInsets.zero,
-      onPressed: () => setState(() => _selectedCategory = category['id']!),
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? Theme.of(context).colorScheme.primary
-              : Theme.of(context).colorScheme.surface, // Use theme color
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected
-                ? Theme.of(context).colorScheme.primary
-                : Theme.of(
-                    context,
-                  ).colorScheme.outline.withOpacity(0.5), // Use theme color
-            width: isSelected ? 2 : 1,
-          ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(category['icon']!, style: const TextStyle(fontSize: 20)),
-            const SizedBox(height: 8),
-            Text(
-              category['name']!,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: isSelected
-                    ? Theme.of(context).colorScheme.onPrimary
-                    : Theme.of(
-                        context,
-                      ).colorScheme.onSurface, // Use theme color
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  // Widget _buildCategoryCard(Map<String, String> category, bool isSelected) {
+  //   return CupertinoButton(
+  //     padding: EdgeInsets.zero,
+  //     onPressed: () => setState(() => _selectedCategory = category['id']!),
+  //     child: Container(
+  //       padding: const EdgeInsets.all(8),
+  //       decoration: BoxDecoration(
+  //         color: isSelected
+  //             ? Theme.of(context).colorScheme.primary
+  //             : Theme.of(context).colorScheme.surface, // Use theme color
+  //         borderRadius: BorderRadius.circular(12),
+  //         border: Border.all(
+  //           color: isSelected
+  //               ? Theme.of(context).colorScheme.primary
+  //               : Theme.of(
+  //                   context,
+  //                 ).colorScheme.outline.withValues(alpha: 0.5), // Use theme color
+  //           width: isSelected ? 2 : 1,
+  //         ),
+  //       ),
+  //       child: Column(
+  //         mainAxisAlignment: MainAxisAlignment.center,
+  //         children: [
+  //           Text(category['icon']!, style: const TextStyle(fontSize: 20)),
+  //           const SizedBox(height: 8),
+  //           Text(
+  //             category['name']!,
+  //             style: TextStyle(
+  //               fontSize: 12,
+  //               fontWeight: FontWeight.w600,
+  //               color: isSelected
+  //                   ? Theme.of(context).colorScheme.onPrimary
+  //                   : Theme.of(
+  //                       context,
+  //                     ).colorScheme.onSurface, // Use theme color
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Future<void> _selectDate(
     BuildContext context, {

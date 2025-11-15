@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+
 import '../services/smart_validator.dart';
 import 'error_feedback_widget.dart';
 
@@ -102,7 +103,7 @@ class _DurationCalculatorState extends State<DurationCalculator> {
         border: Border.all(
           color: _validationResult?.isValid == false
               ? Theme.of(context).colorScheme.error
-              : Theme.of(context).colorScheme.outline.withOpacity(0.5),
+              : Theme.of(context).colorScheme.outline.withValues(alpha: 0.5),
           width: _validationResult?.isValid == false ? 2 : 1,
         ),
       ),
@@ -126,7 +127,9 @@ class _DurationCalculatorState extends State<DurationCalculator> {
                 child: Icon(
                   CupertinoIcons.question_circle,
                   size: 16,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.5),
                 ),
               ),
             ],
@@ -141,14 +144,16 @@ class _DurationCalculatorState extends State<DurationCalculator> {
                   'Utiliser la durée standard',
                   style: TextStyle(
                     fontSize: 14,
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.8),
                   ),
                 ),
                 const Spacer(),
                 CupertinoSwitch(
                   value: _useAutoCalculation,
                   onChanged: widget.enabled ? _toggleAutoCalculation : null,
-                  activeColor: Theme.of(context).colorScheme.primary,
+                  activeTrackColor: Theme.of(context).colorScheme.primary,
                 ),
               ],
             ),
@@ -156,7 +161,9 @@ class _DurationCalculatorState extends State<DurationCalculator> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
@@ -176,7 +183,9 @@ class _DurationCalculatorState extends State<DurationCalculator> {
             children: [
               Icon(
                 CupertinoIcons.timer,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.7),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -186,11 +195,15 @@ class _DurationCalculatorState extends State<DurationCalculator> {
                   keyboardType: TextInputType.number,
                   onChanged: _validateDuration,
                   decoration: InputDecoration(
-                    hintText: hasKnownLifespan ? 'Ou personnaliser...' : 'Ex: 365',
+                    hintText: hasKnownLifespan
+                        ? 'Ou personnaliser...'
+                        : 'Ex: 365',
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.zero,
                     hintStyle: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
                   style: TextStyle(
@@ -211,7 +224,9 @@ class _DurationCalculatorState extends State<DurationCalculator> {
                 'jours',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.7),
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -224,7 +239,7 @@ class _DurationCalculatorState extends State<DurationCalculator> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: _getRemainingColor(daysRemaining).withOpacity(0.1),
+                color: _getRemainingColor(daysRemaining).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Row(
@@ -254,7 +269,9 @@ class _DurationCalculatorState extends State<DurationCalculator> {
             'Exemples: Ampoule=1000j, Électroménager=3650j (10 ans)',
             style: TextStyle(
               fontSize: 12,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.6),
               fontStyle: FontStyle.italic,
             ),
           ),

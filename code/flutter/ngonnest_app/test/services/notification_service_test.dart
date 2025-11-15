@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+// import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
@@ -244,13 +244,7 @@ void main() {
         final scheduledDate = DateTime.now().add(Duration(hours: 2));
 
         when(
-          mockNotificationsPlugin.periodicallyShow(
-            any,
-            any,
-            any,
-            any,
-            any,
-          ),
+          mockNotificationsPlugin.periodicallyShow(any, any, any, any, any),
         ).thenAnswer((_) async {});
 
         // Act
@@ -281,13 +275,7 @@ void main() {
         final scheduledDate = DateTime.now().add(Duration(hours: 2));
 
         when(
-          mockNotificationsPlugin.periodicallyShow(
-            any,
-            any,
-            any,
-            any,
-            any,
-          ),
+          mockNotificationsPlugin.periodicallyShow(any, any, any, any, any),
         ).thenAnswer((_) async {});
 
         // Mock static method call
@@ -329,13 +317,7 @@ void main() {
         final scheduledDate = DateTime.now().add(Duration(hours: 2));
 
         when(
-          mockNotificationsPlugin.periodicallyShow(
-            any,
-            any,
-            any,
-            any,
-            any,
-          ),
+          mockNotificationsPlugin.periodicallyShow(any, any, any, any, any),
         ).thenAnswer((_) async {});
 
         when(
@@ -360,13 +342,7 @@ void main() {
 
         // Notification should still be scheduled despite calendar error
         verify(
-          mockNotificationsPlugin.periodicallyShow(
-            any,
-            any,
-            any,
-            any,
-            any,
-          ),
+          mockNotificationsPlugin.periodicallyShow(any, any, any, any, any),
         ).called(1);
       });
     });
@@ -920,13 +896,7 @@ void main() {
       test('should handle scheduling errors gracefully', () async {
         // Arrange
         when(
-          mockNotificationsPlugin.periodicallyShow(
-            any,
-            any,
-            any,
-            any,
-            any,
-          ),
+          mockNotificationsPlugin.periodicallyShow(any, any, any, any, any),
         ).thenThrow(Exception('Scheduling failed'));
 
         // Act & Assert - Should not throw
@@ -938,13 +908,7 @@ void main() {
         );
 
         verify(
-          mockNotificationsPlugin.periodicallyShow(
-            any,
-            any,
-            any,
-            any,
-            any,
-          ),
+          mockNotificationsPlugin.periodicallyShow(any, any, any, any, any),
         ).called(1);
       });
     });

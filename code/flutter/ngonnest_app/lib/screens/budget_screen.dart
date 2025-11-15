@@ -1,14 +1,15 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import '../widgets/main_navigation_wrapper.dart';
-import '../services/navigation_service.dart';
-import '../services/budget_service.dart';
-import '../services/analytics_service.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
 import '../models/budget_category.dart';
+import '../providers/foyer_provider.dart';
+import '../services/analytics_service.dart';
+import '../services/budget_service.dart';
+import '../services/navigation_service.dart';
 import '../widgets/budget_category_card.dart';
 import '../widgets/budget_category_dialog.dart';
-import 'package:provider/provider.dart';
-import '../providers/foyer_provider.dart';
+import '../widgets/main_navigation_wrapper.dart';
 import 'savings_tips_screen.dart';
 
 class BudgetScreen extends StatefulWidget {
@@ -50,7 +51,9 @@ class _BudgetScreenState extends State<BudgetScreen> {
 
     try {
       // Initialize default categories if none exist
-      await BudgetService.initializeDefaultCategories(month: _currentMonth.toString());
+      await BudgetService.initializeDefaultCategories(
+        month: _currentMonth.toString(),
+      );
 
       // Ensure spending is up-to-date with purchases for this foyer
       final foyerId = context.read<FoyerProvider>().foyerId;
@@ -65,7 +68,9 @@ class _BudgetScreenState extends State<BudgetScreen> {
       final categories = await BudgetService.getBudgetCategories(
         month: _currentMonth,
       );
-      final summary = await BudgetService.getBudgetSummary(month: _currentMonth);
+      final summary = await BudgetService.getBudgetSummary(
+        month: _currentMonth,
+      );
 
       final foyerBudget =
           context.read<FoyerProvider>().foyer?.budgetMensuelEstime ?? 0.0;
@@ -171,7 +176,9 @@ class _BudgetScreenState extends State<BudgetScreen> {
                   gradient: LinearGradient(
                     colors: [
                       Theme.of(context).colorScheme.primary,
-                      Theme.of(context).colorScheme.primary.withOpacity(0.8),
+                      Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.8),
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -199,7 +206,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                               fontSize: 12,
                               color: Theme.of(
                                 context,
-                              ).colorScheme.onPrimary.withOpacity(0.9),
+                              ).colorScheme.onPrimary.withValues(alpha: 0.9),
                             ),
                           ),
                         ],
@@ -211,7 +218,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                       decoration: BoxDecoration(
                         color: Theme.of(
                           context,
-                        ).colorScheme.onPrimary.withOpacity(0.2),
+                        ).colorScheme.onPrimary.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(
@@ -291,7 +298,9 @@ class _BudgetScreenState extends State<BudgetScreen> {
                               context.read<AnalyticsService>().logEvent(
                                 'budget_savings_tips_clicked',
                                 parameters: {
-                                  'timestamp': DateTime.now().millisecondsSinceEpoch.toString(),
+                                  'timestamp': DateTime.now()
+                                      .millisecondsSinceEpoch
+                                      .toString(),
                                 },
                               );
                             }
@@ -334,7 +343,9 @@ class _BudgetScreenState extends State<BudgetScreen> {
                               context.read<AnalyticsService>().logEvent(
                                 'budget_add_category_clicked',
                                 parameters: {
-                                  'timestamp': DateTime.now().millisecondsSinceEpoch.toString(),
+                                  'timestamp': DateTime.now()
+                                      .millisecondsSinceEpoch
+                                      .toString(),
                                 },
                               );
                             }
@@ -381,8 +392,9 @@ class _BudgetScreenState extends State<BudgetScreen> {
                           itemCount: _categories.length,
                           itemBuilder: (context, index) {
                             final category = _categories[index];
-                            final foyerId =
-                                context.watch<FoyerProvider>().foyerId;
+                            final foyerId = context
+                                .watch<FoyerProvider>()
+                                .foyerId;
                             if (foyerId == null) {
                               return const SizedBox.shrink();
                             }
@@ -413,7 +425,9 @@ class _BudgetScreenState extends State<BudgetScreen> {
           Icon(
             CupertinoIcons.money_dollar_circle,
             size: 64,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.3),
           ),
           const SizedBox(height: 16),
           Text(
@@ -421,7 +435,9 @@ class _BudgetScreenState extends State<BudgetScreen> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.7),
             ),
           ),
           const SizedBox(height: 8),
@@ -430,7 +446,9 @@ class _BudgetScreenState extends State<BudgetScreen> {
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 14,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.5),
             ),
           ),
           const SizedBox(height: 24),
@@ -464,7 +482,9 @@ class _BudgetScreenState extends State<BudgetScreen> {
           borderRadius: BorderRadius.circular(10),
           boxShadow: [
             BoxShadow(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.05),
               blurRadius: 6,
               offset: const Offset(0, 1),
             ),
@@ -479,7 +499,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
+                    color: color.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(icon, size: 16, color: color),
@@ -493,7 +513,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                       fontWeight: FontWeight.w500,
                       color: Theme.of(
                         context,
-                      ).colorScheme.onSurface.withOpacity(0.7),
+                      ).colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -515,7 +535,9 @@ class _BudgetScreenState extends State<BudgetScreen> {
               subtitle,
               style: TextStyle(
                 fontSize: 10,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.5),
               ),
               overflow: TextOverflow.ellipsis,
             ),

@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+
 import '../services/sync_service.dart';
 
 class SyncBanner extends StatefulWidget {
@@ -75,12 +76,14 @@ class _SyncBannerState extends State<SyncBanner> {
     String message;
 
     if (isSyncing) {
-      bannerColor = Theme.of(context).colorScheme.primary.withOpacity(0.1);
+      bannerColor = Theme.of(
+        context,
+      ).colorScheme.primary.withValues(alpha: 0.1);
       textColor = Theme.of(context).colorScheme.primary;
       icon = CupertinoIcons.arrow_2_circlepath;
       message = 'Synchronisation en cours...';
     } else if (hasError && widget.showErrors) {
-      bannerColor = Theme.of(context).colorScheme.error.withOpacity(0.1);
+      bannerColor = Theme.of(context).colorScheme.error.withValues(alpha: 0.1);
       textColor = Theme.of(context).colorScheme.error;
       icon = CupertinoIcons.exclamationmark_triangle;
       message = 'Erreur de sync - Appuyez pour réessayer';
@@ -90,12 +93,16 @@ class _SyncBannerState extends State<SyncBanner> {
       final timeText = _formatTimeSinceSync(timeSinceSync);
 
       if (isStale) {
-        bannerColor = Theme.of(context).colorScheme.error.withOpacity(0.1);
+        bannerColor = Theme.of(
+          context,
+        ).colorScheme.error.withValues(alpha: 0.1);
         textColor = Theme.of(context).colorScheme.error;
         icon = CupertinoIcons.exclamationmark_triangle;
         message = 'Dernière sync: $timeText (obsolète)';
       } else {
-        bannerColor = Theme.of(context).colorScheme.primary.withOpacity(0.1);
+        bannerColor = Theme.of(
+          context,
+        ).colorScheme.primary.withValues(alpha: 0.1);
         textColor = Theme.of(context).colorScheme.primary;
         icon = CupertinoIcons.checkmark_circle;
         message = 'Dernière sync: $timeText';

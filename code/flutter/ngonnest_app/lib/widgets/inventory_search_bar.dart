@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
 import 'dart:async';
+
+import 'package:flutter/material.dart';
 
 class InventorySearchBar extends StatefulWidget {
   final Function(String) onSearchChanged;
@@ -52,13 +53,13 @@ class _InventorySearchBarState extends State<InventorySearchBar> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
         ),
       ),
       child: TextField(
         controller: _controller,
         onChanged: _onSearchChanged,
-        decoration: InputDecoration(   
+        decoration: InputDecoration(
           hintText: widget.hintText,
           prefixIcon: const Icon(Icons.search, size: 20),
           suffixIcon: _controller.text.isNotEmpty
@@ -78,7 +79,9 @@ class _InventorySearchBarState extends State<InventorySearchBar> {
           hintTextDirection: TextDirection.ltr,
           hintStyle: TextStyle(
             fontSize: 14,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.5),
           ),
         ),
         style: TextStyle(

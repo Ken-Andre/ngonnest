@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:provider/provider.dart';
+// import 'package:ngonnest_app/models/objet.dart';
+import 'package:ngonnest_app/models/foyer.dart';
 import 'package:ngonnest_app/screens/inventory_screen.dart';
 import 'package:ngonnest_app/services/database_service.dart';
-import 'package:ngonnest_app/models/objet.dart';
-import 'package:ngonnest_app/models/foyer.dart';
+import 'package:provider/provider.dart';
 
 void main() {
   group('Inventory Search Integration', () {
@@ -46,7 +46,7 @@ void main() {
 
 // Mock database service for testing
 class MockDatabaseService extends DatabaseService {
-  @override
+  // @override
   Future<void> initDatabase() async {
     // Mock implementation
   }

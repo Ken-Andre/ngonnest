@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ngonnest_app/services/sync_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:ngonnest_app/services/sync_service.dart';
-import 'package:ngonnest_app/services/connectivity_service.dart';
+// import 'package:ngonnest_app/services/connectivity_service.dart';
 
 void main() {
   // Initialize sqflite_ffi for testing

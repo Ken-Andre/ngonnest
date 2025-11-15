@@ -1,11 +1,12 @@
-import 'package:workmanager/workmanager.dart';
 import 'package:flutter/material.dart';
-import 'notification_service.dart';
-import 'database_service.dart';
-import 'household_service.dart';
-import 'error_logger_service.dart';
+import 'package:workmanager/workmanager.dart';
+
 import '../models/alert.dart';
 import '../models/foyer.dart'; // Changed from household_profile.dart to foyer.dart
+import 'database_service.dart';
+import 'error_logger_service.dart';
+import 'household_service.dart';
+import 'notification_service.dart';
 
 // This function will be called in the background by Workmanager
 @pragma('vm:entry-point')
@@ -54,7 +55,6 @@ void callbackDispatcher() {
 
       print('[BackgroundTask] Background task completed successfully');
       return Future.value(true); // Indicate success
-
     } catch (e, stackTrace) {
       print('[BackgroundTask.ERROR] Error during background task: $e');
       print('[BackgroundTask.ERROR] StackTrace: $stackTrace');
@@ -69,7 +69,8 @@ void callbackDispatcher() {
           severity: ErrorSeverity.high,
           metadata: {
             'task_name': taskName,
-            'has_household_profile': foyer?.id != null, // Changed from householdProfile to foyer
+            'has_household_profile':
+                foyer?.id != null, // Changed from householdProfile to foyer
           },
         );
       } catch (logError) {

@@ -1,9 +1,10 @@
 import 'dart:convert';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/supabase_config.dart';
-import '../services/auth_service.dart';
-import '../services/settings_service.dart';
+// import '../services/auth_service.dart';
+// import '../services/settings_service.dart';
 import 'console_logger.dart';
 import 'error_logger_service.dart';
 
@@ -38,8 +39,11 @@ class SupabaseApiService {
 
       final operationType = operation['operation_type'] as String;
       final entityType = operation['entity_type'] as String;
-      final entityId = operation['entity_id'] as String; // Changed from int to String for UUID
-      final payload = jsonDecode(operation['payload'] as String) as Map<String, dynamic>;
+      final entityId =
+          operation['entity_id']
+              as String; // Changed from int to String for UUID
+      final payload =
+          jsonDecode(operation['payload'] as String) as Map<String, dynamic>;
 
       // Ajouter metadata pour tracking et RLS
       final currentUser = _client.auth.currentUser;
@@ -67,9 +71,16 @@ class SupabaseApiService {
           throw Exception('Unsupported entity type: $entityType');
       }
 
-      ConsoleLogger.success('[SupabaseApiService] Operation synced successfully');
+      ConsoleLogger.success(
+        '[SupabaseApiService] Operation synced successfully',
+      );
     } catch (e, stackTrace) {
-      ConsoleLogger.error('SupabaseApiService', 'syncOperation', e, stackTrace: stackTrace);
+      ConsoleLogger.error(
+        'SupabaseApiService',
+        'syncOperation',
+        e,
+        stackTrace: stackTrace,
+      );
 
       await ErrorLoggerService.logError(
         component: 'SupabaseApiService',
@@ -89,7 +100,10 @@ class SupabaseApiService {
 
   /// Synchronise les produits/objets
   /// Updated for UUID support (v13+ schema)
-  Future<void> _syncProduct(String operationType, Map<String, dynamic> payload) async {
+  Future<void> _syncProduct(
+    String operationType,
+    Map<String, dynamic> payload,
+  ) async {
     final table = SupabaseConfig.productsTable;
 
     switch (operationType) {
@@ -97,43 +111,76 @@ class SupabaseApiService {
         // Le schéma Supabase utilise les noms français directement (nom, categorie, etc.)
         // id_foyer is now a UUID string
         final householdId = payload['id_foyer'] as String?;
-        
+
         // Mapper les colonnes locales vers le schéma Supabase (noms FRANÇAIS)
         final supabasePayload = <String, dynamic>{
           if (payload['id'] != null) 'id': payload['id'], // UUID string
-          if (householdId != null) 'household_id': householdId, // UUID foreign key
+          if (householdId != null)
+            'household_id': householdId, // UUID foreign key
           'nom': payload['nom'],
           'categorie': payload['categorie'],
           'type': payload['type'],
           if (payload['room'] != null) 'room': payload['room'],
           // Convertir les dates ISO en format date (YYYY-MM-DD) pour Supabase
-          if (payload['date_achat'] != null) 'date_achat': _formatDateForSupabase(payload['date_achat']),
-          if (payload['duree_vie_prev_jours'] != null) 'duree_vie_prev_jours': payload['duree_vie_prev_jours'],
-          if (payload['date_rupture_prev'] != null) 'date_rupture_prev': _formatDateForSupabase(payload['date_rupture_prev']),
+          if (payload['date_achat'] != null)
+            'date_achat': _formatDateForSupabase(payload['date_achat']),
+          if (payload['duree_vie_prev_jours'] != null)
+            'duree_vie_prev_jours': payload['duree_vie_prev_jours'],
+          if (payload['date_rupture_prev'] != null)
+            'date_rupture_prev': _formatDateForSupabase(
+              payload['date_rupture_prev'],
+            ),
           'quantite_initiale': payload['quantite_initiale'],
           'quantite_restante': payload['quantite_restante'],
           'unite': payload['unite'],
-          if (payload['taille_conditionnement'] != null) 'taille_conditionnement': payload['taille_conditionnement'],
-          if (payload['prix_unitaire'] != null) 'prix_unitaire': payload['prix_unitaire'],
-          if (payload['methode_prevision'] != null) 'methode_prevision': payload['methode_prevision'],
-          if (payload['frequence_achat_jours'] != null) 'frequence_achat_jours': payload['frequence_achat_jours'],
-          if (payload['consommation_jour'] != null) 'consommation_jour': payload['consommation_jour'],
-          if (payload['seuil_alerte_jours'] != null) 'seuil_alerte_jours': payload['seuil_alerte_jours'],
-          if (payload['seuil_alerte_quantite'] != null) 'seuil_alerte_quantite': payload['seuil_alerte_quantite'],
-          if (payload['alert_threshold_days'] != null) 'alert_threshold_days': payload['alert_threshold_days'],
-          if (payload['alert_threshold_quantity'] != null) 'alert_threshold_quantity': payload['alert_threshold_quantity'],
-          if (payload['commentaires'] != null) 'commentaires': payload['commentaires'],
+          if (payload['taille_conditionnement'] != null)
+            'taille_conditionnement': payload['taille_conditionnement'],
+          if (payload['prix_unitaire'] != null)
+            'prix_unitaire': payload['prix_unitaire'],
+          if (payload['methode_prevision'] != null)
+            'methode_prevision': payload['methode_prevision'],
+          if (payload['frequence_achat_jours'] != null)
+            'frequence_achat_jours': payload['frequence_achat_jours'],
+          if (payload['consommation_jour'] != null)
+            'consommation_jour': payload['consommation_jour'],
+          if (payload['seuil_alerte_jours'] != null)
+            'seuil_alerte_jours': payload['seuil_alerte_jours'],
+          if (payload['seuil_alerte_quantite'] != null)
+            'seuil_alerte_quantite': payload['seuil_alerte_quantite'],
+          if (payload['alert_threshold_days'] != null)
+            'alert_threshold_days': payload['alert_threshold_days'],
+          if (payload['alert_threshold_quantity'] != null)
+            'alert_threshold_quantity': payload['alert_threshold_quantity'],
+          if (payload['commentaires'] != null)
+            'commentaires': payload['commentaires'],
         };
-        
+
         // Log du payload pour debug
-        ConsoleLogger.info('[SupabaseApiService] INSERT product with UUID: ${supabasePayload['id']}');
-        
+        ConsoleLogger.info(
+          '[SupabaseApiService] INSERT product with UUID: ${supabasePayload['id']}',
+        );
+
         try {
-          final response = await _client.from(table).insert(supabasePayload).select();
-          ConsoleLogger.success('[SupabaseApiService] Product inserted successfully: $response');
+          final response = await _client
+              .from(table)
+              .insert(supabasePayload)
+              .select();
+          ConsoleLogger.success(
+            '[SupabaseApiService] Product inserted successfully: $response',
+          );
         } catch (e, stackTrace) {
-          ConsoleLogger.error('SupabaseApiService', '_syncProduct CREATE', e, stackTrace: stackTrace);
-          ConsoleLogger.error('SupabaseApiService', 'CREATE payload', supabasePayload, stackTrace: stackTrace);
+          ConsoleLogger.error(
+            'SupabaseApiService',
+            '_syncProduct CREATE',
+            e,
+            stackTrace: stackTrace,
+          );
+          ConsoleLogger.error(
+            'SupabaseApiService',
+            'CREATE payload',
+            supabasePayload,
+            stackTrace: stackTrace,
+          );
           rethrow;
         }
         break;
@@ -142,32 +189,52 @@ class SupabaseApiService {
         // Use UUID string for ID
         final supabasePayload = <String, dynamic>{
           if (payload.containsKey('nom')) 'nom': payload['nom'],
-          if (payload.containsKey('categorie')) 'categorie': payload['categorie'],
+          if (payload.containsKey('categorie'))
+            'categorie': payload['categorie'],
           if (payload.containsKey('type')) 'type': payload['type'],
           if (payload.containsKey('room')) 'room': payload['room'],
-          if (payload.containsKey('date_achat')) 'date_achat': _formatDateForSupabase(payload['date_achat']),
-          if (payload.containsKey('duree_vie_prev_jours')) 'duree_vie_prev_jours': payload['duree_vie_prev_jours'],
-          if (payload.containsKey('date_rupture_prev')) 'date_rupture_prev': _formatDateForSupabase(payload['date_rupture_prev']),
-          if (payload.containsKey('quantite_initiale')) 'quantite_initiale': payload['quantite_initiale'],
-          if (payload.containsKey('quantite_restante')) 'quantite_restante': payload['quantite_restante'],
+          if (payload.containsKey('date_achat'))
+            'date_achat': _formatDateForSupabase(payload['date_achat']),
+          if (payload.containsKey('duree_vie_prev_jours'))
+            'duree_vie_prev_jours': payload['duree_vie_prev_jours'],
+          if (payload.containsKey('date_rupture_prev'))
+            'date_rupture_prev': _formatDateForSupabase(
+              payload['date_rupture_prev'],
+            ),
+          if (payload.containsKey('quantite_initiale'))
+            'quantite_initiale': payload['quantite_initiale'],
+          if (payload.containsKey('quantite_restante'))
+            'quantite_restante': payload['quantite_restante'],
           if (payload.containsKey('unite')) 'unite': payload['unite'],
-          if (payload.containsKey('taille_conditionnement')) 'taille_conditionnement': payload['taille_conditionnement'],
-          if (payload.containsKey('prix_unitaire')) 'prix_unitaire': payload['prix_unitaire'],
-          if (payload.containsKey('methode_prevision')) 'methode_prevision': payload['methode_prevision'],
-          if (payload.containsKey('frequence_achat_jours')) 'frequence_achat_jours': payload['frequence_achat_jours'],
-          if (payload.containsKey('consommation_jour')) 'consommation_jour': payload['consommation_jour'],
-          if (payload.containsKey('seuil_alerte_jours')) 'seuil_alerte_jours': payload['seuil_alerte_jours'],
-          if (payload.containsKey('seuil_alerte_quantite')) 'seuil_alerte_quantite': payload['seuil_alerte_quantite'],
-          if (payload.containsKey('commentaires')) 'commentaires': payload['commentaires'],
+          if (payload.containsKey('taille_conditionnement'))
+            'taille_conditionnement': payload['taille_conditionnement'],
+          if (payload.containsKey('prix_unitaire'))
+            'prix_unitaire': payload['prix_unitaire'],
+          if (payload.containsKey('methode_prevision'))
+            'methode_prevision': payload['methode_prevision'],
+          if (payload.containsKey('frequence_achat_jours'))
+            'frequence_achat_jours': payload['frequence_achat_jours'],
+          if (payload.containsKey('consommation_jour'))
+            'consommation_jour': payload['consommation_jour'],
+          if (payload.containsKey('seuil_alerte_jours'))
+            'seuil_alerte_jours': payload['seuil_alerte_jours'],
+          if (payload.containsKey('seuil_alerte_quantite'))
+            'seuil_alerte_quantite': payload['seuil_alerte_quantite'],
+          if (payload.containsKey('commentaires'))
+            'commentaires': payload['commentaires'],
         };
         // Use UUID string for ID
         final id = payload['id'] as String;
-        ConsoleLogger.info('[SupabaseApiService] UPDATE product with UUID: $id');
+        ConsoleLogger.info(
+          '[SupabaseApiService] UPDATE product with UUID: $id',
+        );
         await _client.from(table).update(supabasePayload).eq('id', id);
         break;
       case 'DELETE':
         final id = payload['id'] as String; // UUID string
-        ConsoleLogger.info('[SupabaseApiService] DELETE product with UUID: $id');
+        ConsoleLogger.info(
+          '[SupabaseApiService] DELETE product with UUID: $id',
+        );
         await _client.from(table).delete().eq('id', id);
         break;
       default:
@@ -177,24 +244,34 @@ class SupabaseApiService {
 
   /// Synchronise les foyers
   /// Updated for UUID support (v13+ schema)
-  Future<void> _syncHousehold(String operationType, Map<String, dynamic> payload) async {
+  Future<void> _syncHousehold(
+    String operationType,
+    Map<String, dynamic> payload,
+  ) async {
     final table = SupabaseConfig.householdsTable;
 
     switch (operationType) {
       case 'CREATE':
         final id = payload['id'] as String?; // UUID string
-        ConsoleLogger.info('[SupabaseApiService] INSERT household with UUID: $id');
+        ConsoleLogger.info(
+          '[SupabaseApiService] INSERT household with UUID: $id',
+        );
         await _client.from(table).insert(payload);
         break;
       case 'UPDATE':
         final id = payload['id'] as String; // UUID string
-        final filteredPayload = Map<String, dynamic>.from(payload)..remove('id');
-        ConsoleLogger.info('[SupabaseApiService] UPDATE household with UUID: $id');
+        final filteredPayload = Map<String, dynamic>.from(payload)
+          ..remove('id');
+        ConsoleLogger.info(
+          '[SupabaseApiService] UPDATE household with UUID: $id',
+        );
         await _client.from(table).update(filteredPayload).eq('id', id);
         break;
       case 'DELETE':
         final id = payload['id'] as String; // UUID string
-        ConsoleLogger.info('[SupabaseApiService] DELETE household with UUID: $id');
+        ConsoleLogger.info(
+          '[SupabaseApiService] DELETE household with UUID: $id',
+        );
         await _client.from(table).delete().eq('id', id);
         break;
       default:
@@ -204,24 +281,34 @@ class SupabaseApiService {
 
   /// Synchronise les achats
   /// Updated for UUID support (v13+ schema)
-  Future<void> _syncPurchase(String operationType, Map<String, dynamic> payload) async {
+  Future<void> _syncPurchase(
+    String operationType,
+    Map<String, dynamic> payload,
+  ) async {
     final table = SupabaseConfig.purchasesTable;
 
     switch (operationType) {
       case 'CREATE':
         final id = payload['id'] as String?; // UUID string
-        ConsoleLogger.info('[SupabaseApiService] INSERT purchase with UUID: $id');
+        ConsoleLogger.info(
+          '[SupabaseApiService] INSERT purchase with UUID: $id',
+        );
         await _client.from(table).insert(payload);
         break;
       case 'UPDATE':
         final id = payload['id'] as String; // UUID string
-        final filteredPayload = Map<String, dynamic>.from(payload)..remove('id');
-        ConsoleLogger.info('[SupabaseApiService] UPDATE purchase with UUID: $id');
+        final filteredPayload = Map<String, dynamic>.from(payload)
+          ..remove('id');
+        ConsoleLogger.info(
+          '[SupabaseApiService] UPDATE purchase with UUID: $id',
+        );
         await _client.from(table).update(filteredPayload).eq('id', id);
         break;
       case 'DELETE':
         final id = payload['id'] as String; // UUID string
-        ConsoleLogger.info('[SupabaseApiService] DELETE purchase with UUID: $id');
+        ConsoleLogger.info(
+          '[SupabaseApiService] DELETE purchase with UUID: $id',
+        );
         await _client.from(table).delete().eq('id', id);
         break;
       default:
@@ -231,24 +318,34 @@ class SupabaseApiService {
 
   /// Synchronise les catégories budgétaires
   /// Updated for UUID support (v13+ schema)
-  Future<void> _syncBudgetCategory(String operationType, Map<String, dynamic> payload) async {
+  Future<void> _syncBudgetCategory(
+    String operationType,
+    Map<String, dynamic> payload,
+  ) async {
     final table = SupabaseConfig.budgetCategoriesTable;
 
     switch (operationType) {
       case 'CREATE':
         final id = payload['id'] as String?; // UUID string
-        ConsoleLogger.info('[SupabaseApiService] INSERT budget category with UUID: $id');
+        ConsoleLogger.info(
+          '[SupabaseApiService] INSERT budget category with UUID: $id',
+        );
         await _client.from(table).insert(payload);
         break;
       case 'UPDATE':
         final id = payload['id'] as String; // UUID string
-        final filteredPayload = Map<String, dynamic>.from(payload)..remove('id');
-        ConsoleLogger.info('[SupabaseApiService] UPDATE budget category with UUID: $id');
+        final filteredPayload = Map<String, dynamic>.from(payload)
+          ..remove('id');
+        ConsoleLogger.info(
+          '[SupabaseApiService] UPDATE budget category with UUID: $id',
+        );
         await _client.from(table).update(filteredPayload).eq('id', id);
         break;
       case 'DELETE':
         final id = payload['id'] as String; // UUID string
-        ConsoleLogger.info('[SupabaseApiService] DELETE budget category with UUID: $id');
+        ConsoleLogger.info(
+          '[SupabaseApiService] DELETE budget category with UUID: $id',
+        );
         await _client.from(table).delete().eq('id', id);
         break;
       default:
@@ -288,14 +385,19 @@ class SupabaseApiService {
       }
 
       final response = await _client
-        .from(table)
-        .select()
-        .gte(dateColumn, since.toIso8601String())
-        .order(dateColumn, ascending: true);
+          .from(table)
+          .select()
+          .gte(dateColumn, since.toIso8601String())
+          .order(dateColumn, ascending: true);
 
       return List<Map<String, dynamic>>.from(response as List);
     } catch (e, stackTrace) {
-      ConsoleLogger.error('SupabaseApiService', 'getLatestChanges', e, stackTrace: stackTrace);
+      ConsoleLogger.error(
+        'SupabaseApiService',
+        'getLatestChanges',
+        e,
+        stackTrace: stackTrace,
+      );
       await ErrorLoggerService.logError(
         component: 'SupabaseApiService',
         operation: 'getLatestChanges',
@@ -345,7 +447,9 @@ class SupabaseApiService {
               .lt('synced_at', cutoffDate.toIso8601String());
         } catch (e) {
           // Ignorer les erreurs si la colonne n'existe pas
-          ConsoleLogger.warning('[SupabaseApiService] Cleanup failed for $table: $e');
+          ConsoleLogger.warning(
+            '[SupabaseApiService] Cleanup failed for $table: $e',
+          );
         }
       }
 
@@ -376,7 +480,7 @@ class SupabaseApiService {
   /// Les colonnes de type 'date' dans Supabase attendent seulement la date sans l'heure
   String _formatDateForSupabase(dynamic dateValue) {
     if (dateValue == null) return '';
-    
+
     if (dateValue is String) {
       // Si c'est déjà une string ISO, extraire la partie date
       try {
@@ -389,7 +493,7 @@ class SupabaseApiService {
     } else if (dateValue is DateTime) {
       return '${dateValue.year}-${dateValue.month.toString().padLeft(2, '0')}-${dateValue.day.toString().padLeft(2, '0')}';
     }
-    
+
     return dateValue.toString();
   }
 }

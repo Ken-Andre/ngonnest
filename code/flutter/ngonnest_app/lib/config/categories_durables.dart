@@ -4,7 +4,7 @@
 library;
 
 /// Liste fixe des catégories durables disponibles
-const List<Map<String, String>> CATEGORIES_DURABLES = [
+const List<Map<String, String>> categoriesDurables = [
   {
     'id': 'electromenager',
     'name': 'Électroménager',
@@ -34,7 +34,7 @@ const List<Map<String, String>> CATEGORIES_DURABLES = [
 /// Récupère une catégorie par son ID
 Map<String, String>? getDurableCategoryById(String id) {
   try {
-    return CATEGORIES_DURABLES.firstWhere(
+    return categoriesDurables.firstWhere(
       (category) => category['id'] == id,
       orElse: () => {}, // Retourne un map vide si aucun élément n'est trouvé
     );

@@ -1,22 +1,13 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 
 // ========================================
 // DESIGN SYSTEM COMPONENTS (US-2.6)
 // ========================================
 
-enum ButtonVariant {
-  primary,
-  secondary,
-  danger,
-  icon,
-}
+enum ButtonVariant { primary, secondary, danger, icon }
 
-enum ButtonSize {
-  small,
-  medium,
-  large,
-}
+enum ButtonSize { small, medium, large }
 
 class AppButton extends StatelessWidget {
   final Widget child;
@@ -121,7 +112,10 @@ class AppButton extends StatelessWidget {
         ],
       );
     } else if (text != null) {
-      buttonContent = Text(text!, style: TextStyle(fontSize: getFontSize(size)));
+      buttonContent = Text(
+        text!,
+        style: TextStyle(fontSize: getFontSize(size)),
+      );
     } else if (icon != null) {
       buttonContent = Icon(icon, size: getFontSize(size) + 4);
     }
@@ -139,7 +133,9 @@ class AppButton extends StatelessWidget {
             borderRadius: getBorderRadius(variant),
             border: variant == ButtonVariant.secondary
                 ? Border.all(
-                    color: isDarkMode ? const Color(0xFF4B5563) : const Color(0xFFE5E7EB),
+                    color: isDarkMode
+                        ? const Color(0xFF4B5563)
+                        : const Color(0xFFE5E7EB),
                     width: 1,
                   )
                 : null,
@@ -183,10 +179,12 @@ class AppCard extends StatelessWidget {
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
 
-    final defaultBackground = isDarkMode ? const Color(0xFF1F2937) : Colors.white;
+    final defaultBackground = isDarkMode
+        ? const Color(0xFF1F2937)
+        : Colors.white;
     final defaultShadow = [
       BoxShadow(
-        color: Colors.black.withOpacity(isDarkMode ? 0.2 : 0.1),
+        color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.1),
         blurRadius: 8,
         offset: const Offset(0, 4),
       ),
@@ -197,9 +195,11 @@ class AppCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: backgroundColor ?? defaultBackground,
         borderRadius: borderRadius ?? BorderRadius.circular(12),
-        border: border ?? (isDarkMode
-            ? Border.all(color: const Color(0xFF374151), width: 1)
-            : null),
+        border:
+            border ??
+            (isDarkMode
+                ? Border.all(color: const Color(0xFF374151), width: 1)
+                : null),
         boxShadow: boxShadow ?? defaultShadow,
       ),
       child: child,
@@ -235,12 +235,7 @@ class Toast extends StatefulWidget {
   State<Toast> createState() => _ToastState();
 }
 
-enum ToastType {
-  success,
-  error,
-  warning,
-  info,
-}
+enum ToastType { success, error, warning, info }
 
 class _ToastState extends State<Toast> with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
@@ -256,21 +251,14 @@ class _ToastState extends State<Toast> with SingleTickerProviderStateMixin {
       vsync: this,
     );
 
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOut,
-    ));
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+    );
 
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, -1),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOut,
-    ));
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, -1), end: Offset.zero).animate(
+          CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+        );
 
     _animationController.forward();
 
@@ -339,18 +327,14 @@ class _ToastState extends State<Toast> with SingleTickerProviderStateMixin {
               borderRadius: BorderRadius.circular(8),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
+                  color: Colors.black.withValues(alpha: 0.3),
                   blurRadius: 12,
                   offset: const Offset(0, 6),
                 ),
               ],
               child: Row(
                 children: [
-                  Icon(
-                    getIcon(),
-                    color: Colors.white,
-                    size: 20,
-                  ),
+                  Icon(getIcon(), color: Colors.white, size: 20),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
@@ -387,11 +371,7 @@ class ToastOverlay extends StatefulWidget {
   final Widget child;
   final List<Toast> toasts;
 
-  const ToastOverlay({
-    super.key,
-    required this.child,
-    this.toasts = const [],
-  });
+  const ToastOverlay({super.key, required this.child, this.toasts = const []});
 
   @override
   State<ToastOverlay> createState() => _ToastOverlayState();
@@ -410,21 +390,21 @@ class _ToastOverlayState extends State<ToastOverlay> {
     }
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
         widget.child,
         if (_currentToasts.isNotEmpty)
-          ..._currentToasts.map((toast) => Positioned(
-            key: ValueKey(toast.message + DateTime.now().toString()),
-            top: 0,
-            left: 0,
-            right: 0,
-            child: toast,
-          )),
+          ..._currentToasts.map(
+            (toast) => Positioned(
+              key: ValueKey(toast.message + DateTime.now().toString()),
+              top: 0,
+              left: 0,
+              right: 0,
+              child: toast,
+            ),
+          ),
       ],
     );
   }
@@ -516,7 +496,9 @@ class AppProgressBar extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final bgColor = backgroundColor ?? (isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB));
+    final bgColor =
+        backgroundColor ??
+        (isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB));
     final progColor = progressColor ?? const Color(0xFF22C55E);
 
     return Container(

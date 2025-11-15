@@ -25,11 +25,11 @@ class AppTheme {
         secondary: primaryRed,
         tertiary: primaryYellow,
         surface: neutralWhite,
-        background: neutralLightGrey,
+        // background: neutralLightGrey,
         onPrimary: neutralWhite,
         onSecondary: neutralWhite,
         onSurface: neutralBlack,
-        onBackground: neutralBlack,
+        // onBackground: neutralBlack,
       ),
 
       // Typography with minimum 16px font size for accessibility

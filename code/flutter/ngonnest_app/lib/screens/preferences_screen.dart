@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../models/household_profile.dart';
 import '../services/household_service.dart';
 
@@ -28,15 +29,15 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
               // Header
               _buildHeader(),
               const SizedBox(height: 32),
-              
+
               // Language selection
               _buildLanguageSelector(),
               const SizedBox(height: 24),
-              
+
               // Notifications settings
               _buildNotificationsSelector(),
               const SizedBox(height: 40),
-              
+
               // Submit button
               _buildSubmitButton(),
               const SizedBox(height: 24),
@@ -50,11 +51,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
   Widget _buildHeader() {
     return Column(
       children: [
-        Icon(
-          Icons.settings,
-          size: 80,
-          color: Theme.of(context).primaryColor,
-        ),
+        Icon(Icons.settings, size: 80, color: Theme.of(context).primaryColor),
         const SizedBox(height: 24),
         Text(
           'Préférences',
@@ -132,7 +129,9 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
           color: isSelected ? Theme.of(context).primaryColor : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? Theme.of(context).primaryColor : Colors.grey[300]!,
+            color: isSelected
+                ? Theme.of(context).primaryColor
+                : Colors.grey[300]!,
             width: 2,
           ),
         ),
@@ -155,11 +154,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
               ),
             ),
             if (isSelected)
-              Icon(
-                Icons.check_circle_outline,
-                color: Colors.white,
-                size: 28,
-              ),
+              Icon(Icons.check_circle_outline, color: Colors.white, size: 28),
           ],
         ),
       ),
@@ -195,7 +190,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
             ],
           ),
           const SizedBox(height: 20),
-          
+
           // Enable/disable notifications
           Row(
             children: [
@@ -210,12 +205,13 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
               ),
               Switch(
                 value: _notificationsEnabled,
-                onChanged: (value) => setState(() => _notificationsEnabled = value),
-                activeColor: Theme.of(context).primaryColor,
+                onChanged: (value) =>
+                    setState(() => _notificationsEnabled = value),
+                activeThumbColor: Theme.of(context).primaryColor,
               ),
             ],
           ),
-          
+
           if (_notificationsEnabled) ...[
             const SizedBox(height: 20),
             Text(
@@ -253,7 +249,9 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
           color: isSelected ? Theme.of(context).primaryColor : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? Theme.of(context).primaryColor : Colors.grey[300]!,
+            color: isSelected
+                ? Theme.of(context).primaryColor
+                : Colors.grey[300]!,
             width: 2,
           ),
         ),
@@ -277,9 +275,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
         backgroundColor: Theme.of(context).primaryColor,
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(vertical: 20),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         elevation: 4,
       ),
       child: _isLoading

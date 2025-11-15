@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+
 import '../config/categories_durables.dart';
 
 /// Widget Dropdown pour sélection des catégories durables NgonNest MVP
@@ -20,10 +21,12 @@ class DropdownCategoriesDurables extends StatefulWidget {
   });
 
   @override
-  State<DropdownCategoriesDurables> createState() => _DropdownCategoriesDurablesState();
+  State<DropdownCategoriesDurables> createState() =>
+      _DropdownCategoriesDurablesState();
 }
 
-class _DropdownCategoriesDurablesState extends State<DropdownCategoriesDurables> {
+class _DropdownCategoriesDurablesState
+    extends State<DropdownCategoriesDurables> {
   String? _selectedCategoryId;
 
   @override
@@ -54,10 +57,10 @@ class _DropdownCategoriesDurablesState extends State<DropdownCategoriesDurables>
       decoration: BoxDecoration(
         color: widget.enabled
             ? Theme.of(context).colorScheme.surface
-            : Theme.of(context).colorScheme.surface.withOpacity(0.5),
+            : Theme.of(context).colorScheme.surface.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5),
         ),
       ),
       child: Column(
@@ -82,10 +85,14 @@ class _DropdownCategoriesDurablesState extends State<DropdownCategoriesDurables>
               decoration: BoxDecoration(
                 color: widget.enabled
                     ? Theme.of(context).colorScheme.surface
-                    : Theme.of(context).colorScheme.surface.withOpacity(0.5),
+                    : Theme.of(
+                        context,
+                      ).colorScheme.surface.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.outline.withValues(alpha: 0.3),
                 ),
               ),
               child: PopupMenuButton<String>(
@@ -96,7 +103,7 @@ class _DropdownCategoriesDurablesState extends State<DropdownCategoriesDurables>
                   });
                   widget.onCategorySelected?.call(categoryId);
                 },
-                itemBuilder: (context) => CATEGORIES_DURABLES.map((category) {
+                itemBuilder: (context) => categoriesDurables.map((category) {
                   final isSelected = category['id'] == _selectedCategoryId;
                   return PopupMenuItem<String>(
                     value: category['id'],
@@ -115,7 +122,9 @@ class _DropdownCategoriesDurablesState extends State<DropdownCategoriesDurables>
                                 category['name']!,
                                 style: TextStyle(
                                   fontSize: 16,
-                                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                                  fontWeight: isSelected
+                                      ? FontWeight.w600
+                                      : FontWeight.w500,
                                   color: isSelected
                                       ? Theme.of(context).colorScheme.primary
                                       : Theme.of(context).colorScheme.onSurface,
@@ -125,7 +134,8 @@ class _DropdownCategoriesDurablesState extends State<DropdownCategoriesDurables>
                                 category['description']!,
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                  color: Theme.of(context).colorScheme.onSurface
+                                      .withValues(alpha: 0.6),
                                 ),
                               ),
                             ],
@@ -161,7 +171,9 @@ class _DropdownCategoriesDurablesState extends State<DropdownCategoriesDurables>
                     ] else ...[
                       Icon(
                         CupertinoIcons.square_grid_2x2,
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.5),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -169,14 +181,18 @@ class _DropdownCategoriesDurablesState extends State<DropdownCategoriesDurables>
                           widget.hintText ?? 'Sélectionner une catégorie...',
                           style: TextStyle(
                             fontSize: 16,
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: 0.5),
                           ),
                         ),
                       ),
                     ],
                     Icon(
                       CupertinoIcons.chevron_down,
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.5),
                       size: 16,
                     ),
                   ],
@@ -192,7 +208,9 @@ class _DropdownCategoriesDurablesState extends State<DropdownCategoriesDurables>
               selectedCategory['description']!,
               style: TextStyle(
                 fontSize: 12,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.7),
                 fontStyle: FontStyle.italic,
               ),
             ),

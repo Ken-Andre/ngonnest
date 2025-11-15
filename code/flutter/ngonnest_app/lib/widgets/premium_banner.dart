@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/remote_config_service.dart';
+
 import '../services/ab_testing_service.dart';
 import '../services/analytics_service.dart';
 import '../services/feature_flag_service.dart';
+import '../services/remote_config_service.dart';
 
 class PremiumBanner extends StatefulWidget {
   const PremiumBanner({super.key});
@@ -35,10 +36,13 @@ class _PremiumBannerState extends State<PremiumBanner> {
     abTestingService.trackExperimentExposure('cta_button_color_v1');
 
     // Track banner exposure
-    analytics.logEvent('premium_banner_exposed', parameters: {
-      'source': 'dashboard',
-      'timestamp': DateTime.now().millisecondsSinceEpoch.toString(),
-    });
+    analytics.logEvent(
+      'premium_banner_exposed',
+      parameters: {
+        'source': 'dashboard',
+        'timestamp': DateTime.now().millisecondsSinceEpoch.toString(),
+      },
+    );
   }
 
   @override
@@ -57,7 +61,9 @@ class _PremiumBannerState extends State<PremiumBanner> {
 
     // Get A/B test variants from Remote Config (simplified)
     final layoutVariant = remoteConfig.getString('homepage_layout_v1_variant');
-    final buttonColorVariant = remoteConfig.getString('cta_button_color_v1_variant');
+    final buttonColorVariant = remoteConfig.getString(
+      'cta_button_color_v1_variant',
+    );
 
     // Determine button color based on A/B test
     Color buttonColor;
@@ -81,8 +87,8 @@ class _PremiumBannerState extends State<PremiumBanner> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Theme.of(context).primaryColor.withOpacity(0.8),
-            Theme.of(context).primaryColor.withOpacity(0.6),
+            Theme.of(context).primaryColor.withValues(alpha: 0.8),
+            Theme.of(context).primaryColor.withValues(alpha: 0.6),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -90,7 +96,7 @@ class _PremiumBannerState extends State<PremiumBanner> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).primaryColor.withOpacity(0.3),
+            color: Theme.of(context).primaryColor.withValues(alpha: 0.3),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -101,11 +107,7 @@ class _PremiumBannerState extends State<PremiumBanner> {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.star,
-                color: Colors.yellow.shade400,
-                size: 28,
-              ),
+              Icon(Icons.star, color: Colors.yellow.shade400, size: 28),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
@@ -122,7 +124,7 @@ class _PremiumBannerState extends State<PremiumBanner> {
           Text(
             description,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Colors.white.withOpacity(0.9),
+              color: Colors.white.withValues(alpha: 0.9),
             ),
           ),
 
@@ -137,7 +139,11 @@ class _PremiumBannerState extends State<PremiumBanner> {
             children: [
               Expanded(
                 child: ElevatedButton(
-                  onPressed: () => _handleUpgradeClick(analytics, layoutVariant, buttonColorVariant),
+                  onPressed: () => _handleUpgradeClick(
+                    analytics,
+                    layoutVariant,
+                    buttonColorVariant,
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: buttonColor,
                     foregroundColor: Colors.white,
@@ -148,10 +154,7 @@ class _PremiumBannerState extends State<PremiumBanner> {
                   ),
                   child: const Text(
                     'Upgrade Now',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
@@ -159,7 +162,7 @@ class _PremiumBannerState extends State<PremiumBanner> {
               TextButton(
                 onPressed: () => _handleDismiss(),
                 style: TextButton.styleFrom(
-                  foregroundColor: Colors.white.withOpacity(0.8),
+                  foregroundColor: Colors.white.withValues(alpha: 0.8),
                 ),
                 child: const Text('Maybe Later'),
               ),
@@ -184,43 +187,52 @@ class _PremiumBannerState extends State<PremiumBanner> {
         Text(
           'Premium Features:',
           style: TextStyle(
-            color: Colors.white.withOpacity(0.8),
+            color: Colors.white.withValues(alpha: 0.8),
             fontWeight: FontWeight.w600,
             fontSize: 14,
           ),
         ),
         const SizedBox(height: 8),
-        ...features.map((feature) => Padding(
-          padding: const EdgeInsets.only(bottom: 4),
-          child: Row(
-            children: [
-              Icon(
-                Icons.check_circle,
-                color: Colors.yellow.shade400,
-                size: 16,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                feature,
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.9),
-                  fontSize: 14,
+        ...features.map(
+          (feature) => Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.check_circle,
+                  color: Colors.yellow.shade400,
+                  size: 16,
                 ),
-              ),
-            ],
+                const SizedBox(width: 8),
+                Text(
+                  feature,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.9),
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
           ),
-        )),
+        ),
       ],
     );
   }
 
-  void _handleUpgradeClick(AnalyticsService analytics, String layoutVariant, String buttonColorVariant) {
+  void _handleUpgradeClick(
+    AnalyticsService analytics,
+    String layoutVariant,
+    String buttonColorVariant,
+  ) {
     // Track the upgrade click event
-    analytics.logEvent('premium_upgrade_click', parameters: {
-      'source': 'banner',
-      'layout_variant': layoutVariant,
-      'button_color_variant': buttonColorVariant,
-    });
+    analytics.logEvent(
+      'premium_upgrade_click',
+      parameters: {
+        'source': 'banner',
+        'layout_variant': layoutVariant,
+        'button_color_variant': buttonColorVariant,
+      },
+    );
 
     // Show success message
     ScaffoldMessenger.of(context).showSnackBar(

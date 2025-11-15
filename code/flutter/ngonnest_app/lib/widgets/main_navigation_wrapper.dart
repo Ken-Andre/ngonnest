@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 
-/// Widget wrapper pour encapsuler les écrans principaux et intégrer 
+/// Widget wrapper pour encapsuler les écrans principaux et intégrer
 /// la barre de navigation inférieure de manière réutilisable
 class MainNavigationWrapper extends StatelessWidget {
   final Widget body;
@@ -38,7 +38,9 @@ class MainNavigationWrapper extends StatelessWidget {
         color: Theme.of(context).colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, -4),
           ),
@@ -66,7 +68,9 @@ class MainNavigationWrapper extends StatelessWidget {
                         size: 24,
                         color: isSelected
                             ? Theme.of(context).colorScheme.primary
-                            : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                            : Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -76,8 +80,12 @@ class MainNavigationWrapper extends StatelessWidget {
                         fontSize: 12,
                         color: isSelected
                             ? Theme.of(context).colorScheme.primary
-                            : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                            : Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: 0.7),
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.normal,
                       ),
                       child: Text(tab['label'] as String),
                     ),

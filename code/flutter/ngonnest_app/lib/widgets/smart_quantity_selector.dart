@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import '../models/product_template.dart';
 import '../services/product_intelligence_service.dart';
 
@@ -31,7 +32,8 @@ class SmartQuantitySelector extends StatefulWidget {
 
 class _SmartQuantitySelectorState extends State<SmartQuantitySelector> {
   final TextEditingController _quantityController = TextEditingController();
-  final ProductIntelligenceService _intelligenceService = ProductIntelligenceService();
+  final ProductIntelligenceService _intelligenceService =
+      ProductIntelligenceService();
 
   double _recommendedQuantity = 0;
   String _selectedUnit = 'unités';
@@ -39,9 +41,7 @@ class _SmartQuantitySelectorState extends State<SmartQuantitySelector> {
   ProductTemplate? _currentProduct;
   bool _isCalculating = false;
 
-  final List<String> _commonUnits = [
-    'pièces', 'kg', 'L', 'pack'
-  ];
+  final List<String> _commonUnits = ['pièces', 'kg', 'L', 'pack'];
 
   @override
   void initState() {
@@ -80,29 +80,34 @@ class _SmartQuantitySelectorState extends State<SmartQuantitySelector> {
       if (_currentProduct != null) {
         // Calcul basé sur le template de produit sélectionné
         final familySize = widget.familySize ?? 4;
-        _recommendedQuantity = _currentProduct!.getRecommendedQuantity(familySize);
+        _recommendedQuantity = _currentProduct!.getRecommendedQuantity(
+          familySize,
+        );
         _selectedUnit = _currentProduct!.unit;
 
         // Pré-remplir avec la quantité recommandée si vide
-        if (_quantityController.text.isEmpty || _quantityController.text == '0') {
+        if (_quantityController.text.isEmpty ||
+            _quantityController.text == '0') {
           _quantityController.text = _recommendedQuantity.toString();
           widget.onQuantityChanged?.call(_recommendedQuantity, _selectedUnit);
         }
       } else {
         // Calcul générique basé sur la catégorie
-        _recommendedQuantity = await _intelligenceService.calculateOptimalQuantity(
-          ProductTemplate(
-            id: 0,
-            name: 'Produit générique',
-            category: widget.category,
-            unit: _selectedUnit,
-            defaultFrequency: 30,
-            icon: '📦',
-          ),
-          widget.familySize ?? 4,
-        );
+        _recommendedQuantity = await _intelligenceService
+            .calculateOptimalQuantity(
+              ProductTemplate(
+                id: 0,
+                name: 'Produit générique',
+                category: widget.category,
+                unit: _selectedUnit,
+                defaultFrequency: 30,
+                icon: '📦',
+              ),
+              widget.familySize ?? 4,
+            );
 
-        if (_quantityController.text.isEmpty || _quantityController.text == '0') {
+        if (_quantityController.text.isEmpty ||
+            _quantityController.text == '0') {
           _quantityController.text = _recommendedQuantity.toString();
           widget.onQuantityChanged?.call(_recommendedQuantity, _selectedUnit);
         }
@@ -153,18 +158,12 @@ class _SmartQuantitySelectorState extends State<SmartQuantitySelector> {
         Row(
           children: [
             // Champ quantité
-            Expanded(
-              flex: 2,
-              child: _buildQuantityInput(),
-            ),
+            Expanded(flex: 2, child: _buildQuantityInput()),
 
             const SizedBox(width: 12),
 
             // Sélecteur d'unité
-            Expanded(
-              flex: 1,
-              child: _buildUnitSelector(),
-            ),
+            Expanded(flex: 1, child: _buildUnitSelector()),
           ],
         ),
 
@@ -179,10 +178,10 @@ class _SmartQuantitySelectorState extends State<SmartQuantitySelector> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
         ),
       ),
       child: Row(
@@ -234,24 +233,25 @@ class _SmartQuantitySelectorState extends State<SmartQuantitySelector> {
     return TextField(
       controller: _quantityController,
       keyboardType: TextInputType.numberWithOptions(decimal: true),
-      inputFormatters: [
-        FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
-      ],
+      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
       enabled: widget.enabled,
       onChanged: _onQuantityChanged,
       decoration: InputDecoration(
         hintText: '0',
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 12,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
           ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
           ),
         ),
         focusedBorder: OutlineInputBorder(
@@ -280,7 +280,7 @@ class _SmartQuantitySelectorState extends State<SmartQuantitySelector> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
         ),
       ),
       child: DropdownButtonHideUnderline(
@@ -301,12 +301,16 @@ class _SmartQuantitySelectorState extends State<SmartQuantitySelector> {
               ),
             );
           }).toList(),
-          onChanged: widget.enabled ? (value) {
-            if (value != null) _onUnitChanged(value);
-          } : null,
+          onChanged: widget.enabled
+              ? (value) {
+                  if (value != null) _onUnitChanged(value);
+                }
+              : null,
           icon: Icon(
             Icons.keyboard_arrow_down,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.6),
             size: 20,
           ),
         ),
@@ -322,14 +326,18 @@ class _SmartQuantitySelectorState extends State<SmartQuantitySelector> {
           Icon(
             Icons.family_restroom,
             size: 14,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.6),
           ),
           const SizedBox(width: 4),
           Text(
             'Calculé pour ${_getFamilyDescription(widget.familySize!)}',
             style: TextStyle(
               fontSize: 12,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.6),
             ),
           ),
         ],
@@ -344,7 +352,8 @@ class _SmartQuantitySelectorState extends State<SmartQuantitySelector> {
   }
 
   /// Obtenir la quantité actuelle
-  double get currentQuantity => double.tryParse(_quantityController.text) ?? 0.0;
+  double get currentQuantity =>
+      double.tryParse(_quantityController.text) ?? 0.0;
 
   /// Obtenir l'unité actuelle
   String get currentUnit => _selectedUnit;

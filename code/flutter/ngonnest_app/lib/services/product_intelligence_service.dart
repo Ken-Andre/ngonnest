@@ -1,4 +1,3 @@
-import 'dart:convert';
 import '../models/product_template.dart';
 
 /// Service centralisé pour le renseignement intelligent des produits
@@ -194,10 +193,12 @@ class ProductIntelligenceService {
     final defaultFrequency = product.defaultFrequency ?? 30;
 
     // Ajustement selon taille familiale (consommation plus rapide = fréquence plus élevée)
-    if (familySize <= 2)
+    if (familySize <= 2) {
       return (defaultFrequency * 0.8).round(); // Moins fréquent
-    if (familySize >= 6)
+    }
+    if (familySize >= 6) {
       return (defaultFrequency * 1.2).round(); // Plus fréquent
+    }
 
     return defaultFrequency;
   }
@@ -301,8 +302,9 @@ class ProductIntelligenceService {
   ) async {
     // Logique basée sur les guidelines de quantité
     final guidelines = product.quantityGuidelines;
-    if (guidelines == null)
+    if (guidelines == null) {
       return true; // Si pas de guidelines, considérer comme adapté
+    }
 
     final recommended = await calculateOptimalQuantity(product, familySize);
     return recommended > 0; // Produit adapté si une quantité peut être calculée

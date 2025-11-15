@@ -1,8 +1,9 @@
+// import 'package:uuid/uuid.dart';
+import 'dart:io'; // Required for Directory
+
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:uuid/uuid.dart';
-import 'dart:io'; // Required for Directory
 
 import 'services/analytics_service.dart';
 import 'services/error_logger_service.dart';
@@ -460,9 +461,7 @@ Future<void> _migrateToVersion12(Database db) async {
           '[DB Migration V12] ✅ percentage column added to budget_categories.',
         );
       } else {
-        debugPrint(
-          '[DB Migration V12] ✅ percentage column already exists.',
-        );
+        debugPrint('[DB Migration V12] ✅ percentage column already exists.');
       }
 
       // Get all existing budget categories
@@ -485,7 +484,8 @@ Future<void> _migrateToVersion12(Database db) async {
           final monthCategories = entry.value;
           final totalLimit = monthCategories.fold<double>(
             0.0,
-            (sum, cat) => sum + ((cat['limit_amount'] as num?)?.toDouble() ?? 0.0),
+            (sum, cat) =>
+                sum + ((cat['limit_amount'] as num?)?.toDouble() ?? 0.0),
           );
 
           if (totalLimit > 0) {

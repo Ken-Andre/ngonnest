@@ -1,22 +1,17 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
-import 'package:mockito/annotations.dart';
-import 'package:flutter/foundation.dart';
-import 'package:ngonnest_app/services/error_logger_service.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:device_info_plus/device_info_plus.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'dart:io';
 
-// Generate mocks for external dependencies
-@GenerateMocks([
-  DeviceInfoPlugin,
-  PackageInfo,
-  Directory,
-  File,
-])
-// import 'error_logger_service_test.mocks.dart';
+// import 'package:path_provider/path_provider.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_test/flutter_test.dart';
+// import 'package:mockito/mockito.dart';
+import 'package:mockito/annotations.dart';
+import 'package:ngonnest_app/services/error_logger_service.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
+// Generate mocks for external dependencies
+@GenerateMocks([DeviceInfoPlugin, PackageInfo, Directory, File])
+// import 'error_logger_service_test.mocks.dart';
 void main() {
   group('ErrorLoggerService', () {
     setUp(() {
@@ -94,8 +89,14 @@ void main() {
         expect(reconstructedEntry.operation, equals(originalEntry.operation));
         expect(reconstructedEntry.errorCode, equals(originalEntry.errorCode));
         expect(reconstructedEntry.severity, equals(originalEntry.severity));
-        expect(reconstructedEntry.userMessage, equals(originalEntry.userMessage));
-        expect(reconstructedEntry.technicalMessage, equals(originalEntry.technicalMessage));
+        expect(
+          reconstructedEntry.userMessage,
+          equals(originalEntry.userMessage),
+        );
+        expect(
+          reconstructedEntry.technicalMessage,
+          equals(originalEntry.technicalMessage),
+        );
         expect(reconstructedEntry.stackTrace, equals(originalEntry.stackTrace));
         expect(reconstructedEntry.appVersion, equals(originalEntry.appVersion));
         expect(reconstructedEntry.deviceInfo, equals(originalEntry.deviceInfo));
@@ -227,7 +228,7 @@ void main() {
 
       test('should truncate long input values in metadata', () async {
         final longValue = 'a' * 100; // 100 character string
-        
+
         await ErrorLoggerService.logValidationError(
           fieldName: 'description',
           value: longValue,
@@ -243,7 +244,7 @@ void main() {
       test('should return empty list in release mode', () async {
         // In release mode (kDebugMode = false), should return empty list
         final logs = await ErrorLoggerService.getAllLogs();
-        
+
         if (!kDebugMode) {
           expect(logs, isEmpty);
         }
@@ -251,7 +252,7 @@ void main() {
 
       test('should handle file read errors gracefully', () async {
         final logs = await ErrorLoggerService.getAllLogs();
-        
+
         // Should return empty list if file doesn't exist or can't be read
         expect(logs, isA<List<ErrorLogEntry>>());
       });
@@ -279,7 +280,7 @@ void main() {
     group('NgonNest specific error scenarios', () {
       test('should handle database connection errors', () async {
         final dbError = Exception('Database connection failed');
-        
+
         await ErrorLoggerService.logError(
           component: 'DatabaseService',
           operation: 'establishConnection',
@@ -293,17 +294,14 @@ void main() {
 
       test('should handle inventory operation errors', () async {
         final inventoryError = Exception('Failed to update inventory');
-        
+
         await ErrorLoggerService.logError(
           component: 'InventoryRepository',
           operation: 'updateObjet',
           error: inventoryError,
           stackTrace: StackTrace.current,
           severity: ErrorSeverity.high,
-          metadata: {
-            'objetId': 123,
-            'operation': 'quantity_update',
-          },
+          metadata: {'objetId': 123, 'operation': 'quantity_update'},
         );
 
         expect(true, isTrue);
@@ -311,17 +309,14 @@ void main() {
 
       test('should handle budget calculation errors', () async {
         final budgetError = Exception('Budget calculation failed');
-        
+
         await ErrorLoggerService.logError(
           component: 'BudgetService',
           operation: 'calculateRecommendedBudget',
           error: budgetError,
           stackTrace: StackTrace.current,
           severity: ErrorSeverity.medium,
-          metadata: {
-            'foyerId': 456,
-            'month': '2024-01',
-          },
+          metadata: {'foyerId': 456, 'month': '2024-01'},
         );
 
         expect(true, isTrue);
@@ -329,17 +324,14 @@ void main() {
 
       test('should handle notification service errors', () async {
         final notificationError = Exception('Failed to schedule notification');
-        
+
         await ErrorLoggerService.logError(
           component: 'NotificationService',
           operation: 'showLowStockNotification',
           error: notificationError,
           stackTrace: StackTrace.current,
           severity: ErrorSeverity.medium,
-          metadata: {
-            'productName': 'Savon',
-            'remainingQuantity': 1,
-          },
+          metadata: {'productName': 'Savon', 'remainingQuantity': 1},
         );
 
         expect(true, isTrue);
@@ -361,7 +353,7 @@ void main() {
 
       test('should handle storage permission errors', () async {
         final storageError = Exception('Storage permission denied');
-        
+
         await ErrorLoggerService.logError(
           component: 'StorageService',
           operation: 'writeToFile',
@@ -377,7 +369,7 @@ void main() {
     group('Performance and memory management', () {
       test('should handle large error messages efficiently', () async {
         final largeError = Exception('x' * 10000); // Large error message
-        
+
         await ErrorLoggerService.logError(
           component: 'PerformanceTest',
           operation: 'largeErrorTest',

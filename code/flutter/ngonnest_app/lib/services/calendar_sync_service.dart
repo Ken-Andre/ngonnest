@@ -1,9 +1,11 @@
 import 'package:calendar_events/calendar_events.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+// import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'error_logger_service.dart';
+
 import 'console_logger.dart';
+import 'error_logger_service.dart';
+
 /// Service for synchronizing calendar events with device calendar
 /// Handles permissions and event creation for reminders and alerts
 ///
@@ -193,7 +195,9 @@ class CalendarSyncService {
 
       final accounts = await _calendarEvents.getCalendarAccounts();
       if (accounts == null || accounts.isEmpty) {
-        ConsoleLogger.warning('Cannot delete calendar event: no calendar accounts available');
+        ConsoleLogger.warning(
+          'Cannot delete calendar event: no calendar accounts available',
+        );
         return false;
       }
 
