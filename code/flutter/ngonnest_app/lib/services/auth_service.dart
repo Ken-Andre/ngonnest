@@ -614,6 +614,10 @@ class AuthService extends ChangeNotifier {
         value: session.refreshToken,
       );
       await _secureStorage.write(key: 'user_id', value: session.user.id);
+      
+      // HYBRID ID: Récupérer app_user_id (INT) depuis app_users
+      await _fetchAndStoreAppUserId(session.user);
+      
       // Fetch and store household ID from user profile
       await _fetchAndStoreHouseholdId(session.user);
       ConsoleLogger.info('[AuthService] Session stored securely');
@@ -624,6 +628,75 @@ class AuthService extends ChangeNotifier {
         e,
         stackTrace: stackTrace,
       );
+    }
+  }
+  
+  /// Fetch app_user_id (INT) from app_users table using auth_id (UUID)
+  Future<void> _fetchAndStoreAppUserId(User user) async {
+    try {
+      final response = await _supabase
+          .from('app_users')
+          .select('id')
+          .eq('auth_id', user.id)
+          .maybeSingle();
+
+      if (response != null) {
+        final appUserId = response['id'] as int;
+        await _secureStorage.write(
+          key: 'app_user_id',
+          value: appUserId.toString(),
+        );
+        ConsoleLogger.info(
+          '[AuthService] app_user_id fetched and stored: $appUserId',
+        );
+      } else {
+        ConsoleLogger.warning(
+          '[AuthService] No app_user found for auth_id: ${user.id}',
+        );
+      }
+    } catch (e, stackTrace) {
+      ConsoleLogger.error(
+        'AuthService',
+        '_fetchAndStoreAppUserId',
+        e,
+        stackTrace: stackTrace,
+      );
+
+      await ErrorLoggerService.logError(
+        component: 'AuthService',
+        operation: '_fetchAndStoreAppUserId',
+        error: e,
+        stackTrace: stackTrace,
+        severity: ErrorSeverity.high,
+        metadata: {'auth_id': user.id},
+      );
+    }
+  }
+  
+  /// Get app_user_id (INT) for current authenticated user
+  Future<int?> getAppUserId() async {
+    try {
+      final appUserIdStr = await _secureStorage.read(key: 'app_user_id');
+      if (appUserIdStr != null) {
+        return int.tryParse(appUserIdStr);
+      }
+      
+      // Si pas en cache, récupérer depuis Supabase
+      if (_currentUser != null) {
+        await _fetchAndStoreAppUserId(_currentUser!);
+        final refreshedStr = await _secureStorage.read(key: 'app_user_id');
+        return refreshedStr != null ? int.tryParse(refreshedStr) : null;
+      }
+      
+      return null;
+    } catch (e, stackTrace) {
+      ConsoleLogger.error(
+        'AuthService',
+        'getAppUserId',
+        e,
+        stackTrace: stackTrace,
+      );
+      return null;
     }
   }
 

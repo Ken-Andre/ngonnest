@@ -201,7 +201,6 @@
   "exportDataConfirm": "Export all your data to a JSON file?",
   "exportSuccess": "Data exported successfully",
   "importDataConfirm": "This operation will replace your current data. Continue?",
-  "importSuccess": "Import successful",
   "storagePermissionRequired": "Storage permission is required to export data",
   "storagePermissionDenied": "Storage permission denied. Please grant access in system settings",
   "storagePermissionPermanentlyDenied": "Storage permission permanently denied. Please enable it in app settings",

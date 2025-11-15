@@ -1,3 +1,5 @@
+import '../utils/id_utils.dart';
+
 enum TypeObjet { consommable, durable }
 
 enum MethodePrevision { frequence, debit }
@@ -77,51 +79,41 @@ class Objet {
 
   factory Objet.fromMap(Map<String, dynamic> map) {
     return Objet(
-      id: map['id'],
-      idFoyer: map['id_foyer'],
-      nom: map['nom'],
-      categorie: map['categorie'],
+      id: IdUtils.toInt(map['id']),
+      idFoyer: IdUtils.toInt(map['id_foyer']) ?? 0,
+      nom: map['nom'] as String? ?? '',
+      categorie: map['categorie'] as String? ?? '',
       type: TypeObjet.values.firstWhere(
         (e) => e.toString().split('.').last == map['type'],
+        orElse: () => TypeObjet.consommable,
       ),
-      room: map['room'],
+      room: map['room'] as String?,
       dateAchat: map['date_achat'] != null
-          ? DateTime.parse(map['date_achat'])
+          ? DateTime.parse(map['date_achat'] as String)
           : null,
-      dureeViePrevJours: map['duree_vie_prev_jours'],
+      dureeViePrevJours: IdUtils.toInt(map['duree_vie_prev_jours']),
       dateRupturePrev: map['date_rupture_prev'] != null
-          ? DateTime.parse(map['date_rupture_prev'])
+          ? DateTime.parse(map['date_rupture_prev'] as String)
           : null,
-      quantiteInitiale: map['quantite_initiale'] is int
-          ? (map['quantite_initiale'] as int).toDouble()
-          : map['quantite_initiale'],
-      quantiteRestante: map['quantite_restante'] is int
-          ? (map['quantite_restante'] as int).toDouble()
-          : map['quantite_restante'],
-      unite: map['unite'],
-      tailleConditionnement: map['taille_conditionnement'] is int
-          ? (map['taille_conditionnement'] as int).toDouble()
-          : map['taille_conditionnement'],
-      prixUnitaire: map['prix_unitaire'] is int
-          ? (map['prix_unitaire'] as int).toDouble()
-          : map['prix_unitaire'],
+      quantiteInitiale: IdUtils.toDouble(map['quantite_initiale']) ?? 0.0,
+      quantiteRestante: IdUtils.toDouble(map['quantite_restante']) ?? 0.0,
+      unite: map['unite'] as String? ?? '',
+      tailleConditionnement: IdUtils.toDouble(map['taille_conditionnement']),
+      prixUnitaire: IdUtils.toDouble(map['prix_unitaire']),
       methodePrevision: map['methode_prevision'] != null
           ? MethodePrevision.values.firstWhere(
               (e) => e.toString().split('.').last == map['methode_prevision'],
+              orElse: () => MethodePrevision.frequence,
             )
           : null,
-      frequenceAchatJours: map['frequence_achat_jours'],
-      consommationJour: map['consommation_jour'] is int
-          ? (map['consommation_jour'] as int).toDouble()
-          : map['consommation_jour'],
-      seuilAlerteJours: map['seuil_alerte_jours'] ?? 3,
-      seuilAlerteQuantite: map['seuil_alerte_quantite'] is int
-          ? (map['seuil_alerte_quantite'] as int).toDouble()
-          : map['seuil_alerte_quantite'] ?? 1.0,
-      commentaires: map['commentaires'],
+      frequenceAchatJours: IdUtils.toInt(map['frequence_achat_jours']),
+      consommationJour: IdUtils.toDouble(map['consommation_jour']),
+      seuilAlerteJours: IdUtils.toInt(map['seuil_alerte_jours']) ?? 3,
+      seuilAlerteQuantite: IdUtils.toDouble(map['seuil_alerte_quantite']) ?? 1.0,
+      commentaires: map['commentaires'] as String?,
       dateModification: map['date_modification'] != null
-          ? DateTime.parse(map['date_modification'])
-          : null, // Added
+          ? DateTime.parse(map['date_modification'] as String)
+          : null,
     );
   }
 

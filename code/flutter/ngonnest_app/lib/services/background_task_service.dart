@@ -35,7 +35,7 @@ void callbackDispatcher() {
         print('[BackgroundTask] Processing alerts for foyer: ${foyer.id}');
         // Get unread alerts from the database - using shared DatabaseService instance
         final List<Alert> unreadAlerts = await dbService.getAlerts(
-          idFoyer: foyer.id!, // Changed from householdProfile.id! to foyer.id!
+          idFoyer: int.parse(foyer.id!), // foyer.id is a String, convert to int
           unreadOnly: true,
         );
 

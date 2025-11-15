@@ -1,5 +1,7 @@
+import '../utils/id_utils.dart';
+
 class Foyer {
-  final int? id;
+  final String? id; // Changed to String to support both int and UUID
   final int nbPersonnes;
   final int nbPieces;
   final String typeLogement;
@@ -28,17 +30,17 @@ class Foyer {
 
   factory Foyer.fromMap(Map<String, dynamic> map) {
     return Foyer(
-      id: map['id'],
-      nbPersonnes: map['nb_personnes'],
-      nbPieces: map['nb_pieces'] ?? 1,
-      typeLogement: map['type_logement'],
-      langue: map['langue'],
-      budgetMensuelEstime: map['budget_mensuel_estime'],
+      id: IdUtils.toStringId(map['id']),
+      nbPersonnes: IdUtils.toInt(map['nb_personnes']) ?? 0,
+      nbPieces: IdUtils.toInt(map['nb_pieces']) ?? 1,
+      typeLogement: map['type_logement'] as String? ?? '',
+      langue: map['langue'] as String? ?? 'fr',
+      budgetMensuelEstime: IdUtils.toDouble(map['budget_mensuel_estime']),
     );
   }
 
   Foyer copyWith({
-    int? id,
+    String? id,
     int? nbPersonnes,
     int? nbPieces,
     String? typeLogement,

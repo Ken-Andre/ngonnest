@@ -1,9 +1,9 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/supabase_config.dart';
-import '../models/objet.dart';
 import 'auth_service.dart';
 import 'console_logger.dart';
 import 'database_service.dart';
@@ -54,17 +54,22 @@ class BidirectionalSyncService extends ChangeNotifier {
     ];
 
     for (final table in tables) {
-      _supabase.channel('$table-changes').onPostgresChanges(
-        event: PostgresChangeEvent.all,
-        schema: 'public',
-        table: table,
-        callback: (payload) {
-          _handleRealtimeUpdate(payload, ref: null);
-        },
-      ).subscribe();
+      _supabase
+          .channel('$table-changes')
+          .onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: table,
+            callback: (payload) {
+              _handleRealtimeUpdate(payload, ref: null);
+            },
+          )
+          .subscribe();
     }
 
-    ConsoleLogger.info('[BidirectionalSyncService] Real-time listeners initialized');
+    ConsoleLogger.info(
+      '[BidirectionalSyncService] Real-time listeners initialized',
+    );
   }
 
   // Getters
@@ -104,7 +109,9 @@ class BidirectionalSyncService extends ChangeNotifier {
       await _supabase.channel('$table-changes').unsubscribe();
     }
 
-    ConsoleLogger.info('[BidirectionalSyncService] Bidirectional sync disabled');
+    ConsoleLogger.info(
+      '[BidirectionalSyncService] Bidirectional sync disabled',
+    );
     notifyListeners();
   }
 
@@ -115,7 +122,9 @@ class BidirectionalSyncService extends ChangeNotifier {
     }
 
     try {
-      ConsoleLogger.info('[BidirectionalSyncService] Starting bidirectional sync');
+      ConsoleLogger.info(
+        '[BidirectionalSyncService] Starting bidirectional sync',
+      );
 
       // 1. Récupérer les changements distants depuis dernière sync
       await _syncFromCloud();
@@ -128,12 +137,19 @@ class BidirectionalSyncService extends ChangeNotifier {
 
       _lastBidirectionalSync = DateTime.now();
 
-      ConsoleLogger.success('[BidirectionalSyncService] Bidirectional sync completed');
+      ConsoleLogger.success(
+        '[BidirectionalSyncService] Bidirectional sync completed',
+      );
       notifyListeners();
 
       return true;
     } catch (e, stackTrace) {
-      ConsoleLogger.error('BidirectionalSyncService', '_performBidirectionalSync', e, stackTrace: stackTrace);
+      ConsoleLogger.error(
+        'BidirectionalSyncService',
+        '_performBidirectionalSync',
+        e,
+        stackTrace: stackTrace,
+      );
 
       await ErrorLoggerService.logError(
         component: 'BidirectionalSyncService',
@@ -155,7 +171,9 @@ class BidirectionalSyncService extends ChangeNotifier {
 
     try {
       // Récupérer les changements depuis dernière sync pour cet utilisateur
-      final since = _lastBidirectionalSync ?? DateTime.now().subtract(const Duration(days: 30));
+      final since =
+          _lastBidirectionalSync ??
+          DateTime.now().subtract(const Duration(days: 30));
 
       // Sync produits
       await _syncProductsFromCloud(userId, since);
@@ -169,9 +187,16 @@ class BidirectionalSyncService extends ChangeNotifier {
       // Sync catégories budgétaire
       await _syncBudgetCategoriesFromCloud(userId, since);
 
-      ConsoleLogger.info('[BidirectionalSyncService] Pull from cloud completed');
+      ConsoleLogger.info(
+        '[BidirectionalSyncService] Pull from cloud completed',
+      );
     } catch (e, stackTrace) {
-      ConsoleLogger.error('BidirectionalSyncService', '_syncFromCloud', e, stackTrace: stackTrace);
+      ConsoleLogger.error(
+        'BidirectionalSyncService',
+        '_syncFromCloud',
+        e,
+        stackTrace: stackTrace,
+      );
       await ErrorLoggerService.logError(
         component: 'BidirectionalSyncService',
         operation: '_syncFromCloud',
@@ -184,6 +209,7 @@ class BidirectionalSyncService extends ChangeNotifier {
   }
 
   /// Sync des produits depuis le cloud
+  /// Updated for UUID support (v13+ schema)
   Future<void> _syncProductsFromCloud(String userId, DateTime since) async {
     final cloudProducts = await SupabaseApiService.instance.getLatestChanges(
       entityType: 'objet',
@@ -194,7 +220,8 @@ class BidirectionalSyncService extends ChangeNotifier {
 
     for (final cloudProduct in cloudProducts) {
       try {
-        final localProduct = await _getLocalProduct(cloudProduct['local_id']);
+        final productId = cloudProduct['id'] as String; // UUID string
+        final localProduct = await _getLocalProduct(productId);
 
         if (localProduct == null) {
           // Nouveau produit du cloud
@@ -204,20 +231,23 @@ class BidirectionalSyncService extends ChangeNotifier {
           await _resolveProductConflict(localProduct, cloudProduct);
         }
       } catch (e, stackTrace) {
-        ConsoleLogger.warning('[BidirectionalSyncService] Error syncing product ${cloudProduct['id']}: $e');
+        ConsoleLogger.warning(
+          '[BidirectionalSyncService] Error syncing product ${cloudProduct['id']}: $e',
+        );
         await ErrorLoggerService.logError(
           component: 'BidirectionalSyncService',
           operation: '_syncProductsFromCloud',
           error: e,
           stackTrace: stackTrace,
           severity: ErrorSeverity.low,
-          metadata: {'product_id': cloudProduct['id'], 'local_id': cloudProduct['local_id']},
+          metadata: {'product_id': cloudProduct['id']},
         );
       }
     }
   }
 
   /// Sync des foyers depuis le cloud
+  /// Updated for UUID support (v13+ schema)
   Future<void> _syncHouseholdsFromCloud(String userId, DateTime since) async {
     final cloudHouseholds = await SupabaseApiService.instance.getLatestChanges(
       entityType: 'foyer',
@@ -228,7 +258,8 @@ class BidirectionalSyncService extends ChangeNotifier {
 
     for (final cloudHousehold in cloudHouseholds) {
       try {
-        final localHousehold = await _getLocalHousehold(cloudHousehold['local_id']);
+        final householdId = cloudHousehold['id'] as String; // UUID string
+        final localHousehold = await _getLocalHousehold(householdId);
 
         if (localHousehold == null) {
           await _insertCloudHouseholdLocally(cloudHousehold);
@@ -236,12 +267,15 @@ class BidirectionalSyncService extends ChangeNotifier {
           await _resolveHouseholdConflict(localHousehold, cloudHousehold);
         }
       } catch (e, stackTrace) {
-        ConsoleLogger.warning('[BidirectionalSyncService] Error syncing household ${cloudHousehold['id']}: $e');
+        ConsoleLogger.warning(
+          '[BidirectionalSyncService] Error syncing household ${cloudHousehold['id']}: $e',
+        );
       }
     }
   }
 
   /// Sync des achats depuis le cloud
+  /// Updated for UUID support (v13+ schema)
   Future<void> _syncPurchasesFromCloud(String userId, DateTime since) async {
     final cloudPurchases = await SupabaseApiService.instance.getLatestChanges(
       entityType: 'reachat_log',
@@ -252,7 +286,8 @@ class BidirectionalSyncService extends ChangeNotifier {
 
     for (final cloudPurchase in cloudPurchases) {
       try {
-        final localPurchase = await _getLocalPurchase(cloudPurchase['local_id']);
+        final purchaseId = cloudPurchase['id'] as String; // UUID string
+        final localPurchase = await _getLocalPurchase(purchaseId);
 
         if (localPurchase == null) {
           await _insertCloudPurchaseLocally(cloudPurchase);
@@ -260,13 +295,19 @@ class BidirectionalSyncService extends ChangeNotifier {
           await _resolvePurchaseConflict(localPurchase, cloudPurchase);
         }
       } catch (e, stackTrace) {
-        ConsoleLogger.warning('[BidirectionalSyncService] Error syncing purchase ${cloudPurchase['id']}: $e');
+        ConsoleLogger.warning(
+          '[BidirectionalSyncService] Error syncing purchase ${cloudPurchase['id']}: $e',
+        );
       }
     }
   }
 
   /// Sync des catégories budgétaire depuis le cloud
-  Future<void> _syncBudgetCategoriesFromCloud(String userId, DateTime since) async {
+  /// Updated for UUID support (v13+ schema)
+  Future<void> _syncBudgetCategoriesFromCloud(
+    String userId,
+    DateTime since,
+  ) async {
     final cloudCategories = await SupabaseApiService.instance.getLatestChanges(
       entityType: 'budget_categories',
       since: since,
@@ -276,7 +317,8 @@ class BidirectionalSyncService extends ChangeNotifier {
 
     for (final cloudCategory in cloudCategories) {
       try {
-        final localCategory = await _getLocalBudgetCategory(cloudCategory['local_id']);
+        final categoryId = cloudCategory['id'] as String; // UUID string
+        final localCategory = await _getLocalBudgetCategory(categoryId);
 
         if (localCategory == null) {
           await _insertCloudBudgetCategoryLocally(cloudCategory);
@@ -284,7 +326,9 @@ class BidirectionalSyncService extends ChangeNotifier {
           await _resolveBudgetCategoryConflict(localCategory, cloudCategory);
         }
       } catch (e, stackTrace) {
-        ConsoleLogger.warning('[BidirectionalSyncService] Error syncing budget category ${cloudCategory['id']}: $e');
+        ConsoleLogger.warning(
+          '[BidirectionalSyncService] Error syncing budget category ${cloudCategory['id']}: $e',
+        );
       }
     }
   }
@@ -293,7 +337,9 @@ class BidirectionalSyncService extends ChangeNotifier {
   Future<void> _syncChangesToCloud() async {
     // Cette partie est déjà gérée par le SyncService existant
     // Nous pourrions ajouter ici une vérification d'état au besoin
-    ConsoleLogger.info('[BidirectionalSyncService] Push to cloud handled by standard sync');
+    ConsoleLogger.info(
+      '[BidirectionalSyncService] Push to cloud handled by standard sync',
+    );
   }
 
   /// Résoudre les conflits entre local et cloud
@@ -302,12 +348,15 @@ class BidirectionalSyncService extends ChangeNotifier {
     // Cette méthode peut servir pour des rapports ou nettoyage
     ConsoleLogger.info(
       '[BidirectionalSyncService] Conflicts resolved: $_resolvedConflicts '
-      '(Local: $_localWonConflicts, Cloud: $_cloudWonConflicts)'
+      '(Local: $_localWonConflicts, Cloud: $_cloudWonConflicts)',
     );
   }
 
   /// Configuration de priorité pour résolution de conflits
-  ConflictResolution _getConflictResolutionStrategy(String entityType, String source) {
+  ConflictResolution _getConflictResolutionStrategy(
+    String entityType,
+    String source,
+  ) {
     // Produits modifiés directement par l'utilisateur: local wins
     if (entityType == 'objet' && source == 'direct_user_input') {
       return ConflictResolution.localWins;
@@ -333,7 +382,7 @@ class BidirectionalSyncService extends ChangeNotifier {
       final oldRecord = payload['old'] as Map<String, dynamic>?;
 
       ConsoleLogger.info(
-        '[BidirectionalSyncService] Real-time $eventType on $table: ${newRecord?['id']}'
+        '[BidirectionalSyncService] Real-time $eventType on $table: ${newRecord?['id']}',
       );
 
       // Traiter selon le type d'événement et table
@@ -352,75 +401,139 @@ class BidirectionalSyncService extends ChangeNotifier {
           break;
       }
     } catch (e, stackTrace) {
-      ConsoleLogger.error('BidirectionalSyncService', '_handleRealtimeUpdate', e, stackTrace: stackTrace);
+      ConsoleLogger.error(
+        'BidirectionalSyncService',
+        '_handleRealtimeUpdate',
+        e,
+        stackTrace: stackTrace,
+      );
     }
   }
 
-  void _handleProductRealtimeUpdate(String eventType, Map<String, dynamic>? newRecord, Map<String, dynamic>? oldRecord) {
+  void _handleProductRealtimeUpdate(
+    String eventType,
+    Map<String, dynamic>? newRecord,
+    Map<String, dynamic>? oldRecord,
+  ) {
     // Implémenter les updates real-time pour les produits
     // Par exemple: notifier l'UI de changements, ou trigger sync sélective
   }
 
-  void _handleHouseholdRealtimeUpdate(String eventType, Map<String, dynamic>? newRecord, Map<String, dynamic>? oldRecord) {
+  void _handleHouseholdRealtimeUpdate(
+    String eventType,
+    Map<String, dynamic>? newRecord,
+    Map<String, dynamic>? oldRecord,
+  ) {
     // Implémenter pour les foyers
   }
 
-  void _handlePurchaseRealtimeUpdate(String eventType, Map<String, dynamic>? newRecord, Map<String, dynamic>? oldRecord) {
+  void _handlePurchaseRealtimeUpdate(
+    String eventType,
+    Map<String, dynamic>? newRecord,
+    Map<String, dynamic>? oldRecord,
+  ) {
     // Implémenter pour les achats
   }
 
-  void _handleBudgetCategoryRealtimeUpdate(String eventType, Map<String, dynamic>? newRecord, Map<String, dynamic>? oldRecord) {
+  void _handleBudgetCategoryRealtimeUpdate(
+    String eventType,
+    Map<String, dynamic>? newRecord,
+    Map<String, dynamic>? oldRecord,
+  ) {
     // Implémenter pour les catégories budgétaires
   }
 
   // Méthodes helper pour récupérer les données locales
-  Future<Map<String, dynamic>?> _getLocalProduct(int localId) async {
-    final response = await _supabase.from('objet').select().eq('id', localId);
-    return response.isNotEmpty ? response.first : null;
+  // Updated for UUID support (v13+ schema)
+  Future<Map<String, dynamic>?> _getLocalProduct(String id) async {
+    final db = await DatabaseService().database;
+    final results = await db.query('objet', where: 'id = ?', whereArgs: [id]);
+    return results.isNotEmpty ? results.first : null;
   }
 
-  Future<Map<String, dynamic>?> _getLocalHousehold(int localId) async {
-    final response = await _supabase.from('foyer').select().eq('id', localId);
-    return response.isNotEmpty ? response.first : null;
+  Future<Map<String, dynamic>?> _getLocalHousehold(String id) async {
+    final db = await DatabaseService().database;
+    final results = await db.query('foyer', where: 'id = ?', whereArgs: [id]);
+    return results.isNotEmpty ? results.first : null;
   }
 
-  Future<Map<String, dynamic>?> _getLocalPurchase(int localId) async {
-    final response =
-        await _supabase.from('reachat_log').select().eq('id', localId);
-    return response.isNotEmpty ? response.first : null;
+  Future<Map<String, dynamic>?> _getLocalPurchase(String id) async {
+    final db = await DatabaseService().database;
+    final results = await db.query(
+      'reachat_log',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    return results.isNotEmpty ? results.first : null;
   }
 
-  Future<Map<String, dynamic>?> _getLocalBudgetCategory(int localId) async {
-    final response =
-        await _supabase.from('budget_categories').select().eq('id', localId);
-    return response.isNotEmpty ? response.first : null;
+  Future<Map<String, dynamic>?> _getLocalBudgetCategory(String id) async {
+    final db = await DatabaseService().database;
+    final results = await db.query(
+      'budget_categories',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    return results.isNotEmpty ? results.first : null;
   }
 
   // Méthodes helper pour insérer depuis le cloud
-  Future<void> _insertCloudProductLocally(Map<String, dynamic> cloudProduct) async {
+  // Updated for UUID support (v13+ schema) - insert into local SQLite database
+  Future<void> _insertCloudProductLocally(
+    Map<String, dynamic> cloudProduct,
+  ) async {
     // Adapter le format cloud vers local
     final localData = _convertCloudProductToLocal(cloudProduct);
-    await _supabase.from('objet').insert(localData);
+    final db = await DatabaseService().database;
+    await db.insert('objet', localData);
+    ConsoleLogger.info(
+      '[BidirectionalSyncService] Inserted cloud product locally: ${localData['id']}',
+    );
   }
 
-  Future<void> _insertCloudHouseholdLocally(Map<String, dynamic> cloudHousehold) async {
+  Future<void> _insertCloudHouseholdLocally(
+    Map<String, dynamic> cloudHousehold,
+  ) async {
     final localData = _convertCloudHouseholdToLocal(cloudHousehold);
-    await _supabase.from('foyer').insert(localData);
+    final db = await DatabaseService().database;
+    await db.insert('foyer', localData);
+    ConsoleLogger.info(
+      '[BidirectionalSyncService] Inserted cloud household locally: ${localData['id']}',
+    );
   }
 
-  Future<void> _insertCloudPurchaseLocally(Map<String, dynamic> cloudPurchase) async {
+  Future<void> _insertCloudPurchaseLocally(
+    Map<String, dynamic> cloudPurchase,
+  ) async {
     final localData = _convertCloudPurchaseToLocal(cloudPurchase);
-    await _supabase.from('reachat_log').insert(localData);
+    final db = await DatabaseService().database;
+    await db.insert('reachat_log', localData);
+    ConsoleLogger.info(
+      '[BidirectionalSyncService] Inserted cloud purchase locally: ${localData['id']}',
+    );
   }
 
-  Future<void> _insertCloudBudgetCategoryLocally(Map<String, dynamic> cloudCategory) async {
+  Future<void> _insertCloudBudgetCategoryLocally(
+    Map<String, dynamic> cloudCategory,
+  ) async {
     final localData = _convertCloudBudgetCategoryToLocal(cloudCategory);
-    await _supabase.from('budget_categories').insert(localData);
+    final db = await DatabaseService().database;
+    await db.insert('budget_categories', localData);
+    ConsoleLogger.info(
+      '[BidirectionalSyncService] Inserted cloud budget category locally: ${localData['id']}',
+    );
   }
 
   // Méthodes de résolution de conflits
-  Future<void> _resolveProductConflict(Map<String, dynamic> local, Map<String, dynamic> cloud) async {
-    final conflictResolution = _getConflictResolutionStrategy('objet', local['source'] ?? 'unknown');
+  // Updated for UUID support (v13+ schema)
+  Future<void> _resolveProductConflict(
+    Map<String, dynamic> local,
+    Map<String, dynamic> cloud,
+  ) async {
+    final conflictResolution = _getConflictResolutionStrategy(
+      'objet',
+      local['source'] ?? 'unknown',
+    );
 
     switch (conflictResolution) {
       case ConflictResolution.localWins:
@@ -430,7 +543,16 @@ class BidirectionalSyncService extends ChangeNotifier {
       case ConflictResolution.cloudWins:
         // Mettre à jour local avec les données cloud
         final localData = _convertCloudProductToLocal(cloud);
-        await _supabase.from('objet').update(localData).eq('id', local['id']);
+        final db = await DatabaseService().database;
+        await db.update(
+          'objet',
+          localData,
+          where: 'id = ?',
+          whereArgs: [local['id']],
+        );
+        ConsoleLogger.info(
+          '[BidirectionalSyncService] Cloud won conflict for product: ${local['id']}',
+        );
         _cloudWonConflicts++;
         break;
       case ConflictResolution.lastModifiedWins:
@@ -444,9 +566,21 @@ class BidirectionalSyncService extends ChangeNotifier {
 
         if (cloudModified.isAfter(localModified)) {
           final localData = _convertCloudProductToLocal(cloud);
-          await _supabase.from('objet').update(localData).eq('id', local['id']);
+          final db = await DatabaseService().database;
+          await db.update(
+            'objet',
+            localData,
+            where: 'id = ?',
+            whereArgs: [local['id']],
+          );
+          ConsoleLogger.info(
+            '[BidirectionalSyncService] Cloud won (last modified) for product: ${local['id']}',
+          );
           _cloudWonConflicts++;
         } else {
+          ConsoleLogger.info(
+            '[BidirectionalSyncService] Local won (last modified) for product: ${local['id']}',
+          );
           _localWonConflicts++;
         }
         break;
@@ -455,8 +589,14 @@ class BidirectionalSyncService extends ChangeNotifier {
     _resolvedConflicts++;
   }
 
-  Future<void> _resolveHouseholdConflict(Map<String, dynamic> local, Map<String, dynamic> cloud) async {
-    final conflictResolution = _getConflictResolutionStrategy('foyer', 'shared');
+  Future<void> _resolveHouseholdConflict(
+    Map<String, dynamic> local,
+    Map<String, dynamic> cloud,
+  ) async {
+    final conflictResolution = _getConflictResolutionStrategy(
+      'foyer',
+      'shared',
+    );
 
     // Même logique que pour les produits
     switch (conflictResolution) {
@@ -465,18 +605,43 @@ class BidirectionalSyncService extends ChangeNotifier {
         break;
       case ConflictResolution.cloudWins:
         final localData = _convertCloudHouseholdToLocal(cloud);
-        await _supabase.from('foyer').update(localData).eq('id', local['id']);
+        final db = await DatabaseService().database;
+        await db.update(
+          'foyer',
+          localData,
+          where: 'id = ?',
+          whereArgs: [local['id']],
+        );
+        ConsoleLogger.info(
+          '[BidirectionalSyncService] Cloud won conflict for household: ${local['id']}',
+        );
         _cloudWonConflicts++;
         break;
       case ConflictResolution.lastModifiedWins:
-        final cloudDate = DateTime.parse(cloud['synced_at'] ?? cloud['updated_at']);
-        final localDate = DateTime.parse(local['updated_at'] ?? '2023-01-01T00:00:00Z');
+        final cloudDate = DateTime.parse(
+          cloud['synced_at'] ?? cloud['updated_at'],
+        );
+        final localDate = DateTime.parse(
+          local['updated_at'] ?? '2023-01-01T00:00:00Z',
+        );
 
         if (cloudDate.isAfter(localDate)) {
           final localData = _convertCloudHouseholdToLocal(cloud);
-          await _supabase.from('foyer').update(localData).eq('id', local['id']);
+          final db = await DatabaseService().database;
+          await db.update(
+            'foyer',
+            localData,
+            where: 'id = ?',
+            whereArgs: [local['id']],
+          );
+          ConsoleLogger.info(
+            '[BidirectionalSyncService] Cloud won (last modified) for household: ${local['id']}',
+          );
           _cloudWonConflicts++;
         } else {
+          ConsoleLogger.info(
+            '[BidirectionalSyncService] Local won (last modified) for household: ${local['id']}',
+          );
           _localWonConflicts++;
         }
         break;
@@ -485,14 +650,23 @@ class BidirectionalSyncService extends ChangeNotifier {
     _resolvedConflicts++;
   }
 
-  Future<void> _resolvePurchaseConflict(Map<String, dynamic> local, Map<String, dynamic> cloud) async {
+  Future<void> _resolvePurchaseConflict(
+    Map<String, dynamic> local,
+    Map<String, dynamic> cloud,
+  ) async {
     // Pour les achats, ajouter simplement si pas existant (pas vraiment de conflit)
     _localWonConflicts++;
     _resolvedConflicts++;
   }
 
-  Future<void> _resolveBudgetCategoryConflict(Map<String, dynamic> local, Map<String, dynamic> cloud) async {
-    final conflictResolution = _getConflictResolutionStrategy('budget_categories', 'shared');
+  Future<void> _resolveBudgetCategoryConflict(
+    Map<String, dynamic> local,
+    Map<String, dynamic> cloud,
+  ) async {
+    final conflictResolution = _getConflictResolutionStrategy(
+      'budget_categories',
+      'shared',
+    );
 
     switch (conflictResolution) {
       case ConflictResolution.localWins:
@@ -500,24 +674,43 @@ class BidirectionalSyncService extends ChangeNotifier {
         break;
       case ConflictResolution.cloudWins:
         final localData = _convertCloudBudgetCategoryToLocal(cloud);
-        await _supabase
-            .from('budget_categories')
-            .update(localData)
-            .eq('id', local['id']);
+        final db = await DatabaseService().database;
+        await db.update(
+          'budget_categories',
+          localData,
+          where: 'id = ?',
+          whereArgs: [local['id']],
+        );
+        ConsoleLogger.info(
+          '[BidirectionalSyncService] Cloud won conflict for budget category: ${local['id']}',
+        );
         _cloudWonConflicts++;
         break;
       case ConflictResolution.lastModifiedWins:
-        final cloudDate = DateTime.parse(cloud['updated_at'] ?? cloud['synced_at']);
-        final localDate = DateTime.parse(local['updated_at'] ?? '2023-01-01T00:00:00Z');
+        final cloudDate = DateTime.parse(
+          cloud['updated_at'] ?? cloud['synced_at'],
+        );
+        final localDate = DateTime.parse(
+          local['updated_at'] ?? '2023-01-01T00:00:00Z',
+        );
 
         if (cloudDate.isAfter(localDate)) {
           final localData = _convertCloudBudgetCategoryToLocal(cloud);
-          await _supabase
-              .from('budget_categories')
-              .update(localData)
-              .eq('id', local['id']);
+          final db = await DatabaseService().database;
+          await db.update(
+            'budget_categories',
+            localData,
+            where: 'id = ?',
+            whereArgs: [local['id']],
+          );
+          ConsoleLogger.info(
+            '[BidirectionalSyncService] Cloud won (last modified) for budget category: ${local['id']}',
+          );
           _cloudWonConflicts++;
         } else {
+          ConsoleLogger.info(
+            '[BidirectionalSyncService] Local won (last modified) for budget category: ${local['id']}',
+          );
           _localWonConflicts++;
         }
         break;
@@ -527,62 +720,72 @@ class BidirectionalSyncService extends ChangeNotifier {
   }
 
   // Méthodes de conversion cloud -> local
+  // Updated for UUID support (v13+ schema) - cloud uses French column names
   Map<String, dynamic> _convertCloudProductToLocal(Map<String, dynamic> cloud) {
     return {
-      'id': cloud['local_id'],
-      'id_foyer': cloud['household_id'],
-      'nom': cloud['name'],
-      'categorie': cloud['category'],
-      'type': cloud['type'],
-      'date_achat': cloud['purchase_date'],
-      'duree_vie_prev_jours': cloud['predicted_lifespan_days'],
-      'date_rupture_prev': cloud['predicted_depletion_date'],
-      'quantite_initiale': cloud['initial_quantity'],
-      'quantite_restante': cloud['remaining_quantity'],
-      'unite': cloud['unit'],
-      'taille_conditionnement': cloud['package_size'],
-      'prix_unitaire': cloud['unit_price'],
-      'methode_prevision': cloud['prediction_method'],
-      'frequence_achat_jours': cloud['purchase_frequency_days'],
-      'consommation_jour': cloud['daily_consumption'],
-      'seuil_alerte_jours': cloud['alert_threshold_days'] ?? 3,
-      'seuil_alerte_quantite': cloud['alert_threshold_quantity'] ?? 1.0,
-      'commentaires': cloud['comments'],
-      'room': cloud['room'],
-      'date_modification': cloud['synced_at'],
+      'id': cloud['id'] as String, // UUID string
+      'id_foyer': cloud['household_id'] as String, // UUID foreign key
+      'nom': cloud['nom'] as String,
+      'categorie': cloud['categorie'] as String,
+      'type': cloud['type'] as String,
+      'date_achat': cloud['date_achat'] as String?,
+      'duree_vie_prev_jours': cloud['duree_vie_prev_jours'] as int?,
+      'date_rupture_prev': cloud['date_rupture_prev'] as String?,
+      'quantite_initiale': cloud['quantite_initiale'] as double,
+      'quantite_restante': cloud['quantite_restante'] as double,
+      'unite': cloud['unite'] as String,
+      'taille_conditionnement': cloud['taille_conditionnement'] as String?,
+      'prix_unitaire': cloud['prix_unitaire'] as double?,
+      'methode_prevision': cloud['methode_prevision'] as String?,
+      'frequence_achat_jours': cloud['frequence_achat_jours'] as int?,
+      'consommation_jour': cloud['consommation_jour'] as double?,
+      'seuil_alerte_jours': cloud['seuil_alerte_jours'] as int? ?? 3,
+      'seuil_alerte_quantite': cloud['seuil_alerte_quantite'] as double? ?? 1.0,
+      'commentaires': cloud['commentaires'] as String?,
+      'room': cloud['room'] as String?,
+      'date_modification': cloud['date_modification'] as String?,
     };
   }
 
-  Map<String, dynamic> _convertCloudHouseholdToLocal(Map<String, dynamic> cloud) {
+  Map<String, dynamic> _convertCloudHouseholdToLocal(
+    Map<String, dynamic> cloud,
+  ) {
     return {
-      'id': cloud['local_id'],
-      'nb_personnes': cloud['person_count'],
-      'nb_pieces': cloud['room_count'],
-      'type_logement': cloud['housing_type'],
-      'langue': cloud['language'],
-      'budget_mensuel_estime': cloud['estimated_budget'],
+      'id': cloud['id'] as String, // UUID string
+      'nb_personnes': cloud['nb_personnes'] as int,
+      'nb_pieces': cloud['nb_pieces'] as int,
+      'type_logement': cloud['type_logement'] as String,
+      'langue': cloud['langue'] as String,
+      'budget_mensuel_estime': cloud['budget_mensuel_estime'] as double?,
     };
   }
 
-  Map<String, dynamic> _convertCloudPurchaseToLocal(Map<String, dynamic> cloud) {
+  Map<String, dynamic> _convertCloudPurchaseToLocal(
+    Map<String, dynamic> cloud,
+  ) {
     return {
-      'id': cloud['local_id'],
-      'id_objet': cloud['product_local_id'],
-      'date': cloud['date'],
-      'quantite': cloud['quantity'],
-      'prix_total': cloud['total_price'],
+      'id': cloud['id'] as String, // UUID string
+      'id_objet': cloud['product_id'] as String, // UUID foreign key
+      'date': cloud['date'] as String,
+      'quantite': cloud['quantite'] as double,
+      'prix_total': cloud['prix_total'] as double,
     };
   }
 
-  Map<String, dynamic> _convertCloudBudgetCategoryToLocal(Map<String, dynamic> cloud) {
+  Map<String, dynamic> _convertCloudBudgetCategoryToLocal(
+    Map<String, dynamic> cloud,
+  ) {
     return {
-      'id': cloud['local_id'],
-      'name': cloud['name'],
-      'limit_amount': cloud['limit_amount'],
-      'spent_amount': cloud['spent_amount'],
-      'month': cloud['month'],
-      'created_at': cloud['created_at'],
-      'updated_at': cloud['updated_at'],
+      'id': cloud['id'] as String, // UUID string
+      'name': cloud['name'] as String,
+      'limit_amount': cloud['limit_amount'] as double,
+      'spent':
+          cloud['spent_amount']
+              as double, // Note: local uses 'spent', cloud uses 'spent_amount'
+      'percentage': cloud['percentage'] as double? ?? 0.25,
+      'month': cloud['month'] as String,
+      'created_at': cloud['created_at'] as String,
+      'updated_at': cloud['updated_at'] as String,
     };
   }
 
@@ -611,7 +814,7 @@ class BidirectionalSyncService extends ChangeNotifier {
 
 /// Stratégies de résolution de conflits
 enum ConflictResolution {
-  localWins,     // Changements locaux prioritaires
-  cloudWins,     // Changements cloud prioritaires
-  lastModifiedWins,  // Dernière modification gagne
+  localWins, // Changements locaux prioritaires
+  cloudWins, // Changements cloud prioritaires
+  lastModifiedWins, // Dernière modification gagne
 }

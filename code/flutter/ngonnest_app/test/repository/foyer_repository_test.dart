@@ -21,7 +21,7 @@ void main() {
   group('FoyerRepository Tests', () {
     const testId = 1;
     final testFoyer = Foyer(
-      id: testId,
+      id: testId.toString(),
       nbPersonnes: 4,
       nbPieces: 3,
       typeLogement: 'appartement',
@@ -33,7 +33,7 @@ void main() {
       when(mockDatabaseService.getFoyer()).thenAnswer((_) async => null);
       when(
         mockDatabaseService.insertFoyer(any),
-      ).thenAnswer((_) async => testId);
+      ).thenAnswer((_) async => testId.toString());
 
       // Act
       final result = await foyerRepository.save(testFoyer);
@@ -161,17 +161,17 @@ void main() {
       );
 
       when(mockDatabaseService.getFoyer()).thenAnswer((_) async => null);
-      when(mockDatabaseService.insertFoyer(any)).thenAnswer((_) async => 1);
+      when(mockDatabaseService.insertFoyer(any)).thenAnswer((_) async => '1');
       when(
         mockDatabaseService.getFoyer(),
-      ).thenAnswer((_) async => foyerToSave.copyWith(id: 1));
+      ).thenAnswer((_) async => foyerToSave.copyWith(id: '1'));
 
       // Act
       final saveId = await foyerRepository.save(foyerToSave);
       final retrievedFoyer = await foyerRepository.get();
 
       // Assert
-      expect(saveId, 1);
+      expect(saveId, '1');
       expect(retrievedFoyer, isNotNull);
       expect(retrievedFoyer!.nbPersonnes, foyerToSave.nbPersonnes);
       expect(retrievedFoyer.typeLogement, foyerToSave.typeLogement);

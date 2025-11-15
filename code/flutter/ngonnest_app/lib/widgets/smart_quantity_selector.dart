@@ -92,7 +92,7 @@ class _SmartQuantitySelectorState extends State<SmartQuantitySelector> {
         // Calcul générique basé sur la catégorie
         _recommendedQuantity = await _intelligenceService.calculateOptimalQuantity(
           ProductTemplate(
-            id: 'generic_${widget.category}',
+            id: 0,
             name: 'Produit générique',
             category: widget.category,
             unit: _selectedUnit,

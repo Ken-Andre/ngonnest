@@ -1,8 +1,10 @@
+import 'dart:math';
+
 import '../models/foyer.dart';
 import '../repository/foyer_repository.dart';
+import '../services/console_logger.dart';
 import '../services/database_service.dart';
 import '../services/error_logger_service.dart';
-import '../services/console_logger.dart';
 
 class HouseholdService {
   static FoyerRepository? _foyerRepository;
@@ -10,6 +12,8 @@ class HouseholdService {
   static Foyer? _cachedFoyer;
   static DateTime? _lastFetchTime;
   static const Duration _cacheDuration = Duration(minutes: 5);
+
+  // UUID generation removed after migration completion
 
   static Future<FoyerRepository> get foyerRepository async {
     if (_foyerRepository != null) return _foyerRepository!;
@@ -73,14 +77,16 @@ class HouseholdService {
   }
 
   // Create and save foyer from raw data
-  static Future<int> createAndSaveFoyer(
+  static Future<String> createAndSaveFoyer(
     int nbPersonnes,
     String typeLogement,
     String langue, {
     int? nbPieces,
     double? budgetMensuelEstime,
+    String? id,
   }) async {
     final foyer = Foyer(
+      id: id, // Use provided ID or let database auto-generate
       nbPersonnes: nbPersonnes,
       nbPieces:
           nbPieces ??
@@ -93,7 +99,8 @@ class HouseholdService {
       langue: langue,
       budgetMensuelEstime: budgetMensuelEstime,
     );
-    return await saveFoyer(foyer);
+    final savedId = await saveFoyer(foyer);
+    return savedId.toString();
   }
 
   // Get foyer data with caching
@@ -150,8 +157,9 @@ class HouseholdService {
 
   // Legacy methods for compatibility (deprecated - use foyer methods instead)
   @deprecated
-  static Future<int> saveHouseholdProfile(dynamic profile) async {
-    return await saveFoyer(profile);
+  static Future<String> saveHouseholdProfile(dynamic profile) async {
+    final result = await saveFoyer(profile);
+    return result.toString(); // Convert int to string for legacy compatibility
   }
 
   @deprecated

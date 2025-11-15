@@ -1,6 +1,6 @@
 /// Template de produit avec métadonnées intelligentes pour les suggestions
 class ProductTemplate {
-  final String id;
+  final int id;
   final String name;
   final String category;
   final String? subcategory;
@@ -42,7 +42,8 @@ class ProductTemplate {
     }
 
     // Calcul basé sur les guidelines existants (famille de 4 par défaut)
-    final baseQuantity = quantityGuidelines!['family_4'] ?? defaultQuantity ?? 1.0;
+    final baseQuantity =
+        quantityGuidelines!['family_4'] ?? defaultQuantity ?? 1.0;
     final adjustedQuantity = (familySize / 4.0) * baseQuantity;
 
     return adjustedQuantity.roundToDouble();
@@ -53,8 +54,12 @@ class ProductTemplate {
     if (defaultFrequency == null) return 30; // Default 30 jours
 
     // Ajustement selon taille familiale
-    if (familySize <= 2) return (defaultFrequency! * 0.8).round(); // Moins fréquent pour petits foyers
-    if (familySize >= 6) return (defaultFrequency! * 1.2).round(); // Plus fréquent pour gros foyers
+    if (familySize <= 2)
+      return (defaultFrequency! * 0.8)
+          .round(); // Moins fréquent pour petits foyers
+    if (familySize >= 6)
+      return (defaultFrequency! * 1.2)
+          .round(); // Plus fréquent pour gros foyers
 
     return defaultFrequency!;
   }
@@ -62,7 +67,9 @@ class ProductTemplate {
   /// Convertit un Map en ProductTemplate
   factory ProductTemplate.fromMap(Map<String, dynamic> map) {
     return ProductTemplate(
-      id: map['id'] ?? map['name']?.toString().toLowerCase().replaceAll(' ', '_') ?? 'unknown',
+      id: (map['id'] as num?)?.toInt() ??
+          map['name']?.toString().toLowerCase().replaceAll(' ', '_').hashCode.abs() ??
+          'unknown'.hashCode.abs(),
       name: map['name'] ?? 'Produit inconnu',
       category: map['category'] ?? 'unknown',
       subcategory: map['subcategory'],
@@ -71,12 +78,17 @@ class ProductTemplate {
           ? Map<String, dynamic>.from(map['quantityGuidelines'])
           : null,
       defaultFrequency: map['defaultFrequency'] ?? map['frequency'],
-      popularity: (map['popularity'] as num?)?.toInt() ?? 10, // Popularité par défaut moyenne
+      popularity:
+          (map['popularity'] as num?)?.toInt() ??
+          10, // Popularité par défaut moyenne
       icon: map['icon'] ?? '📦',
       region: map['region'],
       commonQuantities: map['commonQuantities'] != null
-          ? Map<String, int>.from(Map<String, dynamic>.from(map['commonQuantities']).map(
-              (key, value) => MapEntry(key, (value as num).toInt())))
+          ? Map<String, int>.from(
+              Map<String, dynamic>.from(
+                map['commonQuantities'],
+              ).map((key, value) => MapEntry(key, (value as num).toInt())),
+            )
           : null,
       defaultQuantity: map['defaultQuantity']?.toDouble(),
     );
@@ -102,7 +114,7 @@ class ProductTemplate {
 
   /// Crée une copie avec des modifications
   ProductTemplate copyWith({
-    String? id,
+    int? id,
     String? name,
     String? category,
     String? subcategory,

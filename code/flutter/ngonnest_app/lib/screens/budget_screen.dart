@@ -50,7 +50,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
 
     try {
       // Initialize default categories if none exist
-      await BudgetService.initializeDefaultCategories(month: _currentMonth);
+      await BudgetService.initializeDefaultCategories(month: _currentMonth.toString());
 
       // Ensure spending is up-to-date with purchases for this foyer
       final foyerId = context.read<FoyerProvider>().foyerId;
@@ -128,7 +128,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
 
     if (confirmed == true && category.id != null) {
       try {
-        await BudgetService.deleteBudgetCategory(category.id!);
+        await BudgetService.deleteBudgetCategory(category.id!.toString());
         _loadBudgetData();
 
         if (mounted) {
@@ -382,14 +382,17 @@ class _BudgetScreenState extends State<BudgetScreen> {
                           itemBuilder: (context, index) {
                             final category = _categories[index];
                             final foyerId =
-                                context.watch<FoyerProvider>().foyerId ?? 0;
+                                context.watch<FoyerProvider>().foyerId;
+                            if (foyerId == null) {
+                              return const SizedBox.shrink();
+                            }
                             return BudgetCategoryCard(
                               category: category,
                               onEdit: () =>
                                   _showCategoryDialog(category: category),
                               onDelete: () => _deleteCategory(category),
 
-                              idFoyer: foyerId,
+                              idFoyer: int.tryParse(foyerId ?? '') ?? 0,
                             );
                           },
                         ),

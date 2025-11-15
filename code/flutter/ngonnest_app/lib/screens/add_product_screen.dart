@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../models/objet.dart';
@@ -9,6 +10,7 @@ import '../repository/foyer_repository.dart';
 import '../repository/inventory_repository.dart';
 import '../services/analytics_service.dart';
 import '../services/budget_service.dart';
+import '../services/calendar_sync_service.dart';
 // import '../theme/app_theme.dart';
 // import '../config/cameroon_products.dart';
 // import '../services/error_logger_service.dart';
@@ -16,12 +18,11 @@ import '../services/console_logger.dart';
 import '../services/database_service.dart';
 import '../services/household_service.dart';
 import '../services/navigation_service.dart';
+import '../services/notification_service.dart';
 import '../services/product_suggestion_service.dart';
+import '../services/settings_service.dart';
 import '../services/smart_validator.dart';
 import '../services/sync_service.dart';
-import '../services/notification_service.dart';
-import '../services/calendar_sync_service.dart';
-import '../services/settings_service.dart';
 import '../widgets/dropdown_categories_durables.dart';
 import '../widgets/error_feedback_widget.dart';
 import '../widgets/main_navigation_wrapper.dart';
@@ -29,12 +30,16 @@ import '../widgets/smart_product_search.dart';
 // import '../services/budget_service.dart';
 
 import '../widgets/smart_quantity_selector.dart';
-import 'package:intl/intl.dart';
 
 class AddProductScreen extends StatefulWidget {
   final bool isConsumable;
+  final Function(bool)? onTypeChanged; // Callback pour notifier le changement de type
 
-  const AddProductScreen({super.key, this.isConsumable = true});
+  const AddProductScreen({
+    super.key,
+    this.isConsumable = true,
+    this.onTypeChanged,
+  });
 
   @override
   State<AddProductScreen> createState() => _AddProductScreenState();
@@ -48,7 +53,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
   late FoyerRepository _foyerRepository;
 
   bool _isConsumable = true;
-  int? _foyerId;
+  String? _foyerId;
   int _householdSize = 4; // Taille réelle du foyer
   bool _isLoading = true;
   bool _isSaving = false;
@@ -62,7 +67,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
   final _commentairesController =
       TextEditingController(); // Commentaires pour durables
   String _selectedCategory = 'hygiène'; // Première catégorie par défaut
-  String _selectedDurableCategory = ''; // Catégorie durable sélectionnée
+  String _selectedDurableCategory =
+      'electromenager'; // Catégorie durable sélectionnée avec valeur par défaut
   String _selectedUnit = 'pièces'; // Unité sélectionnée
   DateTime? _expiryDate;
   DateTime? _purchaseDate;
@@ -113,6 +119,20 @@ class _AddProductScreenState extends State<AddProductScreen> {
       context.read<AnalyticsService>().logFlowStarted('add_product');
     });
     //     _getHouseholdSize();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Récupérer les arguments de navigation
+    final args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    if (args != null) {
+      if (args.containsKey('isConsumable')) {
+        _isConsumable = args['isConsumable'] as bool;
+      }
+      // Le callback onTypeChanged est déjà passé via le widget constructor
+    }
   }
 
   void _initializeServices() {
@@ -257,42 +277,63 @@ class _AddProductScreenState extends State<AddProductScreen> {
   //     });
 
   /// Create expiry reminders and calendar events for a product
-  Future<void> _createExpiryReminders(Objet objet, int productId) async {
+  Future<void> _createExpiryReminders(
+    Objet objet,
+    String notificationId,
+  ) async {
     if (objet.dateRupturePrev == null) return;
 
     final expiryDate = objet.dateRupturePrev!;
     final now = DateTime.now();
     final daysUntilExpiry = expiryDate.difference(now).inDays;
 
-    ConsoleLogger.info('REMINDERS: Creating reminders for ${objet.nom}, expiry: $expiryDate, daysUntilExpiry: $daysUntilExpiry');
+    ConsoleLogger.info(
+      'REMINDERS: Creating reminders for ${objet.nom}, expiry: $expiryDate, daysUntilExpiry: $daysUntilExpiry',
+    );
 
     // Create notification 1 day before expiry (or today if expiring tomorrow)
     if (daysUntilExpiry >= 0) {
       // Si expiration dans 1 jour ou moins, créer notification aujourd'hui
       // Sinon, créer notification 1 jour avant
-      final reminderDate = daysUntilExpiry <= 1 
-          ? now.add(const Duration(hours: 1)) // Notifier dans 1h si expire demain
+      final reminderDate = daysUntilExpiry <= 1
+          ? now.add(
+              const Duration(hours: 1),
+            ) // Notifier dans 1h si expire demain
           : expiryDate.subtract(const Duration(days: 1));
-      
+
       if (reminderDate.isAfter(now)) {
         try {
           await NotificationService.showScheduledNotification(
-            id: productId + 1000000, // Use high ID to avoid conflicts
+            id:
+                (int.tryParse(notificationId) ?? 0) +
+                1000000, // Use high ID to avoid conflicts
             title: '⏰ Expiration proche',
-            body: daysUntilExpiry == 0 
+            body: daysUntilExpiry == 0
                 ? '${objet.nom} expire aujourd\'hui'
                 : '${objet.nom} expire ${daysUntilExpiry == 1 ? 'demain' : 'dans $daysUntilExpiry jours'} (${DateFormat('dd/MM/yyyy').format(expiryDate)})',
             scheduledDate: reminderDate,
-            addToCalendar: false, // Ne pas ajouter au calendrier via notification (on le fait séparément)
+            addToCalendar:
+                false, // Ne pas ajouter au calendrier via notification (on le fait séparément)
             context: context,
           );
-          ConsoleLogger.success('REMINDERS: Notification scheduled for ${objet.nom} at $reminderDate');
+          ConsoleLogger.success(
+            'REMINDERS: Notification scheduled for ${objet.nom} at $reminderDate',
+          );
         } catch (e, stackTrace) {
-          ConsoleLogger.warning('REMINDERS: Failed to schedule notification: $e');
-          ConsoleLogger.error('REMINDERS', 'showScheduledNotification', e, stackTrace: stackTrace);
+          ConsoleLogger.warning(
+            'REMINDERS: Failed to schedule notification: $e',
+          );
+          ConsoleLogger.error(
+            'REMINDERS',
+            'showScheduledNotification',
+            e,
+            stackTrace: stackTrace,
+          );
         }
       } else {
-        ConsoleLogger.warning('REMINDERS: Reminder date $reminderDate is in the past, skipping notification');
+        ConsoleLogger.warning(
+          'REMINDERS: Reminder date $reminderDate is in the past, skipping notification',
+        );
       }
     }
 
@@ -301,19 +342,32 @@ class _AddProductScreenState extends State<AddProductScreen> {
       try {
         final calendarService = CalendarSyncService();
         // Créer un événement all-day en utilisant le début de la journée et la fin de la journée
-        final startOfDay = DateTime(expiryDate.year, expiryDate.month, expiryDate.day);
-        final endOfDay = startOfDay.add(const Duration(days: 1)); // Fin de journée = début du jour suivant
-        
+        final startOfDay = DateTime(
+          expiryDate.year,
+          expiryDate.month,
+          expiryDate.day,
+        );
+        final endOfDay = startOfDay.add(
+          const Duration(days: 1),
+        ); // Fin de journée = début du jour suivant
+
         await calendarService.addEvent(
           title: 'Expiration: ${objet.nom}',
           description: 'Produit ${objet.categorie} - ${objet.nom}',
           start: startOfDay,
           end: endOfDay, // All-day event: start of day to start of next day
         );
-        ConsoleLogger.success('REMINDERS: Calendar event (all-day) added for ${objet.nom} on ${DateFormat('dd/MM/yyyy').format(startOfDay)}');
+        ConsoleLogger.success(
+          'REMINDERS: Calendar event (all-day) added for ${objet.nom} on ${DateFormat('dd/MM/yyyy').format(startOfDay)}',
+        );
       } catch (e, stackTrace) {
         ConsoleLogger.warning('REMINDERS: Failed to add calendar event: $e');
-        ConsoleLogger.error('REMINDERS', 'addCalendarEvent', e, stackTrace: stackTrace);
+        ConsoleLogger.error(
+          'REMINDERS',
+          'addCalendarEvent',
+          e,
+          stackTrace: stackTrace,
+        );
       }
     }
   }
@@ -390,7 +444,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
     try {
       final objet = Objet(
-        idFoyer: _foyerId!,
+        idFoyer: int.tryParse(_foyerId!) ?? 0,
         nom: _productNameController.text.trim(),
         categorie: _isConsumable
             ? _selectedCategory
@@ -442,6 +496,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
         'SAVE PRODUCT: Product created with ID: $productId',
       );
 
+      final productIdInt = productId;
+
       // Enqueue sync operation
       try {
         final syncService = Provider.of<SyncService>(context, listen: false);
@@ -460,9 +516,11 @@ class _AddProductScreenState extends State<AddProductScreen> {
       // Create expiry reminder and calendar event if product has expiry date
       if (_isConsumable && objet.dateRupturePrev != null) {
         try {
-          await _createExpiryReminders(objet, productId);
+          await _createExpiryReminders(objet, productId.toString());
         } catch (e) {
-          ConsoleLogger.warning('REMINDERS: Failed to create expiry reminders: $e');
+          ConsoleLogger.warning(
+            'REMINDERS: Failed to create expiry reminders: $e',
+          );
           // Ne pas bloquer l'ajout du produit si les rappels échouent
         }
       }
@@ -483,7 +541,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
       if (_isConsumable && _foyerId != null) {
         try {
           await BudgetService.checkBudgetAlertsAfterPurchase(
-            _foyerId!,
+            _foyerId!.toString(),
             _selectedCategory,
           );
           ConsoleLogger.success(
@@ -562,15 +620,70 @@ class _AddProductScreenState extends State<AddProductScreen> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
+    // Vérifier si on peut revenir en arrière (pile de navigation)
+    final canPop = ModalRoute.of(context)?.canPop ?? false;
+
     return MainNavigationWrapper(
       currentIndex: 2, // Add product is index 2
       onTabChanged: (index) => NavigationService.navigateToTab(context, index),
       body: Scaffold(
-        backgroundColor: Theme.of(context).colorScheme.background,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         appBar: AppBar(
           backgroundColor: Theme.of(context).colorScheme.surface,
           elevation: 0,
           automaticallyImplyLeading: false,
+          leading: canPop
+              ? IconButton(
+                  icon: Icon(
+                    CupertinoIcons.back,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                  onPressed: () {
+                    // Vérifier si des données ont été saisies avant de quitter
+                    final hasData =
+                        _productNameController.text.isNotEmpty ||
+                        _initialQuantityController.text != '1' ||
+                        _frequencyController.text != '30' ||
+                        _unitPriceController.text.isNotEmpty ||
+                        _packagingSizeController.text.isNotEmpty ||
+                        _commentairesController.text.isNotEmpty ||
+                        _expiryDate != null ||
+                        _purchaseDate != null;
+
+                    if (hasData && !_isSaving) {
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Quitter sans sauvegarder ?'),
+                          content: const Text(
+                            'Vous avez des données non sauvegardées. Voulez-vous vraiment quitter ?',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text('Annuler'),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(context); // Fermer le dialog
+                                Navigator.pop(
+                                  context,
+                                ); // Retourner à l'écran précédent
+                              },
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.red,
+                              ),
+                              child: const Text('Quitter'),
+                            ),
+                          ],
+                        ),
+                      );
+                    } else {
+                      Navigator.pop(context);
+                    }
+                  },
+                )
+              : null,
           title: Text(
             'Ajouter un produit',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
@@ -607,7 +720,19 @@ class _AddProductScreenState extends State<AddProductScreen> {
                         subtitle: 'Savon, nourriture, etc.',
                         icon: CupertinoIcons.cube_box_fill,
                         selected: _isConsumable,
-                        onTap: () => setState(() => _isConsumable = true),
+                        onTap: () {
+                          if (!_isConsumable) {
+                            // Reset durable-specific fields when switching to consumable
+                            setState(() {
+                              _isConsumable = true;
+                              _selectedDurableCategory = 'electromenager';
+                              _commentairesController.clear();
+                              _purchaseDate = null;
+                            });
+                            // Notifier le changement de type
+                            widget.onTypeChanged?.call(true);
+                          }
+                        },
                       ),
                       const SizedBox(width: 4),
                       _buildTypeOption(
@@ -615,7 +740,22 @@ class _AddProductScreenState extends State<AddProductScreen> {
                         subtitle: 'Électroménager, meubles',
                         icon: CupertinoIcons.tv_fill,
                         selected: !_isConsumable,
-                        onTap: () => setState(() => _isConsumable = false),
+                        onTap: () {
+                          if (_isConsumable) {
+                            // Reset consumable-specific fields when switching to durable
+                            setState(() {
+                              _isConsumable = false;
+                              _selectedCategory = 'hygiène';
+                              _packagingSizeController.clear();
+                              _unitPriceController.clear();
+                              _frequencyController.text = '30';
+                              _expiryDate = null;
+                              _selectedUnit = 'pièces';
+                            });
+                            // Notifier le changement de type
+                            widget.onTypeChanged?.call(false);
+                          }
+                        },
                       ),
                     ],
                   ),
@@ -626,7 +766,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 SmartProductSearch(
                   category: _isConsumable ? _selectedCategory : '',
                   onProductSelected: _onProductSelected,
-                  controller: _productNameController, // Passer le controller pour synchronisation
+                  controller:
+                      _productNameController, // Passer le controller pour synchronisation
                   onTextChanged: (text) {
                     // Le controller externe est déjà synchronisé
                     // Pas besoin de faire _productNameController.text = text;

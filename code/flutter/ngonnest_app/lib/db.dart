@@ -1,12 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:uuid/uuid.dart';
 import 'dart:io'; // Required for Directory
 
 import 'services/analytics_service.dart';
+import 'services/error_logger_service.dart';
 
-const int _databaseVersion =
-    11; // Added sync_outbox table for offline-first sync
+const int _databaseVersion = 13; // UUID migration implemented
 
 Future<Database> initDatabase() async {
   final databasesPath = await getDatabasesPath();
@@ -435,6 +436,145 @@ Future<void> _migrateToVersion11(Database db) async {
   }
 }
 
+Future<void> _migrateToVersion12(Database db) async {
+  debugPrint(
+    '[DB Migration V12] Adding percentage column to budget_categories for dynamic budgets',
+  );
+
+  try {
+    await db.transaction((txn) async {
+      // Check if percentage column already exists
+      final budgetColumns = await txn.rawQuery(
+        "PRAGMA table_info(budget_categories)",
+      );
+      final hasPercentage = budgetColumns.any(
+        (col) => col['name'] == 'percentage',
+      );
+
+      if (!hasPercentage) {
+        // Add percentage column with default value
+        await txn.execute(
+          'ALTER TABLE budget_categories ADD COLUMN percentage REAL DEFAULT 0.25',
+        );
+        debugPrint(
+          '[DB Migration V12] ✅ percentage column added to budget_categories.',
+        );
+      } else {
+        debugPrint(
+          '[DB Migration V12] ✅ percentage column already exists.',
+        );
+      }
+
+      // Get all existing budget categories
+      final categories = await txn.query('budget_categories');
+
+      if (categories.isEmpty) {
+        debugPrint(
+          '[DB Migration V12] No existing categories to migrate percentages.',
+        );
+      } else {
+        // Group categories by month to calculate percentages
+        final Map<String, List<Map<String, dynamic>>> byMonth = {};
+        for (final cat in categories) {
+          final month = cat['month'] as String;
+          byMonth.putIfAbsent(month, () => []).add(cat);
+        }
+
+        // Calculate and update percentages for each month
+        for (final entry in byMonth.entries) {
+          final monthCategories = entry.value;
+          final totalLimit = monthCategories.fold<double>(
+            0.0,
+            (sum, cat) => sum + ((cat['limit_amount'] as num?)?.toDouble() ?? 0.0),
+          );
+
+          if (totalLimit > 0) {
+            for (final cat in monthCategories) {
+              final limit = (cat['limit_amount'] as num?)?.toDouble() ?? 0.0;
+              final percentage = limit / totalLimit;
+
+              await txn.update(
+                'budget_categories',
+                {'percentage': percentage},
+                where: 'id = ?',
+                whereArgs: [cat['id']],
+              );
+            }
+            debugPrint(
+              '[DB Migration V12] ✅ Calculated percentages for month ${entry.key}.',
+            );
+          }
+        }
+      }
+
+      // Update foyer.budgetMensuelEstime if not set
+      final foyers = await txn.query('foyer');
+      for (final foyer in foyers) {
+        final budgetMensuelEstime = foyer['budget_mensuel_estime'];
+        if (budgetMensuelEstime == null) {
+          // Calculate from current month's categories
+          final now = DateTime.now();
+          final currentMonth =
+              '${now.year}-${now.month.toString().padLeft(2, '0')}';
+
+          final foyerCategories = categories.where(
+            (cat) => cat['month'] == currentMonth,
+          );
+
+          if (foyerCategories.isNotEmpty) {
+            final totalBudget = foyerCategories.fold<double>(
+              0.0,
+              (sum, cat) =>
+                  sum + ((cat['limit_amount'] as num?)?.toDouble() ?? 0.0),
+            );
+
+            await txn.update(
+              'foyer',
+              {'budget_mensuel_estime': totalBudget},
+              where: 'id = ?',
+              whereArgs: [foyer['id']],
+            );
+            debugPrint(
+              '[DB Migration V12] ✅ Set budgetMensuelEstime to $totalBudget for foyer ${foyer['id']}.',
+            );
+          }
+        }
+      }
+
+      // Create indexes for performance
+      await txn.execute(
+        'CREATE INDEX IF NOT EXISTS idx_budget_categories_month ON budget_categories(month)',
+      );
+      await txn.execute(
+        'CREATE INDEX IF NOT EXISTS idx_budget_categories_name_month ON budget_categories(name, month)',
+      );
+      debugPrint('[DB Migration V12] ✅ Performance indexes created.');
+    });
+
+    debugPrint('[DB Migration V12] ✅ Migration completed successfully.');
+  } catch (e, stackTrace) {
+    debugPrint('[DB Migration V12] ❌ Migration failed: $e');
+    debugPrint('[DB Migration V12] Stack trace: $stackTrace');
+
+    // Log error for monitoring
+    await ErrorLoggerService.logError(
+      component: 'DatabaseService',
+      operation: '_migrateToVersion12',
+      error: e,
+      stackTrace: stackTrace,
+      severity: ErrorSeverity.critical,
+    );
+
+    // Rethrow to trigger rollback
+    rethrow;
+  }
+}
+
+// --- UUID Migration Functions Removed ---
+// The UUID migration (V13) has been completed and the migration functions
+// have been removed to clean up the codebase. The database now uses UUID
+// strings for all entity IDs.
+
 // --- Migrations Map ---
 
 final Map<int, Future<void> Function(Database)> _migrations = {
@@ -448,6 +588,8 @@ final Map<int, Future<void> Function(Database)> _migrations = {
   9: _migrateToVersion9,
   10: _migrateToVersion10,
   11: _migrateToVersion11,
+  12: _migrateToVersion12,
+  // 13: _migrateToVersion13, // UUID migration - removed after completion
 };
 
 // --- Debug (Optional, can be removed or conditional) ---

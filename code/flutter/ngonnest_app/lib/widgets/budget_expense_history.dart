@@ -38,7 +38,7 @@ class _BudgetExpenseHistoryState extends State<BudgetExpenseHistory> {
       final startTime = DateTime.now();
       
       final history = await BudgetService.getMonthlyExpenseHistory(
-        widget.idFoyer,
+        widget.idFoyer.toString(),
         widget.category.name,
         monthsBack: 6, // Changed from 12 to 6
       );

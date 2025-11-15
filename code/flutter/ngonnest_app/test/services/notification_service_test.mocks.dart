@@ -12,13 +12,15 @@ import 'package:flutter_local_notifications/src/initialization_settings.dart'
 import 'package:flutter_local_notifications/src/notification_details.dart'
     as _i6;
 import 'package:flutter_local_notifications/src/platform_specifics/android/schedule_mode.dart'
+    as _i9;
+import 'package:flutter_local_notifications/src/platform_specifics/ios/enums.dart'
     as _i8;
-import 'package:flutter_local_notifications/src/types.dart' as _i9;
+import 'package:flutter_local_notifications/src/types.dart' as _i10;
 import 'package:flutter_local_notifications_platform_interface/flutter_local_notifications_platform_interface.dart'
     as _i5;
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:ngonnest_app/services/calendar_sync_service.dart' as _i10;
-import 'package:ngonnest_app/services/settings_service.dart' as _i11;
+import 'package:ngonnest_app/services/calendar_sync_service.dart' as _i11;
+import 'package:ngonnest_app/services/settings_service.dart' as _i12;
 import 'package:timezone/timezone.dart' as _i7;
 
 // ignore_for_file: type=lint
@@ -115,30 +117,27 @@ class MockFlutterLocalNotificationsPlugin extends _i1.Mock
           as _i3.Future<void>);
 
   @override
-  _i3.Future<void> cancelAllPendingNotifications() =>
-      (super.noSuchMethod(
-            Invocation.method(#cancelAllPendingNotifications, []),
-            returnValue: _i3.Future<void>.value(),
-            returnValueForMissingStub: _i3.Future<void>.value(),
-          )
-          as _i3.Future<void>);
-
-  @override
   _i3.Future<void> zonedSchedule(
     int? id,
     String? title,
     String? body,
     _i7.TZDateTime? scheduledDate,
     _i6.NotificationDetails? notificationDetails, {
-    required _i8.AndroidScheduleMode? androidScheduleMode,
+    required _i8.UILocalNotificationDateInterpretation?
+    uiLocalNotificationDateInterpretation,
+    bool? androidAllowWhileIdle = false,
+    _i9.AndroidScheduleMode? androidScheduleMode,
     String? payload,
-    _i9.DateTimeComponents? matchDateTimeComponents,
+    _i10.DateTimeComponents? matchDateTimeComponents,
   }) =>
       (super.noSuchMethod(
             Invocation.method(
               #zonedSchedule,
               [id, title, body, scheduledDate, notificationDetails],
               {
+                #uiLocalNotificationDateInterpretation:
+                    uiLocalNotificationDateInterpretation,
+                #androidAllowWhileIdle: androidAllowWhileIdle,
                 #androidScheduleMode: androidScheduleMode,
                 #payload: payload,
                 #matchDateTimeComponents: matchDateTimeComponents,
@@ -156,14 +155,19 @@ class MockFlutterLocalNotificationsPlugin extends _i1.Mock
     String? body,
     _i5.RepeatInterval? repeatInterval,
     _i6.NotificationDetails? notificationDetails, {
-    required _i8.AndroidScheduleMode? androidScheduleMode,
     String? payload,
+    bool? androidAllowWhileIdle = false,
+    _i9.AndroidScheduleMode? androidScheduleMode,
   }) =>
       (super.noSuchMethod(
             Invocation.method(
               #periodicallyShow,
               [id, title, body, repeatInterval, notificationDetails],
-              {#androidScheduleMode: androidScheduleMode, #payload: payload},
+              {
+                #payload: payload,
+                #androidAllowWhileIdle: androidAllowWhileIdle,
+                #androidScheduleMode: androidScheduleMode,
+              },
             ),
             returnValue: _i3.Future<void>.value(),
             returnValueForMissingStub: _i3.Future<void>.value(),
@@ -177,8 +181,8 @@ class MockFlutterLocalNotificationsPlugin extends _i1.Mock
     String? body,
     Duration? repeatDurationInterval,
     _i6.NotificationDetails? notificationDetails, {
-    _i8.AndroidScheduleMode? androidScheduleMode =
-        _i8.AndroidScheduleMode.exact,
+    _i9.AndroidScheduleMode? androidScheduleMode =
+        _i9.AndroidScheduleMode.exact,
     String? payload,
   }) =>
       (super.noSuchMethod(
@@ -218,7 +222,7 @@ class MockFlutterLocalNotificationsPlugin extends _i1.Mock
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockCalendarSyncService extends _i1.Mock
-    implements _i10.CalendarSyncService {
+    implements _i11.CalendarSyncService {
   MockCalendarSyncService() {
     _i1.throwOnMissingStub(this);
   }
@@ -262,30 +266,30 @@ class MockCalendarSyncService extends _i1.Mock
           as _i3.Future<bool>);
 
   @override
-  _i3.Future<_i10.CalendarPermissionStatus> getPermissionStatus() =>
+  _i3.Future<_i11.CalendarPermissionStatus> getPermissionStatus() =>
       (super.noSuchMethod(
             Invocation.method(#getPermissionStatus, []),
-            returnValue: _i3.Future<_i10.CalendarPermissionStatus>.value(
-              _i10.CalendarPermissionStatus.granted,
+            returnValue: _i3.Future<_i11.CalendarPermissionStatus>.value(
+              _i11.CalendarPermissionStatus.granted,
             ),
           )
-          as _i3.Future<_i10.CalendarPermissionStatus>);
+          as _i3.Future<_i11.CalendarPermissionStatus>);
 
   @override
-  _i3.Future<_i10.CalendarPermissionResult> requestPermissionsWithFeedback() =>
+  _i3.Future<_i11.CalendarPermissionResult> requestPermissionsWithFeedback() =>
       (super.noSuchMethod(
             Invocation.method(#requestPermissionsWithFeedback, []),
-            returnValue: _i3.Future<_i10.CalendarPermissionResult>.value(
-              _i10.CalendarPermissionResult.granted,
+            returnValue: _i3.Future<_i11.CalendarPermissionResult>.value(
+              _i11.CalendarPermissionResult.granted,
             ),
           )
-          as _i3.Future<_i10.CalendarPermissionResult>);
+          as _i3.Future<_i11.CalendarPermissionResult>);
 }
 
 /// A class which mocks [SettingsService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockSettingsService extends _i1.Mock implements _i11.SettingsService {
+class MockSettingsService extends _i1.Mock implements _i12.SettingsService {
   MockSettingsService() {
     _i1.throwOnMissingStub(this);
   }

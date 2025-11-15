@@ -93,9 +93,9 @@ class _InventoryScreenState extends State<InventoryScreen>
       final foyer = await _databaseService.getFoyer();
       if (foyer != null && foyer.id != null) {
         final consommables = await _inventoryRepository.getConsommables(
-          foyer.id!,
+          int.tryParse(foyer.id!) ?? 0,
         );
-        final durables = await _inventoryRepository.getDurables(foyer.id!);
+        final durables = await _inventoryRepository.getDurables(int.tryParse(foyer.id!) ?? 0);
 
         setState(() {
           _consommables = consommables;
@@ -191,11 +191,26 @@ class _InventoryScreenState extends State<InventoryScreen>
     // Apply category filter
     if (_filterState.selectedRoom != null) {
       filteredConsommables = filteredConsommables.where((objet) {
-        return objet.categorie == _filterState.selectedRoom;
+        // Pour les consommables, mapper les noms de catégories des filtres vers les noms en base
+        String mappedCategory = _filterState.selectedRoom!;
+        switch (mappedCategory) {
+          case 'hygiene':
+            mappedCategory = 'hygiène'; // Accent dans les données
+            break;
+          case 'menage':
+            mappedCategory = 'nettoyage'; // 'menage' dans les filtres correspond à 'nettoyage' dans les données
+            break;
+          case 'nourriture':
+            mappedCategory = 'cuisine'; // 'nourriture' dans les filtres correspond à 'cuisine' dans les données
+            break;
+          // 'bureau' et 'maintenance' sont identiques
+        }
+        return objet.categorie == mappedCategory;
       });
 
       filteredDurables = filteredDurables.where((objet) {
-        return objet.categorie == _filterState.selectedRoom;
+        // Pour les durables, les noms sont identiques entre filtres et données
+        return objet.categorie == _filterState.selectedRoom!;
       });
     }
 
@@ -692,7 +707,15 @@ class _InventoryScreenState extends State<InventoryScreen>
                 Navigator.pushNamed(
                   context,
                   '/add-product',
-                  arguments: const {'isConsumable': true},
+                  arguments: {
+                    'isConsumable': true,
+                    'onTypeChanged': (bool isConsumable) {
+                      // Changer l'onglet actif selon le type sélectionné
+                      setState(() {
+                        _tabController.animateTo(isConsumable ? 0 : 1);
+                      });
+                    },
+                  },
                 );
               },
             ),
@@ -705,7 +728,15 @@ class _InventoryScreenState extends State<InventoryScreen>
                 Navigator.pushNamed(
                   context,
                   '/add-product',
-                  arguments: const {'isConsumable': false},
+                  arguments: {
+                    'isConsumable': false,
+                    'onTypeChanged': (bool isConsumable) {
+                      // Changer l'onglet actif selon le type sélectionné
+                      setState(() {
+                        _tabController.animateTo(isConsumable ? 0 : 1);
+                      });
+                    },
+                  },
                 );
               },
             ),

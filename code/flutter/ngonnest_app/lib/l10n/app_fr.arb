@@ -139,7 +139,6 @@
   "exportDataConfirm": "Exporter toutes vos données vers un fichier JSON ?",
   "exportSuccess": "Export effectué avec succès",
   "importDataConfirm": "Cette opération remplacera vos données actuelles. Continuer ?",
- "importSuccess": "Import réussi",
   "storagePermissionRequired": "L'autorisation de stockage est requise pour exporter les données",
   "storagePermissionDenied": "Autorisation de stockage refusée. Veuillez accorder l'accès dans les paramètres système",
   "storagePermissionPermanentlyDenied": "Autorisation de stockage définitivement refusée. Veuillez l'activer dans les paramètres de l'application",

@@ -123,7 +123,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
       final id = await HouseholdService.saveFoyer(foyer);
       if (!mounted) return;
-      final savedFoyer = foyer.copyWith(id: id);
+      final savedFoyer = foyer.copyWith(id: id.toString());
       context.read<FoyerProvider>().setFoyer(savedFoyer);
 
       // Track onboarding completion and household profile setup

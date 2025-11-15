@@ -1,18 +1,20 @@
 import 'dart:async';
+
 import 'package:flutter/foundation.dart'; // Required for kDebugMode
 import 'package:sqflite/sqflite.dart';
 import 'package:synchronized/synchronized.dart';
+
+import '../db.dart';
+import '../models/alert.dart';
 import '../models/foyer.dart';
 import '../models/objet.dart';
-import '../models/alert.dart';
-import '../db.dart';
 import 'error_logger_service.dart';
 
 /// Service centralisé pour la gestion de la base de données SQLite
-/// 
+///
 /// Implémente le pattern Singleton avec gestion des connexions,
 /// retry automatique et optimisations de performance pour NgonNest.
-/// 
+///
 /// Fonctionnalités principales:
 /// - Gestion thread-safe des connexions SQLite
 /// - Retry automatique en cas d'échec
@@ -184,7 +186,9 @@ class DatabaseService {
         await db.close();
       } catch (closeError) {
         if (kDebugMode) {
-          print('[DatabaseService] Error closing database after failed validation: $closeError');
+          print(
+            '[DatabaseService] Error closing database after failed validation: $closeError',
+          );
         }
       }
       throw Exception('New connection validation failed: $e');
@@ -285,9 +289,10 @@ class DatabaseService {
     }, ErrorContext.getFoyer);
   }
 
-  Future<int> insertFoyer(Foyer foyer) async {
-    return _executeDbOperation((db) {
-      return db.insert('foyer', foyer.toMap());
+  Future<String> insertFoyer(Foyer foyer) async {
+    return _executeDbOperation((db) async {
+      await db.insert('foyer', foyer.toMap());
+      return foyer.id.toString();
     }, ErrorContext.insertFoyer);
   }
 
@@ -344,8 +349,9 @@ class DatabaseService {
   }
 
   Future<int> insertObjet(Objet objet) async {
-    return _executeDbOperation((db) {
-      return db.insert('objet', objet.toMap());
+    return _executeDbOperation((db) async {
+      final id = await db.insert('objet', objet.toMap());
+      return id;
     }, ErrorContext.insertObjet);
   }
 
@@ -387,12 +393,12 @@ class DatabaseService {
       final count = Sqflite.firstIntValue(
         await db.rawQuery(
           '''
-        SELECT COUNT(*) FROM objet 
-        WHERE id_foyer = ? 
+        SELECT COUNT(*) FROM objet
+        WHERE id_foyer = ?
         AND (
           (type = 'consommable' AND quantite_restante <= seuil_alerte_quantite)
           OR (type = 'consommable' AND date_rupture_prev IS NOT NULL AND date(date_rupture_prev) <= date(?))
-          OR (type = 'durable' AND date_achat IS NOT NULL AND duree_vie_prev_jours IS NOT NULL 
+          OR (type = 'durable' AND date_achat IS NOT NULL AND duree_vie_prev_jours IS NOT NULL
               AND date(date_achat, '+' || duree_vie_prev_jours || ' days') <= date(?))
         )
       ''',
@@ -505,8 +511,9 @@ class DatabaseService {
   }
 
   Future<int> insertAlert(Alert alert) async {
-    return _executeDbOperation((db) {
-      return db.insert('alertes', alert.toMap());
+    return _executeDbOperation((db) async {
+      final id = await db.insert('alertes', alert.toMap());
+      return id;
     }, ErrorContext.insertAlert);
   }
 
@@ -729,7 +736,7 @@ class DatabaseService {
       final tables = await db.rawQuery(
         "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'android_metadata'",
       );
-      
+
       // Clear each table
       for (var table in tables) {
         final tableName = table['name'] as String;

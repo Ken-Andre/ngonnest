@@ -36,7 +36,7 @@ void main() {
 
     test('calculateOptimalQuantity considers family size', () async {
       final mockProduct = ProductTemplate(
-        id: 'test_savon',
+        id: 1,
         name: 'Savon Test',
         category: 'hygiene',
         unit: 'pièces',
@@ -59,7 +59,7 @@ void main() {
 
     test('calculateOptimalFrequency adjusts based on family size', () async {
       final mockProduct = ProductTemplate(
-        id: 'test_savon',
+        id: 2,
         name: 'Savon Test',
         category: 'hygiene',
         unit: 'pièces',
@@ -80,7 +80,7 @@ void main() {
 
     test('ProductTemplate calculates recommended quantity correctly', () {
       final template = ProductTemplate(
-        id: 'test',
+        id: 3,
         name: 'Test Product',
         category: 'hygiene',
         unit: 'unités',
@@ -97,7 +97,7 @@ void main() {
 
     test('ProductTemplate calculates recommended frequency correctly', () {
       final template = ProductTemplate(
-        id: 'test',
+        id: 4,
         name: 'Test Product',
         category: 'hygiene',
         unit: 'unités',
@@ -132,7 +132,7 @@ void main() {
 
     test('commonQuantities are used when available', () {
       final template = ProductTemplate(
-        id: 'test',
+        id: 5,
         name: 'Test Product',
         category: 'hygiene',
         unit: 'unités',

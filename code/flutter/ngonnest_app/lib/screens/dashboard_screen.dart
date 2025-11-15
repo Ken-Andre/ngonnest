@@ -94,16 +94,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final foyer = await HouseholdService.getFoyer();
       if (foyer != null) {
         // Batch all database calls in parallel for better performance
+        final foyerIdInt = int.parse(foyer.id!);
         final results = await Future.wait([
-          _inventoryRepository.getTotalCount(foyer.id!),
-          _inventoryRepository.getExpiringSoonCount(foyer.id!),
-          _databaseService.getAlerts(idFoyer: foyer.id!, unreadOnly: true),
+          _inventoryRepository.getTotalCount(foyerIdInt),
+          _inventoryRepository.getExpiringSoonCount(foyerIdInt),
+          _databaseService.getAlerts(idFoyer: foyerIdInt, unreadOnly: true),
         ]);
 
         setState(() {
           _foyerProfile = foyer;
-          _totalItems = results[0] as int;
-          _expiringSoon = results[1] as int;
+          _totalItems = int.parse(results[0] as String);
+          _expiringSoon = int.parse(results[1] as String);
           _notifications = results[2] as List<Alert>;
           _urgentAlerts = _notifications.length;
           _lastSyncTime =
@@ -1079,7 +1080,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     try {
       if (_foyerProfile?.id != null) {
         final alerts = await _databaseService.getAlerts(
-          idFoyer: _foyerProfile!.id!,
+          idFoyer: int.parse(_foyerProfile!.id!),
           unreadOnly: true,
         );
         setState(() {

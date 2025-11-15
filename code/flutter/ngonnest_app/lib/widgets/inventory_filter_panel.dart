@@ -215,19 +215,24 @@ class _InventoryFilterPanelState extends State<InventoryFilterPanel> {
                                 // Filtres spécifiques aux durables
                                 if (!widget.isConsumableTab) ...[
                                   FilterChip(
-                                    label: const Text('📺 Électroménager'),
+                                    label: const Text('🏠 Électroménager'),
                                     selected: widget.filterState.selectedRoom == 'electromenager',
                                     onSelected: (_) => _updateRoomFilter('electromenager'),
                                   ),
                                   FilterChip(
-                                    label: const Text('🪑 Mobilier'),
-                                    selected: widget.filterState.selectedRoom == 'mobilier',
-                                    onSelected: (_) => _updateRoomFilter('mobilier'),
+                                    label: const Text('🛋️ Meubles'),
+                                    selected: widget.filterState.selectedRoom == 'meubles',
+                                    onSelected: (_) => _updateRoomFilter('meubles'),
                                   ),
                                   FilterChip(
-                                    label: const Text('💡 Électronique'),
+                                    label: const Text('💻 Électronique'),
                                     selected: widget.filterState.selectedRoom == 'electronique',
                                     onSelected: (_) => _updateRoomFilter('electronique'),
+                                  ),
+                                  FilterChip(
+                                    label: const Text('🌳 Extérieur'),
+                                    selected: widget.filterState.selectedRoom == 'exterieur',
+                                    onSelected: (_) => _updateRoomFilter('exterieur'),
                                   ),
                                 ],
                               ],

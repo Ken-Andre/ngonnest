@@ -1,0 +1,52 @@
+sequenceDiagram
+    participant U as User
+    participant A as App
+    participant SS as SyncService
+    participant AS as AuthService
+    participant CS as ConnectivityService
+    participant DB as DatabaseService
+    participant SP as SharedPreferences
+    participant SA as Supabase API
+
+    Note over U,A: App Installation & First Launch
+    U->>A: Install and open app
+    A->>SS: Initialize SyncService
+    SS->>SP: Load sync settings
+    SP-->>SS: Settings (sync disabled by default)
+    SS-->>A: SyncService ready
+    
+    A->>AS: Initialize AuthService
+    AS->>SA: Check for existing session
+    SA-->>AS: Session status
+    AS-->>A: Auth state
+    
+    Note over U,A: User Onboarding
+    U->>A: Complete onboarding
+    A->>A: Create local household profile
+    
+    Note over U,A: Enable Sync
+    U->>A: Go to Settings
+    A->>SS: Check sync status
+    SS-->>A: Sync disabled
+    U->>A: Enable sync with consent
+    A->>SS: enableSync(userConsent: true)
+    SS->>SP: Save sync settings
+    SS->>CS: Check connectivity
+    CS-->>SS: Online status
+    alt If online
+        SS->>SS: Perform initial sync
+        SS->>DB: Get pending operations
+        DB-->>SS: Operations (empty initially)
+    end
+    SS-->>A: Sync enabled
+    
+    Note over U,A: Using App with Sync
+    U->>A: Add inventory item
+    A->>DB: Save item locally
+    DB-->>A: Confirmation
+    A->>SS: Enqueue operation
+    SS->>DB: Store in sync_outbox
+    SS->>SS: Auto-sync if conditions met
+    SS->>SA: Send to Supabase
+    SA-->>SS: Response
+    SS->>DB: Update sync status

@@ -142,6 +142,7 @@ class CloudImportService {
   }
 
   /// Import households from cloud and insert into local foyer table
+  /// Handles UUID strings from Supabase (v13+ schema)
   Future<List<Map<String, dynamic>>> _importHouseholds(String userId) async {
     try {
       final response = await _client
@@ -152,9 +153,12 @@ class CloudImportService {
       final db = await _databaseService.database;
 
       for (final household in response) {
+        final localData = mapHouseholdToLocal(household);
+        ConsoleLogger.info('[CloudImportService] Importing household with UUID: ${localData['id']}');
+        
         await db.insert(
           'foyer',
-          mapHouseholdToLocal(household),
+          localData,
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
       }
@@ -177,6 +181,7 @@ class CloudImportService {
   }
 
   /// Import products from cloud and insert into local objet table
+  /// Handles UUID strings from Supabase (v13+ schema)
   Future<List<Map<String, dynamic>>> _importProducts(String householdId) async {
     try {
       final response = await _client
@@ -187,9 +192,12 @@ class CloudImportService {
       final db = await _databaseService.database;
 
       for (final product in response) {
+        final localData = mapProductToLocal(product);
+        ConsoleLogger.info('[CloudImportService] Importing product with UUID: ${localData['id']}');
+        
         await db.insert(
           'objet',
-          mapProductToLocal(product),
+          localData,
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
       }
@@ -212,6 +220,7 @@ class CloudImportService {
   }
 
   /// Import budget categories from cloud and insert into local budget_categories table
+  /// Handles UUID strings from Supabase (v13+ schema)
   Future<List<Map<String, dynamic>>> _importBudgetCategories(String householdId) async {
     try {
       final response = await _client
@@ -222,9 +231,12 @@ class CloudImportService {
       final db = await _databaseService.database;
 
       for (final budget in response) {
+        final localData = mapBudgetCategoryToLocal(budget);
+        ConsoleLogger.info('[CloudImportService] Importing budget category with UUID: ${localData['id']}');
+        
         await db.insert(
           'budget_categories',
-          mapBudgetCategoryToLocal(budget),
+          localData,
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
       }
@@ -247,6 +259,7 @@ class CloudImportService {
   }
 
   /// Import purchases from cloud and insert into local reachat_log table
+  /// Handles UUID strings from Supabase (v13+ schema)
   Future<List<Map<String, dynamic>>> _importPurchases() async {
     try {
       final response = await _client.from('purchases').select();
@@ -254,9 +267,12 @@ class CloudImportService {
       final db = await _databaseService.database;
 
       for (final purchase in response) {
+        final localData = mapPurchaseToLocal(purchase);
+        ConsoleLogger.info('[CloudImportService] Importing purchase with UUID: ${localData['id']}');
+        
         await db.insert(
           'reachat_log',
-          mapPurchaseToLocal(purchase),
+          localData,
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
       }
@@ -278,65 +294,70 @@ class CloudImportService {
   }
 
   /// Map cloud household schema to local foyer schema
+  /// Cloud uses UUID strings, local now uses UUID strings (v13+)
   Map<String, dynamic> mapHouseholdToLocal(Map<String, dynamic> household) {
     return {
-      'id': household['id'],
-      'nb_personnes': household['nb_personnes'],
-      'nb_pieces': household['nb_pieces'],
-      'type_logement': household['type_logement'],
-      'langue': household['langue'],
-      'budget_mensuel_estime': household['budget_mensuel_estime'],
+      'id': household['id'] as String, // UUID string from Supabase
+      'nb_personnes': household['nb_personnes'] as int,
+      'nb_pieces': household['nb_pieces'] as int,
+      'type_logement': household['type_logement'] as String,
+      'langue': household['langue'] as String,
+      'budget_mensuel_estime': household['budget_mensuel_estime'] as double?,
     };
   }
 
   /// Map cloud product schema to local objet schema
+  /// Cloud uses UUID strings, local now uses UUID strings (v13+)
   Map<String, dynamic> mapProductToLocal(Map<String, dynamic> product) {
     return {
-      'id': product['id'],
-      'id_foyer': product['household_id'],
-      'nom': product['nom'],
-      'categorie': product['categorie'],
-      'type': product['type'],
-      'date_achat': product['date_achat'],
-      'duree_vie_prev_jours': product['duree_vie_prev_jours'],
-      'date_rupture_prev': product['date_rupture_prev'],
-      'quantite_initiale': product['quantite_initiale'],
-      'quantite_restante': product['quantite_restante'],
-      'unite': product['unite'],
-      'taille_conditionnement': product['taille_conditionnement'],
-      'prix_unitaire': product['prix_unitaire'],
-      'methode_prevision': product['methode_prevision'],
-      'frequence_achat_jours': product['frequence_achat_jours'],
-      'consommation_jour': product['consommation_jour'],
-      'seuil_alerte_jours': product['seuil_alerte_jours'],
-      'seuil_alerte_quantite': product['seuil_alerte_quantite'],
-      'commentaires': product['commentaires'],
-      'room': product['room'],
-      'date_modification': product['date_modification'],
+      'id': product['id'] as String, // UUID string from Supabase
+      'id_foyer': product['household_id'] as String, // UUID foreign key
+      'nom': product['nom'] as String,
+      'categorie': product['categorie'] as String,
+      'type': product['type'] as String,
+      'date_achat': product['date_achat'] as String?,
+      'duree_vie_prev_jours': product['duree_vie_prev_jours'] as int?,
+      'date_rupture_prev': product['date_rupture_prev'] as String?,
+      'quantite_initiale': product['quantite_initiale'] as double,
+      'quantite_restante': product['quantite_restante'] as double,
+      'unite': product['unite'] as String,
+      'taille_conditionnement': product['taille_conditionnement'] as String?,
+      'prix_unitaire': product['prix_unitaire'] as double?,
+      'methode_prevision': product['methode_prevision'] as String?,
+      'frequence_achat_jours': product['frequence_achat_jours'] as int?,
+      'consommation_jour': product['consommation_jour'] as double?,
+      'seuil_alerte_jours': product['seuil_alerte_jours'] as int?,
+      'seuil_alerte_quantite': product['seuil_alerte_quantite'] as double?,
+      'commentaires': product['commentaires'] as String?,
+      'room': product['room'] as String?,
+      'date_modification': product['date_modification'] as String?,
     };
   }
 
   /// Map cloud budget category schema to local budget_categories schema
+  /// Cloud uses UUID strings, local now uses UUID strings (v13+)
   Map<String, dynamic> mapBudgetCategoryToLocal(Map<String, dynamic> budget) {
     return {
-      'id': budget['id'],
-      'name': budget['name'],
-      'limit_amount': budget['limit_amount'],
-      'spent_amount': budget['spent_amount'],
-      'month': budget['month'],
-      'created_at': budget['created_at'],
-      'updated_at': budget['updated_at'],
+      'id': budget['id'] as String, // UUID string from Supabase
+      'name': budget['name'] as String,
+      'limit_amount': budget['limit_amount'] as double,
+      'spent': budget['spent_amount'] as double, // Note: local uses 'spent', cloud uses 'spent_amount'
+      'percentage': budget['percentage'] as double? ?? 0.25, // Default to 25% if not present
+      'month': budget['month'] as String,
+      'created_at': budget['created_at'] as String,
+      'updated_at': budget['updated_at'] as String,
     };
   }
 
   /// Map cloud purchase schema to local reachat_log schema
+  /// Cloud uses UUID strings, local now uses UUID strings (v13+)
   Map<String, dynamic> mapPurchaseToLocal(Map<String, dynamic> purchase) {
     return {
-      'id': purchase['id'],
-      'id_objet': purchase['product_id'],
-      'date': purchase['date'],
-      'quantite': purchase['quantite'],
-      'prix_total': purchase['prix_total'],
+      'id': purchase['id'] as String, // UUID string from Supabase
+      'id_objet': purchase['product_id'] as String, // UUID foreign key
+      'date': purchase['date'] as String,
+      'quantite': purchase['quantite'] as double,
+      'prix_total': purchase['prix_total'] as double,
     };
   }
 }

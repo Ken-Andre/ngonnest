@@ -135,7 +135,6 @@
   "exportDataConfirm": "¿Exportar todos tus datos a un archivo JSON?",
   "exportSuccess": "Datos exportados con éxito",
   "importDataConfirm": "Esta operación reemplazará tus datos actuales. ¿Continuar?",
-  "importSuccess": "Importación exitosa",
   "storagePermissionRequired": "Se requiere permiso de almacenamiento para exportar datos",
   "storagePermissionDenied": "Permiso de almacenamiento denegado. Por favor concede acceso en configuración del sistema",
   "storagePermissionPermanentlyDenied": "Permiso de almacenamiento permanentemente denegado. Por favor actívalo en configuración de la aplicación",

@@ -39,7 +39,7 @@ class InventoryRepository {
       final id = await _databaseService.insertObjet(objetWithRuptureDate);
       try {
         await BudgetService.checkBudgetAlertsAfterPurchase(
-          objetWithRuptureDate.idFoyer,
+          objetWithRuptureDate.idFoyer.toString(),
           objetWithRuptureDate.categorie,
         );
       } catch (e, stackTrace) {
@@ -66,7 +66,7 @@ class InventoryRepository {
             final id = await _databaseService.insertObjet(objetWithRuptureDate);
             try {
               await BudgetService.checkBudgetAlertsAfterPurchase(
-                objetWithRuptureDate.idFoyer,
+                objetWithRuptureDate.idFoyer.toString(),
                 objetWithRuptureDate.categorie,
               );
             } catch (e, stackTrace) {
@@ -181,7 +181,7 @@ class InventoryRepository {
       if (spendingChanged) {
         try {
           await BudgetService.checkBudgetAlertsAfterPurchase(
-            objetWithUpdatedRuptureDate.idFoyer,
+            objetWithUpdatedRuptureDate.idFoyer.toString(),
             objetWithUpdatedRuptureDate.categorie,
           );
         } catch (e, stackTrace) {
@@ -223,7 +223,7 @@ class InventoryRepository {
     );
     try {
       await BudgetService.checkBudgetAlertsAfterPurchase(
-        objetWithUpdatedRuptureDate.idFoyer,
+        objetWithUpdatedRuptureDate.idFoyer.toString(),
         objetWithUpdatedRuptureDate.categorie,
       );
     } catch (e, stackTrace) {
@@ -298,13 +298,15 @@ class InventoryRepository {
   }
 
   /// Get total count of inventory items
-  Future<int> getTotalCount(int idFoyer) async {
-    return await _databaseService.getTotalObjetCount(idFoyer);
+  Future<String> getTotalCount(int idFoyer) async {
+    final count = await _databaseService.getTotalObjetCount(idFoyer);
+    return count.toString();
   }
 
   /// Get count of items expiring soon
-  Future<int> getExpiringSoonCount(int idFoyer) async {
-    return await _databaseService.getExpiringSoonObjetCount(idFoyer);
+  Future<String> getExpiringSoonCount(int idFoyer) async {
+    final count = await _databaseService.getExpiringSoonObjetCount(idFoyer);
+    return count.toString();
   }
 
   /// Helper method to detect database connection errors

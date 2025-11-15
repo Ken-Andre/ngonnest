@@ -59,10 +59,11 @@ class FoyerRepository {
       if (existing != null) {
         // Update existing foyer
         await _databaseService.updateFoyer(foyer);
-        return existing.id!;
+        return int.tryParse(existing.id!) ?? 0;
       } else {
         // Create new foyer
-        return await _databaseService.insertFoyer(foyer);
+        final result = await _databaseService.insertFoyer(foyer);
+        return int.tryParse(result.toString()) ?? 0;
       }
     } catch (e, stackTrace) {
       print('[FoyerRepository] Error saving foyer: $e');

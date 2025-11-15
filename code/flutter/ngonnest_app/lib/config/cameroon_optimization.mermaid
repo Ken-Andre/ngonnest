@@ -1,0 +1,31 @@
+sequenceDiagram
+    participant U as User
+    participant UI as UI Components
+    participant SS as SyncService
+    participant DB as DatabaseService
+    participant CS as ConnectivityService
+    participant SA as Supabase API
+
+    U->>UI: Perform action (create/update/delete item)
+    UI->>DB: Apply change locally (local wins)
+    DB-->>UI: Confirm local save
+    UI->>SS: Enqueue operation for sync
+    SS->>DB: Store operation in sync_outbox
+    SS-->>UI: Operation enqueued
+    
+    alt If online and sync enabled
+        SS->>CS: Check connectivity
+        CS-->>SS: Connection status
+        SS->>SS: Perform sync if conditions met
+        SS->>DB: Get pending operations
+        DB-->>SS: Operations list
+        loop For each operation
+            SS->>SA: Send operation to Supabase
+            SA-->>SS: Response
+            alt Success
+                SS->>DB: Mark as synced
+            else Failure
+                SS->>DB: Increment retry count
+            end
+        end
+    end

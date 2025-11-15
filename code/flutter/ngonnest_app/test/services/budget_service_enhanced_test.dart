@@ -169,7 +169,7 @@ void main() {
 
     group('syncBudgetWithPurchases', () {
       test('should sync budget with actual purchases', () async {
-        const idFoyer = 1;
+        const idFoyer = '1';
         const month = '2024-01';
 
         // Mock existing categories
@@ -224,7 +224,7 @@ void main() {
 
     group('calculateRecommendedBudget', () {
       test('should calculate budget based on foyer profile', () async {
-        const idFoyer = 1;
+        const idFoyer = '1';
         final foyerData = {
           'id': idFoyer,
           'nb_personnes': 4,
@@ -269,7 +269,7 @@ void main() {
       });
 
       test('should return default values on error', () async {
-        const idFoyer = 999;
+        const idFoyer = '999';
         when(
           mockDatabase.query(
             'foyer',
@@ -293,7 +293,7 @@ void main() {
       });
 
       test('should apply correct multipliers for house vs apartment', () async {
-        const idFoyer = 1;
+        const idFoyer = '1';
         final maisonData = {
           'id': idFoyer,
           'nb_personnes': 3,
@@ -332,7 +332,7 @@ void main() {
 
     group('generateSavingsTips', () {
       test('should generate tips for high spending categories', () async {
-        const idFoyer = 1;
+        const idFoyer = '1';
         const month = '2024-01';
 
         final categories = [
@@ -373,7 +373,7 @@ void main() {
       });
 
       test('should generate category-specific tips for over-budget', () async {
-        const idFoyer = 1;
+        const idFoyer = '1';
         const month = '2024-01';
 
         final categories = [
@@ -417,7 +417,7 @@ void main() {
       });
 
       test('should limit tips to maximum 5', () async {
-        const idFoyer = 1;
+        const idFoyer = '1';
         const month = '2024-01';
 
         // Create many over-budget categories
@@ -463,7 +463,7 @@ void main() {
       });
 
       test('should include seasonal tips during rainy season', () async {
-        const idFoyer = 1;
+        const idFoyer = '1';
         final julyMonth = '2024-07'; // Rainy season
 
         when(
@@ -492,7 +492,7 @@ void main() {
 
     group('getSpendingHistory', () {
       test('should return spending history with trends', () async {
-        const idFoyer = 1;
+        const idFoyer = '1';
         const monthsBack = 3;
 
         final spendingData = [
@@ -525,7 +525,7 @@ void main() {
       });
 
       test('should calculate trends correctly', () async {
-        const idFoyer = 1;
+        const idFoyer = '1';
 
         // Mock data showing increasing trend
         final increasingSpendingData = [
@@ -559,7 +559,7 @@ void main() {
 
     group('initializeRecommendedBudgets', () {
       test('should create recommended budgets for new foyer', () async {
-        const idFoyer = 1;
+        const idFoyer = '1';
         const month = '2024-01';
 
         // No existing categories
@@ -610,14 +610,14 @@ void main() {
           mockDatabase.insert('budget_categories', any),
         ).thenAnswer((_) async => 1);
 
-        await BudgetService.initializeRecommendedBudgets(idFoyer, month: month);
+        await BudgetService.initializeRecommendedBudgets(int.parse(idFoyer), month: month);
 
         // Should create 4 default categories
         verify(mockDatabase.insert('budget_categories', any)).called(4);
       });
 
       test('should not create budgets if categories already exist', () async {
-        const idFoyer = 1;
+        const idFoyer = '1';
         const month = '2024-01';
 
         // Existing categories
@@ -640,7 +640,7 @@ void main() {
           ],
         );
 
-        await BudgetService.initializeRecommendedBudgets(idFoyer, month: month);
+        await BudgetService.initializeRecommendedBudgets(int.parse(idFoyer), month: month);
 
         // Should not create any new categories
         verifyNever(mockDatabase.insert('budget_categories', any));
@@ -651,7 +651,7 @@ void main() {
       test(
         'should update spending and trigger alert for over-budget category',
         () async {
-          const idFoyer = 1;
+          const idFoyer = '1';
           const categoryName = 'Hygiène';
           const month = '2024-01';
 
@@ -794,7 +794,7 @@ void main() {
       });
 
       test('should handle concurrent budget operations', () async {
-        const idFoyer = 1;
+        const idFoyer = '1';
         final category = BudgetCategory(
           name: 'Test',
           limit: 100.0,
@@ -838,7 +838,7 @@ void main() {
       });
 
       test('should handle Cameroon-specific categories and pricing', () async {
-        const idFoyer = 1;
+        const idFoyer = '1';
 
         when(
           mockDatabase.query(
@@ -883,7 +883,7 @@ void main() {
       });
 
       test('should provide French month names', () async {
-        const idFoyer = 1;
+        const idFoyer = '1';
         const categoryName = 'Hygiène';
 
         when(mockDatabase.rawQuery(any, any)).thenAnswer(

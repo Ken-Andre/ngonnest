@@ -1,9 +1,20 @@
+import '../utils/id_utils.dart';
+
+/// Alert levels for budget categories based on spending percentage
+enum BudgetAlertLevel {
+  normal, // < 80%
+  warning, // >= 80% and < 100%
+  alert, // >= 100% and < 120%
+  critical, // >= 120%
+}
+
 class BudgetCategory {
   final int? id;
   final String name;
   final double limit;
   final double spent;
   final String month; // Format: YYYY-MM
+  final double percentage; // Percentage of total budget (0.0 to 1.0)
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -13,10 +24,11 @@ class BudgetCategory {
     required this.limit,
     this.spent = 0.0,
     required this.month,
+    this.percentage = 0.25, // Default 25% for backward compatibility
     DateTime? createdAt,
     DateTime? updatedAt,
-  })  : createdAt = createdAt ?? DateTime.now(),
-        updatedAt = updatedAt ?? DateTime.now();
+  }) : createdAt = createdAt ?? DateTime.now(),
+       updatedAt = updatedAt ?? DateTime.now();
 
   /// Calculate spending percentage
   double get spendingPercentage => limit > 0 ? (spent / limit) : 0.0;
@@ -30,6 +42,14 @@ class BudgetCategory {
   /// Get remaining budget
   double get remainingBudget => limit - spent;
 
+  /// Get alert level based on spending percentage
+  BudgetAlertLevel get alertLevel {
+    if (spendingPercentage >= 1.2) return BudgetAlertLevel.critical;
+    if (spendingPercentage >= 1.0) return BudgetAlertLevel.alert;
+    if (spendingPercentage >= 0.8) return BudgetAlertLevel.warning;
+    return BudgetAlertLevel.normal;
+  }
+
   /// Create a copy with updated values
   BudgetCategory copyWith({
     int? id,
@@ -37,6 +57,7 @@ class BudgetCategory {
     double? limit,
     double? spent,
     String? month,
+    double? percentage,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -46,6 +67,7 @@ class BudgetCategory {
       limit: limit ?? this.limit,
       spent: spent ?? this.spent,
       month: month ?? this.month,
+      percentage: percentage ?? this.percentage,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -59,6 +81,7 @@ class BudgetCategory {
       'limit_amount': limit,
       'spent_amount': spent,
       'month': month,
+      'percentage': percentage,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
@@ -67,13 +90,18 @@ class BudgetCategory {
   /// Create from Map (database)
   factory BudgetCategory.fromMap(Map<String, dynamic> map) {
     return BudgetCategory(
-      id: map['id']?.toInt(),
+      id: IdUtils.toIntId(map['id']),
       name: map['name'] ?? '',
       limit: (map['limit_amount'] ?? 0.0).toDouble(),
       spent: (map['spent_amount'] ?? 0.0).toDouble(),
       month: map['month'] ?? '',
-      createdAt: DateTime.parse(map['created_at'] ?? DateTime.now().toIso8601String()),
-      updatedAt: DateTime.parse(map['updated_at'] ?? DateTime.now().toIso8601String()),
+      percentage: (map['percentage'] ?? 0.25).toDouble(),
+      createdAt: DateTime.parse(
+        map['created_at'] ?? DateTime.now().toIso8601String(),
+      ),
+      updatedAt: DateTime.parse(
+        map['updated_at'] ?? DateTime.now().toIso8601String(),
+      ),
     );
   }
 
@@ -90,7 +118,8 @@ class BudgetCategory {
         other.name == name &&
         other.limit == limit &&
         other.spent == spent &&
-        other.month == month;
+        other.month == month &&
+        other.percentage == percentage;
   }
 
   @override
@@ -99,6 +128,7 @@ class BudgetCategory {
         name.hashCode ^
         limit.hashCode ^
         spent.hashCode ^
-        month.hashCode;
+        month.hashCode ^
+        percentage.hashCode;
   }
 }

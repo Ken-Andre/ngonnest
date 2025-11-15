@@ -40,7 +40,7 @@ class ProductPrice {
 
   factory ProductPrice.fromMap(Map<String, dynamic> map) {
     return ProductPrice(
-      id: map['id']?.toInt(),
+      id: (map['id'] as num?)?.toInt(),
       name: map['name'] ?? '',
       category: map['category'] ?? '',
       priceFcfa: map['price_fcfa']?.toDouble() ?? 0.0,

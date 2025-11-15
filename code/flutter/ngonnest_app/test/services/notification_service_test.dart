@@ -1,13 +1,12 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
-import 'package:mockito/annotations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:timezone/timezone.dart' as tz;
-import 'package:ngonnest_app/services/notification_service.dart';
-import 'package:ngonnest_app/services/calendar_sync_service.dart';
-import 'package:ngonnest_app/services/settings_service.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mockito/annotations.dart';
+import 'package:mockito/mockito.dart';
 import 'package:ngonnest_app/models/alert.dart';
+import 'package:ngonnest_app/services/calendar_sync_service.dart';
+import 'package:ngonnest_app/services/notification_service.dart';
+import 'package:ngonnest_app/services/settings_service.dart';
 
 // Generate mocks
 @GenerateMocks([
@@ -18,6 +17,7 @@ import 'package:ngonnest_app/models/alert.dart';
 import 'notification_service_test.mocks.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   group('NotificationService', () {
     late MockFlutterLocalNotificationsPlugin mockNotificationsPlugin;
     late MockCalendarSyncService mockCalendarService;
@@ -28,20 +28,39 @@ void main() {
     });
 
     group('initialize', () {
-      test('should initialize notification plugin with correct settings', () async {
-        // Arrange
-        when(mockNotificationsPlugin.initialize(any, onDidReceiveNotificationResponse: anyNamed('onDidReceiveNotificationResponse')))
-            .thenAnswer((_) async => true);
-        when(mockNotificationsPlugin.resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>())
-            .thenReturn(null);
+      test(
+        'should initialize notification plugin with correct settings',
+        () async {
+          // Arrange
+          when(
+            mockNotificationsPlugin.initialize(
+              any,
+              onDidReceiveNotificationResponse: anyNamed(
+                'onDidReceiveNotificationResponse',
+              ),
+            ),
+          ).thenAnswer((_) async => true);
+          when(
+            mockNotificationsPlugin
+                .resolvePlatformSpecificImplementation<
+                  IOSFlutterLocalNotificationsPlugin
+                >(),
+          ).thenReturn(null);
 
-        // Act
-        await NotificationService.initialize();
+          // Act
+          await NotificationService.initialize();
 
-        // Assert
-        verify(mockNotificationsPlugin.initialize(any, onDidReceiveNotificationResponse: anyNamed('onDidReceiveNotificationResponse')))
-            .called(1);
-      });
+          // Assert
+          verify(
+            mockNotificationsPlugin.initialize(
+              any,
+              onDidReceiveNotificationResponse: anyNamed(
+                'onDidReceiveNotificationResponse',
+              ),
+            ),
+          ).called(1);
+        },
+      );
 
       test('should request iOS permissions when available', () async {
         // This test would require more complex mocking of platform-specific implementations
@@ -50,41 +69,62 @@ void main() {
     });
 
     group('showLowStockNotification', () {
-      test('should show low stock notification with correct parameters', () async {
-        // Arrange
-        const id = 123;
-        const productName = 'Savon de Marseille';
-        const remainingQuantity = 2;
-        const category = 'Hygiène';
+      test(
+        'should show low stock notification with correct parameters',
+        () async {
+          // Arrange
+          const id = 123;
+          const productName = 'Savon de Marseille';
+          const remainingQuantity = 2;
+          const category = 'Hygiène';
 
-        when(mockNotificationsPlugin.show(any, any, any, any, payload: anyNamed('payload')))
-            .thenAnswer((_) async {});
+          when(
+            mockNotificationsPlugin.show(
+              any,
+              any,
+              any,
+              any,
+              payload: anyNamed('payload'),
+            ),
+          ).thenAnswer((_) async {});
 
-        // Act
-        await NotificationService.showLowStockNotification(
-          id: id,
-          productName: productName,
-          remainingQuantity: remainingQuantity,
-          category: category,
-        );
+          // Act
+          await NotificationService.showLowStockNotification(
+            id: id,
+            productName: productName,
+            remainingQuantity: remainingQuantity,
+            category: category,
+          );
 
-        // Assert
-        verify(mockNotificationsPlugin.show(
-          id,
-          argThat(equals('Stock faible')),
-          argThat(allOf([
-            contains(productName),
-            contains('$remainingQuantity article(s)'),
-          ])),
-          any,
-          payload: argThat(equals('low_stock_$id')),
-        )).called(1);
-      });
+          // Assert
+          verify(
+            mockNotificationsPlugin.show(
+              id,
+              argThat(equals('Stock faible')),
+              argThat(
+                allOf([
+                  contains(productName),
+                  contains('$remainingQuantity article(s)'),
+                ]),
+              ),
+              any,
+              payload: argThat(equals('low_stock_$id')),
+            ),
+          ).called(1);
+        },
+      );
 
       test('should use correct notification channel for low stock', () async {
         // Arrange
-        when(mockNotificationsPlugin.show(any, any, any, any, payload: anyNamed('payload')))
-            .thenAnswer((_) async {});
+        when(
+          mockNotificationsPlugin.show(
+            any,
+            any,
+            any,
+            any,
+            payload: anyNamed('payload'),
+          ),
+        ).thenAnswer((_) async {});
 
         // Act
         await NotificationService.showLowStockNotification(
@@ -95,9 +135,17 @@ void main() {
         );
 
         // Assert
-        final capturedDetails = verify(mockNotificationsPlugin.show(
-          any, any, any, any, payload: anyNamed('payload')
-        )).captured.first as NotificationDetails;
+        final capturedDetails =
+            verify(
+                  mockNotificationsPlugin.show(
+                    any,
+                    any,
+                    any,
+                    any,
+                    payload: anyNamed('payload'),
+                  ),
+                ).captured.first
+                as NotificationDetails;
 
         expect(capturedDetails.android?.channelId, equals('low_stock_channel'));
         expect(capturedDetails.android?.channelName, equals('Stock faible'));
@@ -114,8 +162,15 @@ void main() {
         const expiryDate = '2024-01-15';
         const category = 'Cuisine';
 
-        when(mockNotificationsPlugin.show(any, any, any, any, payload: anyNamed('payload')))
-            .thenAnswer((_) async {});
+        when(
+          mockNotificationsPlugin.show(
+            any,
+            any,
+            any,
+            any,
+            payload: anyNamed('payload'),
+          ),
+        ).thenAnswer((_) async {});
 
         // Act
         await NotificationService.showExpiryNotification(
@@ -126,22 +181,28 @@ void main() {
         );
 
         // Assert
-        verify(mockNotificationsPlugin.show(
-          id,
-          argThat(equals('Expiration proche')),
-          argThat(allOf([
-            contains(productName),
-            contains(expiryDate),
-          ])),
-          any,
-          payload: argThat(equals('expiry_$id')),
-        )).called(1);
+        verify(
+          mockNotificationsPlugin.show(
+            id,
+            argThat(equals('Expiration proche')),
+            argThat(allOf([contains(productName), contains(expiryDate)])),
+            any,
+            payload: argThat(equals('expiry_$id')),
+          ),
+        ).called(1);
       });
 
       test('should use correct notification channel for expiry', () async {
         // Arrange
-        when(mockNotificationsPlugin.show(any, any, any, any, payload: anyNamed('payload')))
-            .thenAnswer((_) async {});
+        when(
+          mockNotificationsPlugin.show(
+            any,
+            any,
+            any,
+            any,
+            payload: anyNamed('payload'),
+          ),
+        ).thenAnswer((_) async {});
 
         // Act
         await NotificationService.showExpiryNotification(
@@ -152,12 +213,23 @@ void main() {
         );
 
         // Assert
-        final capturedDetails = verify(mockNotificationsPlugin.show(
-          any, any, any, any, payload: anyNamed('payload')
-        )).captured.first as NotificationDetails;
+        final capturedDetails =
+            verify(
+                  mockNotificationsPlugin.show(
+                    any,
+                    any,
+                    any,
+                    any,
+                    payload: anyNamed('payload'),
+                  ),
+                ).captured.first
+                as NotificationDetails;
 
         expect(capturedDetails.android?.channelId, equals('expiry_channel'));
-        expect(capturedDetails.android?.channelName, equals('Expiration proche'));
+        expect(
+          capturedDetails.android?.channelName,
+          equals('Expiration proche'),
+        );
         expect(capturedDetails.android?.importance, equals(Importance.high));
         expect(capturedDetails.android?.priority, equals(Priority.high));
       });
@@ -171,11 +243,15 @@ void main() {
         const body = 'Il est temps de faire les courses';
         final scheduledDate = DateTime.now().add(Duration(hours: 2));
 
-        when(mockNotificationsPlugin.zonedSchedule(
-          any, any, any, any, any,
-          androidScheduleMode: anyNamed('androidScheduleMode'),
-          matchDateTimeComponents: anyNamed('matchDateTimeComponents'),
-        )).thenAnswer((_) async {});
+        when(
+          mockNotificationsPlugin.periodicallyShow(
+            any,
+            any,
+            any,
+            any,
+            any,
+          ),
+        ).thenAnswer((_) async {});
 
         // Act
         await NotificationService.showScheduledNotification(
@@ -186,15 +262,15 @@ void main() {
         );
 
         // Assert
-        verify(mockNotificationsPlugin.zonedSchedule(
-          id,
-          argThat(equals(title)),
-          argThat(equals(body)),
-          any, // TZDateTime
-          any, // NotificationDetails
-          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-          matchDateTimeComponents: DateTimeComponents.dateAndTime,
-        )).called(1);
+        verify(
+          mockNotificationsPlugin.periodicallyShow(
+            id,
+            argThat(equals(title)),
+            argThat(equals(body)),
+            RepeatInterval.daily,
+            any, // NotificationDetails
+          ),
+        ).called(1);
       });
 
       test('should add to calendar when enabled and requested', () async {
@@ -204,19 +280,27 @@ void main() {
         const body = 'Il est temps de faire les courses';
         final scheduledDate = DateTime.now().add(Duration(hours: 2));
 
-        when(mockNotificationsPlugin.zonedSchedule(
-          any, any, any, any, any,
-          androidScheduleMode: anyNamed('androidScheduleMode'),
-          matchDateTimeComponents: anyNamed('matchDateTimeComponents'),
-        )).thenAnswer((_) async {});
+        when(
+          mockNotificationsPlugin.periodicallyShow(
+            any,
+            any,
+            any,
+            any,
+            any,
+          ),
+        ).thenAnswer((_) async {});
 
         // Mock static method call
-        when(SettingsService.getCalendarSyncEnabled()).thenAnswer((_) async => true);
-        when(mockCalendarService.addEvent(
-          title: anyNamed('title'),
-          description: anyNamed('description'),
-          start: anyNamed('start'),
-        )).thenAnswer((_) async {});
+        when(
+          SettingsService.getCalendarSyncEnabled(),
+        ).thenAnswer((_) async => true);
+        when(
+          mockCalendarService.addEvent(
+            title: anyNamed('title'),
+            description: anyNamed('description'),
+            start: anyNamed('start'),
+          ),
+        ).thenAnswer((_) async {});
 
         // Act
         await NotificationService.showScheduledNotification(
@@ -228,11 +312,13 @@ void main() {
         );
 
         // Assert
-        verify(mockCalendarService.addEvent(
-          title: argThat(equals(title)),
-          description: argThat(equals(body)),
-          start: argThat(equals(scheduledDate)),
-        )).called(1);
+        verify(
+          mockCalendarService.addEvent(
+            title: argThat(equals(title)),
+            description: argThat(equals(body)),
+            start: argThat(equals(scheduledDate)),
+          ),
+        ).called(1);
       });
 
       test('should handle calendar sync errors gracefully', () async {
@@ -242,18 +328,26 @@ void main() {
         const body = 'Il est temps de faire les courses';
         final scheduledDate = DateTime.now().add(Duration(hours: 2));
 
-        when(mockNotificationsPlugin.zonedSchedule(
-          any, any, any, any, any,
-          androidScheduleMode: anyNamed('androidScheduleMode'),
-          matchDateTimeComponents: anyNamed('matchDateTimeComponents'),
-        )).thenAnswer((_) async {});
+        when(
+          mockNotificationsPlugin.periodicallyShow(
+            any,
+            any,
+            any,
+            any,
+            any,
+          ),
+        ).thenAnswer((_) async {});
 
-        when(SettingsService.getCalendarSyncEnabled()).thenAnswer((_) async => true);
-        when(mockCalendarService.addEvent(
-          title: anyNamed('title'),
-          description: anyNamed('description'),
-          start: anyNamed('start'),
-        )).thenThrow(Exception('Calendar sync failed'));
+        when(
+          SettingsService.getCalendarSyncEnabled(),
+        ).thenAnswer((_) async => true);
+        when(
+          mockCalendarService.addEvent(
+            title: anyNamed('title'),
+            description: anyNamed('description'),
+            start: anyNamed('start'),
+          ),
+        ).thenThrow(Exception('Calendar sync failed'));
 
         // Act & Assert - Should not throw
         await NotificationService.showScheduledNotification(
@@ -265,45 +359,68 @@ void main() {
         );
 
         // Notification should still be scheduled despite calendar error
-        verify(mockNotificationsPlugin.zonedSchedule(
-          any, any, any, any, any,
-          androidScheduleMode: anyNamed('androidScheduleMode'),
-          matchDateTimeComponents: anyNamed('matchDateTimeComponents'),
-        )).called(1);
+        verify(
+          mockNotificationsPlugin.periodicallyShow(
+            any,
+            any,
+            any,
+            any,
+            any,
+          ),
+        ).called(1);
       });
     });
 
     group('showReminderNotification', () {
-      test('should show reminder notification with correct parameters', () async {
-        // Arrange
-        const id = 101;
-        const reminderTitle = 'Acheter du savon';
-        const message = 'N\'oubliez pas d\'acheter du savon de Marseille';
+      test(
+        'should show reminder notification with correct parameters',
+        () async {
+          // Arrange
+          const id = 101;
+          const reminderTitle = 'Acheter du savon';
+          const message = 'N\'oubliez pas d\'acheter du savon de Marseille';
 
-        when(mockNotificationsPlugin.show(any, any, any, any, payload: anyNamed('payload')))
-            .thenAnswer((_) async {});
+          when(
+            mockNotificationsPlugin.show(
+              any,
+              any,
+              any,
+              any,
+              payload: anyNamed('payload'),
+            ),
+          ).thenAnswer((_) async {});
 
-        // Act
-        await NotificationService.showReminderNotification(
-          id: id,
-          reminderTitle: reminderTitle,
-          message: message,
-        );
+          // Act
+          await NotificationService.showReminderNotification(
+            id: id,
+            reminderTitle: reminderTitle,
+            message: message,
+          );
 
-        // Assert
-        verify(mockNotificationsPlugin.show(
-          id,
-          argThat(equals(reminderTitle)),
-          argThat(equals(message)),
-          any,
-          payload: argThat(equals('reminder_$id')),
-        )).called(1);
-      });
+          // Assert
+          verify(
+            mockNotificationsPlugin.show(
+              id,
+              argThat(equals(reminderTitle)),
+              argThat(equals(message)),
+              any,
+              payload: argThat(equals('reminder_$id')),
+            ),
+          ).called(1);
+        },
+      );
 
       test('should use correct notification channel for reminders', () async {
         // Arrange
-        when(mockNotificationsPlugin.show(any, any, any, any, payload: anyNamed('payload')))
-            .thenAnswer((_) async {});
+        when(
+          mockNotificationsPlugin.show(
+            any,
+            any,
+            any,
+            any,
+            payload: anyNamed('payload'),
+          ),
+        ).thenAnswer((_) async {});
 
         // Act
         await NotificationService.showReminderNotification(
@@ -313,14 +430,28 @@ void main() {
         );
 
         // Assert
-        final capturedDetails = verify(mockNotificationsPlugin.show(
-          any, any, any, any, payload: anyNamed('payload')
-        )).captured.first as NotificationDetails;
+        final capturedDetails =
+            verify(
+                  mockNotificationsPlugin.show(
+                    any,
+                    any,
+                    any,
+                    any,
+                    payload: anyNamed('payload'),
+                  ),
+                ).captured.first
+                as NotificationDetails;
 
         expect(capturedDetails.android?.channelId, equals('reminder_channel'));
         expect(capturedDetails.android?.channelName, equals('Rappels'));
-        expect(capturedDetails.android?.importance, equals(Importance.defaultImportance));
-        expect(capturedDetails.android?.priority, equals(Priority.defaultPriority));
+        expect(
+          capturedDetails.android?.importance,
+          equals(Importance.defaultImportance),
+        );
+        expect(
+          capturedDetails.android?.priority,
+          equals(Priority.defaultPriority),
+        );
       });
     });
 
@@ -333,8 +464,15 @@ void main() {
         const limitAmount = 120.0;
         const percentage = 125;
 
-        when(mockNotificationsPlugin.show(any, any, any, any, payload: anyNamed('payload')))
-            .thenAnswer((_) async {});
+        when(
+          mockNotificationsPlugin.show(
+            any,
+            any,
+            any,
+            any,
+            payload: anyNamed('payload'),
+          ),
+        ).thenAnswer((_) async {});
 
         // Act
         await NotificationService.showBudgetAlert(
@@ -346,23 +484,34 @@ void main() {
         );
 
         // Assert
-        verify(mockNotificationsPlugin.show(
-          id,
-          argThat(contains(categoryName)),
-          argThat(allOf([
-            contains(spentAmount.toStringAsFixed(2)),
-            contains(limitAmount.toStringAsFixed(2)),
-            contains('$percentage%'),
-          ])),
-          any,
-          payload: argThat(contains('budget_alert_$id')),
-        )).called(1);
+        verify(
+          mockNotificationsPlugin.show(
+            id,
+            argThat(contains(categoryName)),
+            argThat(
+              allOf([
+                contains(spentAmount.toStringAsFixed(2)),
+                contains(limitAmount.toStringAsFixed(2)),
+                contains('$percentage%'),
+              ]),
+            ),
+            any,
+            payload: argThat(contains('budget_alert_$id')),
+          ),
+        ).called(1);
       });
 
       test('should use high priority for budget alerts', () async {
         // Arrange
-        when(mockNotificationsPlugin.show(any, any, any, any, payload: anyNamed('payload')))
-            .thenAnswer((_) async {});
+        when(
+          mockNotificationsPlugin.show(
+            any,
+            any,
+            any,
+            any,
+            payload: anyNamed('payload'),
+          ),
+        ).thenAnswer((_) async {});
 
         // Act
         await NotificationService.showBudgetAlert(
@@ -374,11 +523,22 @@ void main() {
         );
 
         // Assert
-        final capturedDetails = verify(mockNotificationsPlugin.show(
-          any, any, any, any, payload: anyNamed('payload')
-        )).captured.first as NotificationDetails;
+        final capturedDetails =
+            verify(
+                  mockNotificationsPlugin.show(
+                    any,
+                    any,
+                    any,
+                    any,
+                    payload: anyNamed('payload'),
+                  ),
+                ).captured.first
+                as NotificationDetails;
 
-        expect(capturedDetails.android?.channelId, equals('budget_alert_channel'));
+        expect(
+          capturedDetails.android?.channelId,
+          equals('budget_alert_channel'),
+        );
         expect(capturedDetails.android?.channelName, equals('Alertes budget'));
         expect(capturedDetails.android?.importance, equals(Importance.high));
         expect(capturedDetails.android?.priority, equals(Priority.high));
@@ -394,11 +554,15 @@ void main() {
         const intervalDays = 7;
         final startDate = DateTime.now().add(Duration(days: 1));
 
-        when(mockNotificationsPlugin.zonedSchedule(
-          any, any, any, any, any,
-          androidScheduleMode: anyNamed('androidScheduleMode'),
-          matchDateTimeComponents: anyNamed('matchDateTimeComponents'),
-        )).thenAnswer((_) async {});
+        when(
+          mockNotificationsPlugin.show(
+            any,
+            any,
+            any,
+            any,
+            payload: anyNamed('payload'),
+          ),
+        ).thenAnswer((_) async {});
 
         // Act
         await NotificationService.scheduleRecurringReminder(
@@ -410,15 +574,15 @@ void main() {
         );
 
         // Assert
-        verify(mockNotificationsPlugin.zonedSchedule(
-          id,
-          argThat(equals(title)),
-          argThat(equals(body)),
-          any, // TZDateTime
-          any, // NotificationDetails
-          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-          matchDateTimeComponents: DateTimeComponents.time,
-        )).called(1);
+        verify(
+          mockNotificationsPlugin.show(
+            id,
+            argThat(equals(title)),
+            argThat(equals(body)),
+            any, // NotificationDetails
+            payload: argThat(equals('recurring_reminder_$id')),
+          ),
+        ).called(1);
       });
     });
 
@@ -456,8 +620,9 @@ void main() {
           PendingNotificationRequest(1, 'Title 1', 'Body 1', 'payload1'),
           PendingNotificationRequest(2, 'Title 2', 'Body 2', 'payload2'),
         ];
-        when(mockNotificationsPlugin.pendingNotificationRequests())
-            .thenAnswer((_) async => mockPendingNotifications);
+        when(
+          mockNotificationsPlugin.pendingNotificationRequests(),
+        ).thenAnswer((_) async => mockPendingNotifications);
 
         // Act
         final result = await NotificationService.getPendingNotifications();
@@ -474,30 +639,40 @@ void main() {
         final alert = Alert(
           id: 1,
           idFoyer: 1,
-          idObjet: 123,
+          idObjet: "123",
           typeAlerte: AlertType.stockFaible,
           titre: 'Stock faible',
-          message: 'Savon de Marseille est en rupture de stock (quantité restante: 1)',
+          message:
+              'Savon de Marseille est en rupture de stock (quantité restante: 1)',
           urgences: AlertUrgency.high,
           dateCreation: DateTime.now(),
           lu: false,
           resolu: false,
         );
 
-        when(mockNotificationsPlugin.show(any, any, any, any, payload: anyNamed('payload')))
-            .thenAnswer((_) async {});
+        when(
+          mockNotificationsPlugin.show(
+            any,
+            any,
+            any,
+            any,
+            payload: anyNamed('payload'),
+          ),
+        ).thenAnswer((_) async {});
 
         // Act
         await NotificationService.processAlertForNotification(alert);
 
         // Assert
-        verify(mockNotificationsPlugin.show(
-          any,
-          argThat(equals('Stock faible')),
-          argThat(contains('Savon de Marseille')),
-          any,
-          payload: anyNamed('payload'),
-        )).called(1);
+        verify(
+          mockNotificationsPlugin.show(
+            any,
+            argThat(equals('Stock faible')),
+            argThat(contains('Savon de Marseille')),
+            any,
+            payload: anyNamed('payload'),
+          ),
+        ).called(1);
       });
 
       test('should process expiry alert correctly', () async {
@@ -505,7 +680,7 @@ void main() {
         final alert = Alert(
           id: 2,
           idFoyer: 1,
-          idObjet: 456,
+          idObjet: "456",
           typeAlerte: AlertType.expirationProche,
           titre: 'Expiration proche',
           message: 'Lait expire bientôt (le 2024-01-15)',
@@ -515,20 +690,29 @@ void main() {
           resolu: false,
         );
 
-        when(mockNotificationsPlugin.show(any, any, any, any, payload: anyNamed('payload')))
-            .thenAnswer((_) async {});
+        when(
+          mockNotificationsPlugin.show(
+            any,
+            any,
+            any,
+            any,
+            payload: anyNamed('payload'),
+          ),
+        ).thenAnswer((_) async {});
 
         // Act
         await NotificationService.processAlertForNotification(alert);
 
         // Assert
-        verify(mockNotificationsPlugin.show(
-          any,
-          argThat(equals('Expiration proche')),
-          argThat(contains('Lait')),
-          any,
-          payload: anyNamed('payload'),
-        )).called(1);
+        verify(
+          mockNotificationsPlugin.show(
+            any,
+            argThat(equals('Expiration proche')),
+            argThat(contains('Lait')),
+            any,
+            payload: anyNamed('payload'),
+          ),
+        ).called(1);
       });
 
       test('should process reminder alert correctly', () async {
@@ -536,7 +720,7 @@ void main() {
         final alert = Alert(
           id: 3,
           idFoyer: 1,
-          idObjet: 789,
+          idObjet: "789",
           typeAlerte: AlertType.reminder,
           titre: 'Rappel personnel',
           message: 'Acheter du savon au marché',
@@ -546,20 +730,29 @@ void main() {
           resolu: false,
         );
 
-        when(mockNotificationsPlugin.show(any, any, any, any, payload: anyNamed('payload')))
-            .thenAnswer((_) async {});
+        when(
+          mockNotificationsPlugin.show(
+            any,
+            any,
+            any,
+            any,
+            payload: anyNamed('payload'),
+          ),
+        ).thenAnswer((_) async {});
 
         // Act
         await NotificationService.processAlertForNotification(alert);
 
         // Assert
-        verify(mockNotificationsPlugin.show(
-          any,
-          argThat(equals('Rappel personnel')),
-          argThat(equals('Acheter du savon au marché')),
-          any,
-          payload: anyNamed('payload'),
-        )).called(1);
+        verify(
+          mockNotificationsPlugin.show(
+            any,
+            argThat(equals('Rappel personnel')),
+            argThat(equals('Acheter du savon au marché')),
+            any,
+            payload: anyNamed('payload'),
+          ),
+        ).called(1);
       });
 
       test('should process system alert correctly', () async {
@@ -567,7 +760,7 @@ void main() {
         final alert = Alert(
           id: 4,
           idFoyer: 1,
-          idObjet: 101,
+          idObjet: "101",
           typeAlerte: AlertType.system,
           titre: 'Alerte système',
           message: 'Mise à jour des prix disponible',
@@ -577,20 +770,29 @@ void main() {
           resolu: false,
         );
 
-        when(mockNotificationsPlugin.show(any, any, any, any, payload: anyNamed('payload')))
-            .thenAnswer((_) async {});
+        when(
+          mockNotificationsPlugin.show(
+            any,
+            any,
+            any,
+            any,
+            payload: anyNamed('payload'),
+          ),
+        ).thenAnswer((_) async {});
 
         // Act
         await NotificationService.processAlertForNotification(alert);
 
         // Assert
-        verify(mockNotificationsPlugin.show(
-          any,
-          argThat(equals('Alerte système')),
-          argThat(equals('Mise à jour des prix disponible')),
-          any,
-          payload: anyNamed('payload'),
-        )).called(1);
+        verify(
+          mockNotificationsPlugin.show(
+            any,
+            argThat(equals('Alerte système')),
+            argThat(equals('Mise à jour des prix disponible')),
+            any,
+            payload: anyNamed('payload'),
+          ),
+        ).called(1);
       });
     });
 
@@ -600,69 +802,100 @@ void main() {
         final alert = Alert(
           id: 1,
           idFoyer: 1,
-          idObjet: 123,
+          idObjet: "123",
           typeAlerte: AlertType.stockFaible,
           titre: 'Stock faible',
-          message: 'Savon de Marseille est en rupture de stock (quantité restante: 2)',
+          message:
+              'Savon de Marseille est en rupture de stock (quantité restante: 2)',
           urgences: AlertUrgency.high,
           dateCreation: DateTime.now(),
           lu: false,
           resolu: false,
         );
 
-        when(mockNotificationsPlugin.show(any, any, any, any, payload: anyNamed('payload')))
-            .thenAnswer((_) async {});
+        when(
+          mockNotificationsPlugin.show(
+            any,
+            any,
+            any,
+            any,
+            payload: anyNamed('payload'),
+          ),
+        ).thenAnswer((_) async {});
 
         // Act
         await NotificationService.processAlertForNotification(alert);
 
         // Assert
-        verify(mockNotificationsPlugin.show(
-          any,
-          any,
-          argThat(contains('2 article(s)')), // Should extract quantity correctly
-          any,
-          payload: anyNamed('payload'),
-        )).called(1);
+        verify(
+          mockNotificationsPlugin.show(
+            any,
+            any,
+            argThat(
+              contains('2 article(s)'),
+            ), // Should extract quantity correctly
+            any,
+            payload: anyNamed('payload'),
+          ),
+        ).called(1);
       });
 
-      test('should extract expiry info from expiry message correctly', () async {
-        // Arrange
-        final alert = Alert(
-          id: 2,
-          idFoyer: 1,
-          idObjet: 456,
-          typeAlerte: AlertType.expirationProche,
-          titre: 'Expiration proche',
-          message: 'Yaourt expire bientôt (le 2024-01-20)',
-          urgences: AlertUrgency.medium,
-          dateCreation: DateTime.now(),
-          lu: false,
-          resolu: false,
-        );
+      test(
+        'should extract expiry info from expiry message correctly',
+        () async {
+          // Arrange
+          final alert = Alert(
+            id: 2,
+            idFoyer: 1,
+            idObjet: "456",
+            typeAlerte: AlertType.expirationProche,
+            titre: 'Expiration proche',
+            message: 'Yaourt expire bientôt (le 2024-01-20)',
+            urgences: AlertUrgency.medium,
+            dateCreation: DateTime.now(),
+            lu: false,
+            resolu: false,
+          );
 
-        when(mockNotificationsPlugin.show(any, any, any, any, payload: anyNamed('payload')))
-            .thenAnswer((_) async {});
+          when(
+            mockNotificationsPlugin.show(
+              any,
+              any,
+              any,
+              any,
+              payload: anyNamed('payload'),
+            ),
+          ).thenAnswer((_) async {});
 
-        // Act
-        await NotificationService.processAlertForNotification(alert);
+          // Act
+          await NotificationService.processAlertForNotification(alert);
 
-        // Assert
-        verify(mockNotificationsPlugin.show(
-          any,
-          any,
-          argThat(contains('2024-01-20')), // Should extract date correctly
-          any,
-          payload: anyNamed('payload'),
-        )).called(1);
-      });
+          // Assert
+          verify(
+            mockNotificationsPlugin.show(
+              any,
+              any,
+              argThat(contains('2024-01-20')), // Should extract date correctly
+              any,
+              payload: anyNamed('payload'),
+            ),
+          ).called(1);
+        },
+      );
     });
 
     group('Error handling', () {
       test('should handle notification plugin errors gracefully', () async {
         // Arrange
-        when(mockNotificationsPlugin.show(any, any, any, any, payload: anyNamed('payload')))
-            .thenThrow(Exception('Notification failed'));
+        when(
+          mockNotificationsPlugin.show(
+            any,
+            any,
+            any,
+            any,
+            payload: anyNamed('payload'),
+          ),
+        ).thenThrow(Exception('Notification failed'));
 
         // Act & Assert - Should not throw
         await NotificationService.showLowStockNotification(
@@ -673,17 +906,28 @@ void main() {
         );
 
         // Should attempt to show notification despite error
-        verify(mockNotificationsPlugin.show(any, any, any, any, payload: anyNamed('payload')))
-            .called(1);
+        verify(
+          mockNotificationsPlugin.show(
+            any,
+            any,
+            any,
+            any,
+            payload: anyNamed('payload'),
+          ),
+        ).called(1);
       });
 
       test('should handle scheduling errors gracefully', () async {
         // Arrange
-        when(mockNotificationsPlugin.zonedSchedule(
-          any, any, any, any, any,
-          androidScheduleMode: anyNamed('androidScheduleMode'),
-          matchDateTimeComponents: anyNamed('matchDateTimeComponents'),
-        )).thenThrow(Exception('Scheduling failed'));
+        when(
+          mockNotificationsPlugin.periodicallyShow(
+            any,
+            any,
+            any,
+            any,
+            any,
+          ),
+        ).thenThrow(Exception('Scheduling failed'));
 
         // Act & Assert - Should not throw
         await NotificationService.showScheduledNotification(
@@ -693,11 +937,15 @@ void main() {
           scheduledDate: DateTime.now().add(Duration(hours: 1)),
         );
 
-        verify(mockNotificationsPlugin.zonedSchedule(
-          any, any, any, any, any,
-          androidScheduleMode: anyNamed('androidScheduleMode'),
-          matchDateTimeComponents: anyNamed('matchDateTimeComponents'),
-        )).called(1);
+        verify(
+          mockNotificationsPlugin.periodicallyShow(
+            any,
+            any,
+            any,
+            any,
+            any,
+          ),
+        ).called(1);
       });
     });
 
@@ -711,8 +959,15 @@ void main() {
           'Cube Maggi',
         ];
 
-        when(mockNotificationsPlugin.show(any, any, any, any, payload: anyNamed('payload')))
-            .thenAnswer((_) async {});
+        when(
+          mockNotificationsPlugin.show(
+            any,
+            any,
+            any,
+            any,
+            payload: anyNamed('payload'),
+          ),
+        ).thenAnswer((_) async {});
 
         // Act & Assert
         for (final productName in productNames) {
@@ -723,20 +978,29 @@ void main() {
             category: 'Test',
           );
 
-          verify(mockNotificationsPlugin.show(
-            any,
-            any,
-            argThat(contains(productName)),
-            any,
-            payload: anyNamed('payload'),
-          )).called(1);
+          verify(
+            mockNotificationsPlugin.show(
+              any,
+              any,
+              argThat(contains(productName)),
+              any,
+              payload: anyNamed('payload'),
+            ),
+          ).called(1);
         }
       });
 
       test('should work offline (local notifications)', () async {
         // Arrange - Notifications should work offline since they're local
-        when(mockNotificationsPlugin.show(any, any, any, any, payload: anyNamed('payload')))
-            .thenAnswer((_) async {});
+        when(
+          mockNotificationsPlugin.show(
+            any,
+            any,
+            any,
+            any,
+            payload: anyNamed('payload'),
+          ),
+        ).thenAnswer((_) async {});
 
         // Act
         await NotificationService.showLowStockNotification(
@@ -747,8 +1011,15 @@ void main() {
         );
 
         // Assert
-        verify(mockNotificationsPlugin.show(any, any, any, any, payload: anyNamed('payload')))
-            .called(1);
+        verify(
+          mockNotificationsPlugin.show(
+            any,
+            any,
+            any,
+            any,
+            payload: anyNamed('payload'),
+          ),
+        ).called(1);
       });
     });
   });

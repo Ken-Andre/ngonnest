@@ -29,6 +29,7 @@ class SupabaseApiService {
 
   /// Synchronise une opération dans Supabase selon l'entité type
   /// Méthode principale appelée par SyncService._syncOperation
+  /// Updated for UUID support (v13+ schema)
   Future<void> syncOperation(Map<String, dynamic> operation) async {
     try {
       ConsoleLogger.info(
@@ -37,14 +38,13 @@ class SupabaseApiService {
 
       final operationType = operation['operation_type'] as String;
       final entityType = operation['entity_type'] as String;
-      final entityId = operation['entity_id'] as int;
+      final entityId = operation['entity_id'] as String; // Changed from int to String for UUID
       final payload = jsonDecode(operation['payload'] as String) as Map<String, dynamic>;
 
       // Ajouter metadata pour tracking et RLS
       final currentUser = _client.auth.currentUser;
       final payloadWithMeta = {
         ...payload,
-        'local_id': entityId,
         'synced_at': DateTime.now().toIso8601String(),
         'sync_source': 'mobile_app',
         if (currentUser != null) 'user_id': currentUser.id, // Pour RLS
@@ -88,39 +88,22 @@ class SupabaseApiService {
   }
 
   /// Synchronise les produits/objets
+  /// Updated for UUID support (v13+ schema)
   Future<void> _syncProduct(String operationType, Map<String, dynamic> payload) async {
     final table = SupabaseConfig.productsTable;
 
     switch (operationType) {
       case 'CREATE':
         // Le schéma Supabase utilise les noms français directement (nom, categorie, etc.)
-        // Récupérer le UUID du household depuis les settings locaux
-        String? householdUuid;
-        final localHouseholdId = payload['id_foyer'] as int?;
-        if (localHouseholdId != null) {
-          try {
-            // Utiliser le household_id stocké localement
-            householdUuid = await SettingsService.getHouseholdId();
-            if (householdUuid == null) {
-              ConsoleLogger.warning('[SupabaseApiService] No household ID found in settings, attempting to create one');
-              // Try to ensure household exists
-              try {
-                householdUuid = await AuthService.instance.ensureHouseholdExists();
-                ConsoleLogger.info('[SupabaseApiService] Household created/recovered: $householdUuid');
-              } catch (e) {
-                ConsoleLogger.error('SupabaseApiService', 'household creation', e);
-              }
-            }
-          } catch (e) {
-            ConsoleLogger.warning('[SupabaseApiService] Could not fetch household UUID from settings: $e');
-          }
-        }
+        // id_foyer is now a UUID string
+        final householdId = payload['id_foyer'] as String?;
         
         // Mapper les colonnes locales vers le schéma Supabase (noms FRANÇAIS)
         final supabasePayload = <String, dynamic>{
-          if (householdUuid != null) 'household_id': householdUuid,
-          'nom': payload['nom'], // Pas de changement, le schéma utilise "nom"
-          'categorie': payload['categorie'], // Pas de changement, le schéma utilise "categorie"
+          if (payload['id'] != null) 'id': payload['id'], // UUID string
+          if (householdId != null) 'household_id': householdId, // UUID foreign key
+          'nom': payload['nom'],
+          'categorie': payload['categorie'],
           'type': payload['type'],
           if (payload['room'] != null) 'room': payload['room'],
           // Convertir les dates ISO en format date (YYYY-MM-DD) pour Supabase
@@ -143,9 +126,7 @@ class SupabaseApiService {
         };
         
         // Log du payload pour debug
-        ConsoleLogger.info('[SupabaseApiService] INSERT payload keys: ${supabasePayload.keys.toList()}');
-        final payloadStr = supabasePayload.toString();
-        ConsoleLogger.info('[SupabaseApiService] INSERT payload sample: ${payloadStr.length > 200 ? payloadStr.substring(0, 200) : payloadStr}...');
+        ConsoleLogger.info('[SupabaseApiService] INSERT product with UUID: ${supabasePayload['id']}');
         
         try {
           final response = await _client.from(table).insert(supabasePayload).select();
@@ -158,7 +139,7 @@ class SupabaseApiService {
         break;
       case 'UPDATE':
         // Pour UPDATE, on utilise le même mapping que CREATE (noms français)
-        // Note: Supabase n'a pas de colonne local_id, on devra utiliser l'ID Supabase
+        // Use UUID string for ID
         final supabasePayload = <String, dynamic>{
           if (payload.containsKey('nom')) 'nom': payload['nom'],
           if (payload.containsKey('categorie')) 'categorie': payload['categorie'],
@@ -179,14 +160,15 @@ class SupabaseApiService {
           if (payload.containsKey('seuil_alerte_quantite')) 'seuil_alerte_quantite': payload['seuil_alerte_quantite'],
           if (payload.containsKey('commentaires')) 'commentaires': payload['commentaires'],
         };
-        // TODO: Utiliser l'ID Supabase pour UPDATE (nécessite un mapping local_id -> supabase_id)
-        // Pour l'instant, on utilise local_id comme fallback
-        final localId = payload['local_id'] ?? payload['id'];
-        await _client.from(table).update(supabasePayload).eq('id', localId);
+        // Use UUID string for ID
+        final id = payload['id'] as String;
+        ConsoleLogger.info('[SupabaseApiService] UPDATE product with UUID: $id');
+        await _client.from(table).update(supabasePayload).eq('id', id);
         break;
       case 'DELETE':
-        final localId = payload['local_id'];
-        await _client.from(table).delete().eq('local_id', localId);
+        final id = payload['id'] as String; // UUID string
+        ConsoleLogger.info('[SupabaseApiService] DELETE product with UUID: $id');
+        await _client.from(table).delete().eq('id', id);
         break;
       default:
         throw Exception('Unsupported operation: $operationType');
@@ -194,23 +176,26 @@ class SupabaseApiService {
   }
 
   /// Synchronise les foyers
+  /// Updated for UUID support (v13+ schema)
   Future<void> _syncHousehold(String operationType, Map<String, dynamic> payload) async {
     final table = SupabaseConfig.householdsTable;
 
     switch (operationType) {
       case 'CREATE':
+        final id = payload['id'] as String?; // UUID string
+        ConsoleLogger.info('[SupabaseApiService] INSERT household with UUID: $id');
         await _client.from(table).insert(payload);
         break;
       case 'UPDATE':
-        final localId = payload['local_id'];
-        final filteredPayload = Map<String, dynamic>.from(payload)
-          ..remove('local_id')
-          ..remove('id');
-        await _client.from(table).update(filteredPayload).eq('local_id', localId);
+        final id = payload['id'] as String; // UUID string
+        final filteredPayload = Map<String, dynamic>.from(payload)..remove('id');
+        ConsoleLogger.info('[SupabaseApiService] UPDATE household with UUID: $id');
+        await _client.from(table).update(filteredPayload).eq('id', id);
         break;
       case 'DELETE':
-        final localId = payload['local_id'];
-        await _client.from(table).delete().eq('local_id', localId);
+        final id = payload['id'] as String; // UUID string
+        ConsoleLogger.info('[SupabaseApiService] DELETE household with UUID: $id');
+        await _client.from(table).delete().eq('id', id);
         break;
       default:
         throw Exception('Unsupported operation: $operationType');
@@ -218,23 +203,26 @@ class SupabaseApiService {
   }
 
   /// Synchronise les achats
+  /// Updated for UUID support (v13+ schema)
   Future<void> _syncPurchase(String operationType, Map<String, dynamic> payload) async {
     final table = SupabaseConfig.purchasesTable;
 
     switch (operationType) {
       case 'CREATE':
+        final id = payload['id'] as String?; // UUID string
+        ConsoleLogger.info('[SupabaseApiService] INSERT purchase with UUID: $id');
         await _client.from(table).insert(payload);
         break;
       case 'UPDATE':
-        final localId = payload['local_id'];
-        final filteredPayload = Map<String, dynamic>.from(payload)
-          ..remove('local_id')
-          ..remove('id');
-        await _client.from(table).update(filteredPayload).eq('local_id', localId);
+        final id = payload['id'] as String; // UUID string
+        final filteredPayload = Map<String, dynamic>.from(payload)..remove('id');
+        ConsoleLogger.info('[SupabaseApiService] UPDATE purchase with UUID: $id');
+        await _client.from(table).update(filteredPayload).eq('id', id);
         break;
       case 'DELETE':
-        final localId = payload['local_id'];
-        await _client.from(table).delete().eq('local_id', localId);
+        final id = payload['id'] as String; // UUID string
+        ConsoleLogger.info('[SupabaseApiService] DELETE purchase with UUID: $id');
+        await _client.from(table).delete().eq('id', id);
         break;
       default:
         throw Exception('Unsupported operation: $operationType');
@@ -242,23 +230,26 @@ class SupabaseApiService {
   }
 
   /// Synchronise les catégories budgétaires
+  /// Updated for UUID support (v13+ schema)
   Future<void> _syncBudgetCategory(String operationType, Map<String, dynamic> payload) async {
     final table = SupabaseConfig.budgetCategoriesTable;
 
     switch (operationType) {
       case 'CREATE':
+        final id = payload['id'] as String?; // UUID string
+        ConsoleLogger.info('[SupabaseApiService] INSERT budget category with UUID: $id');
         await _client.from(table).insert(payload);
         break;
       case 'UPDATE':
-        final localId = payload['local_id'];
-        final filteredPayload = Map<String, dynamic>.from(payload)
-          ..remove('local_id')
-          ..remove('id');
-        await _client.from(table).update(filteredPayload).eq('local_id', localId);
+        final id = payload['id'] as String; // UUID string
+        final filteredPayload = Map<String, dynamic>.from(payload)..remove('id');
+        ConsoleLogger.info('[SupabaseApiService] UPDATE budget category with UUID: $id');
+        await _client.from(table).update(filteredPayload).eq('id', id);
         break;
       case 'DELETE':
-        final localId = payload['local_id'];
-        await _client.from(table).delete().eq('local_id', localId);
+        final id = payload['id'] as String; // UUID string
+        ConsoleLogger.info('[SupabaseApiService] DELETE budget category with UUID: $id');
+        await _client.from(table).delete().eq('id', id);
         break;
       default:
         throw Exception('Unsupported operation: $operationType');

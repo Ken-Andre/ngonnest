@@ -41,22 +41,13 @@ class AlertGenerationService {
   }
 
   /// Génère toutes les alertes pour un foyer
-  Future<List<Alert>> generateAllAlerts(String foyerId) async {
+  Future<List<Alert>> generateAllAlerts(int foyerId) async {
     try {
       final alerts = <Alert>[];
 
-      // Convert String foyerId to int for repository calls
-      final foyerIdInt = int.tryParse(foyerId);
-      if (foyerIdInt == null) {
-        if (kDebugMode) {
-          print('Invalid foyer ID: $foyerId');
-        }
-        return alerts;
-      }
-
       // Récupérer les données du foyer et inventaire
       final foyer = await _foyerRepository.get();
-      final inventory = await _inventoryRepository.getAll(foyerIdInt);
+      final inventory = await _inventoryRepository.getAll(foyerId);
 
       if (foyer == null || inventory.isEmpty) {
         return alerts;
@@ -112,7 +103,7 @@ class AlertGenerationService {
           // Rupture immédiate
           alerts.add(
             Alert(
-              id: 'stock_critical_${item.id}',
+              id: 1000 + (item.id ?? 0),
               type: AlertType.stockCritical,
               priority: AlertPriority.critical,
               title: '🚨 Stock épuisé',
@@ -132,14 +123,14 @@ class AlertGenerationService {
           // Rupture proche
           alerts.add(
             Alert(
-              id: 'stock_low_${item.id}',
+              id: 2000 + (item.id ?? 0),
               type: AlertType.stockLow,
               priority: AlertPriority.high,
               title: '⚠️ Stock faible',
               message: '${item.nom} sera épuisé dans $daysUntilRupture jour(s)',
               productId: item.id?.toString(),
               productName: item.nom,
-              urgencyScore: 80 - (daysUntilRupture * 10),
+              urgencyScore: 80 - (daysUntilRupture.toInt() * 10),
               actionRequired: true,
               suggestedActions: [
                 'Ajouter à la liste de courses',
@@ -160,7 +151,7 @@ class AlertGenerationService {
         if (percentageRemaining <= 20 && percentageRemaining > 0) {
           alerts.add(
             Alert(
-              id: 'quantity_low_${item.id}',
+              id: 3000 + (item.id ?? 0),
               type: AlertType.stockLow,
               priority: AlertPriority.medium,
               title: '📦 Quantité faible',
@@ -178,7 +169,6 @@ class AlertGenerationService {
             ),
           );
         }
-
       }
     }
 
@@ -225,7 +215,7 @@ class AlertGenerationService {
           // > 50k FCFA par personne/mois
           alerts.add(
             Alert(
-              id: 'budget_high_${foyer.id ?? 'unknown'}',
+              id: 8000 + (int.tryParse(foyer.id ?? '0') ?? 0),
               type: AlertType.budgetHigh,
               priority: AlertPriority.medium,
               title: '💰 Budget élevé',
@@ -252,7 +242,7 @@ class AlertGenerationService {
         if (budgetEstimate.coveragePercentage < 60) {
           alerts.add(
             Alert(
-              id: 'budget_uncertainty_${foyer.id ?? 'unknown'}',
+              id: 9000 + (int.tryParse(foyer.id ?? '0') ?? 0),
               type: AlertType.budgetUncertain,
               priority: AlertPriority.low,
               title: '📊 Estimation incertaine',
@@ -305,7 +295,7 @@ class AlertGenerationService {
         final price = CameroonPrices.getPrice(essential);
         alerts.add(
           Alert(
-            id: 'missing_essential_$essential',
+            id: 4000 + essential.hashCode.abs(),
             type: AlertType.recommendation,
             priority: AlertPriority.medium,
             title: '💡 Produit essentiel manquant',
@@ -340,7 +330,7 @@ class AlertGenerationService {
       if (smallQuantityItems.length >= 3) {
         alerts.add(
           Alert(
-            id: 'bulk_purchase_recommendation_${foyer.id ?? 'unknown'}',
+            id: 5000 + (int.tryParse(foyer.id ?? '0') ?? 0),
             type: AlertType.recommendation,
             priority: AlertPriority.low,
             title: '🛒 Achat en gros recommandé',
@@ -375,7 +365,7 @@ class AlertGenerationService {
       if (daysUntilExpiry <= 0) {
         alerts.add(
           Alert(
-            id: 'expired_${item.id}',
+            id: 6000 + (item.id ?? 0),
             type: AlertType.expired,
             priority: AlertPriority.high,
             title: '⚠️ Produit expiré',
@@ -395,14 +385,14 @@ class AlertGenerationService {
       } else if (daysUntilExpiry <= 7) {
         alerts.add(
           Alert(
-            id: 'expiring_soon_${item.id}',
+            id: 7000 + (item.id ?? 0),
             type: AlertType.expiringSoon,
             priority: AlertPriority.medium,
             title: '⏰ Expiration proche',
             message: '${item.nom} expire dans $daysUntilExpiry jour(s)',
             productId: item.id?.toString(),
             productName: item.nom,
-            urgencyScore: 70 - (daysUntilExpiry * 5),
+            urgencyScore: 70 - (daysUntilExpiry * 5).toInt(),
             actionRequired: false,
             suggestedActions: [
               'Utiliser en priorité',
@@ -441,7 +431,7 @@ class AlertGenerationService {
       if (daysSincePurchase >= interval) {
         alerts.add(
           Alert(
-            id: 'maintenance_due_${item.id}',
+            id: 10000 + (item.id ?? 0),
             type: AlertType.maintenanceDue,
             priority: AlertPriority.low,
             title: '🔧 Maintenance recommandée',
@@ -505,7 +495,7 @@ class AlertGenerationService {
 
 /// Modèle pour une alerte
 class Alert {
-  final String id;
+  final int id;
   final AlertType type;
   final AlertPriority priority;
   final String title;

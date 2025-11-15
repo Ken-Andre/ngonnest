@@ -443,12 +443,17 @@ class MockDatabaseService extends _i1.Mock implements _i6.DatabaseService {
           as _i3.Future<_i7.Foyer?>);
 
   @override
-  _i3.Future<int> insertFoyer(_i7.Foyer? foyer) =>
+  _i3.Future<String> insertFoyer(_i7.Foyer? foyer) =>
       (super.noSuchMethod(
             Invocation.method(#insertFoyer, [foyer]),
-            returnValue: _i3.Future<int>.value(0),
+            returnValue: _i3.Future<String>.value(
+              _i4.dummyValue<String>(
+                this,
+                Invocation.method(#insertFoyer, [foyer]),
+              ),
+            ),
           )
-          as _i3.Future<int>);
+          as _i3.Future<String>);
 
   @override
   _i3.Future<int> updateFoyer(_i7.Foyer? foyer) =>

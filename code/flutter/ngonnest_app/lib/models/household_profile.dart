@@ -1,3 +1,5 @@
+import '../utils/id_utils.dart';
+
 class HouseholdProfile {
   final int? id;
   final int nbPersonnes;
@@ -28,12 +30,12 @@ class HouseholdProfile {
 
   factory HouseholdProfile.fromMap(Map<String, dynamic> map) {
     return HouseholdProfile(
-      id: map['id'],
-      nbPersonnes: map['nb_personnes'],
-      nbPieces: map['nb_pieces'] ?? 1,
-      typeLogement: map['type_logement'],
-      langue: map['langue'],
-      budgetMensuelEstime: map['budget_mensuel_estime'],
+      id: IdUtils.toIntId(map['id']),
+      nbPersonnes: IdUtils.toInt(map['nb_personnes']) ?? 1,
+      nbPieces: IdUtils.toInt(map['nb_pieces']) ?? 1,
+      typeLogement: map['type_logement'] as String? ?? '',
+      langue: map['langue'] as String? ?? 'fr',
+      budgetMensuelEstime: IdUtils.toDouble(map['budget_mensuel_estime']),
     );
   }
 
@@ -54,14 +56,28 @@ class HouseholdProfile {
       budgetMensuelEstime: budgetMensuelEstime ?? this.budgetMensuelEstime,
     );
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is HouseholdProfile &&
+        other.id == id &&
+        other.nbPersonnes == nbPersonnes &&
+        other.typeLogement == typeLogement;
+  }
+
+  @override
+  int get hashCode {
+    return id.hashCode ^ nbPersonnes.hashCode ^ typeLogement.hashCode;
+  }
 }
 
 class LogementType {
   static const String appartement = 'appartement';
   static const String maison = 'maison';
-  
+
   static const List<String> values = [appartement, maison];
-  
+
   static String getDisplayName(String value) {
     switch (value) {
       case appartement:

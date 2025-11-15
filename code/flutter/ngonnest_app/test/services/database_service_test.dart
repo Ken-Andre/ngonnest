@@ -105,7 +105,7 @@ void main() {
 
       test('should update foyer successfully', () async {
         final testFoyer = Foyer(
-          id: 1,
+          id: "1",
           nbPersonnes: 5,
           nbPieces: 4,
           typeLogement: 'maison',
@@ -218,12 +218,8 @@ void main() {
       test('should retry on database busy error', () async {
         // Create a mock exception that simulates a database busy error
         final busyError = Exception('Database is locked');
-        when(
-          mockDatabase.query('foyer', limit: 1),
-        ).thenThrow(busyError);
-        when(
-          mockDatabase.query('foyer', limit: 1),
-        ).thenAnswer((_) async => []);
+        when(mockDatabase.query('foyer', limit: 1)).thenThrow(busyError);
+        when(mockDatabase.query('foyer', limit: 1)).thenAnswer((_) async => []);
         final result = await databaseService.getFoyer();
         expect(result, isNull);
       });
@@ -234,10 +230,7 @@ void main() {
         when(
           mockDatabase.query('foyer', limit: 1),
         ).thenThrow(nonRetryableError);
-        expect(
-          () => databaseService.getFoyer(),
-          throwsA(isA<Exception>()),
-        );
+        expect(() => databaseService.getFoyer(), throwsA(isA<Exception>()));
       });
     });
 

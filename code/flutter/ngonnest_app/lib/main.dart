@@ -379,7 +379,15 @@ void main() async {
             routes: {
               '/dashboard': (context) => const DashboardScreen(),
               '/inventory': (context) => const InventoryScreen(),
-              '/add-product': (context) => const AddProductScreen(),
+              '/add-product': (context) {
+                final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+                final isConsumable = args?['isConsumable'] as bool? ?? true;
+                final onTypeChanged = args?['onTypeChanged'] as Function(bool)?;
+                return AddProductScreen(
+                  isConsumable: isConsumable,
+                  onTypeChanged: onTypeChanged,
+                );
+              },
               '/edit-product': (context) {
                 final objet =
                     ModalRoute.of(context)?.settings.arguments as Objet?;
@@ -461,8 +469,17 @@ class MyApp extends StatelessWidget {
             const AppWithConnectivityOverlay(child: PreferencesScreen()),
         '/dashboard': (context) =>
             const AppWithConnectivityOverlay(child: DashboardScreen()),
-        '/add-product': (context) =>
-            const AppWithConnectivityOverlay(child: AddProductScreen()),
+        '/add-product': (context) {
+          final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+          final isConsumable = args?['isConsumable'] as bool? ?? true;
+          final onTypeChanged = args?['onTypeChanged'] as Function(bool)?;
+          return AppWithConnectivityOverlay(
+            child: AddProductScreen(
+              isConsumable: isConsumable,
+              onTypeChanged: onTypeChanged,
+            ),
+          );
+        },
         '/inventory': (context) =>
             const AppWithConnectivityOverlay(child: InventoryScreen()),
         '/budget': (context) =>
@@ -651,7 +668,7 @@ class _SplashScreenState extends State<SplashScreen>
       if (hasProfile) {
         final foyerId = context.read<FoyerProvider>().foyerId;
         if (foyerId != null) {
-          await BudgetService.initializeRecommendedBudgets(foyerId);
+          await BudgetService.initializeRecommendedBudgets(int.tryParse(foyerId) ?? 0);
         }
       }
     } catch (e, stackTrace) {

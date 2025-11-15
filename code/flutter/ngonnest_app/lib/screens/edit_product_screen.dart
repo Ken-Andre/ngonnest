@@ -147,7 +147,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
       if (widget.objet.type == TypeObjet.consommable) {
         try {
           await BudgetService.checkBudgetAlertsAfterPurchase(
-            widget.objet.idFoyer,
+            widget.objet.idFoyer.toString(),
             _selectedCategory,
           );
           if (kDebugMode) {

@@ -1,20 +1,11 @@
-enum AlertType {
-  stockFaible,
-  expirationProche,
-  reminder,
-  system
-}
+enum AlertType { stockFaible, expirationProche, reminder, system }
 
-enum AlertUrgency {
-  low,
-  medium,
-  high
-}
+enum AlertUrgency { low, medium, high }
 
 class Alert {
   final int? id;
   final int idFoyer;
-  final int? idObjet;
+  final String? idObjet;
   final AlertType typeAlerte;
   final String titre;
   final String message;
@@ -83,7 +74,7 @@ class Alert {
   Alert copyWith({
     int? id,
     int? idFoyer,
-    int? idObjet,
+    String? idObjet,
     AlertType? typeAlerte,
     String? titre,
     String? message,
@@ -131,5 +122,25 @@ class Alert {
       case AlertUrgency.high:
         return 'Élevé';
     }
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Alert &&
+        other.id == id &&
+        other.idFoyer == idFoyer &&
+        other.idObjet == idObjet &&
+        other.typeAlerte == typeAlerte &&
+        other.titre == titre;
+  }
+
+  @override
+  int get hashCode {
+    return id.hashCode ^
+        idFoyer.hashCode ^
+        idObjet.hashCode ^
+        typeAlerte.hashCode ^
+        titre.hashCode;
   }
 }
