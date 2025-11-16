@@ -40,20 +40,39 @@ class BudgetCategoryCard extends StatelessWidget {
     final percentage = category.spendingPercentage;
     final isOverBudget = category.isOverBudget;
     final isNearLimit = category.isNearLimit;
+    final alertLevel = category.alertLevel;
 
-    // Determine color based on spending status
+    // Determine color and icon based on alert level
     Color progressColor;
     Color borderColor;
+    IconData? alertIcon;
+    Color? alertIconColor;
 
-    if (isOverBudget) {
-      progressColor = Theme.of(context).colorScheme.error;
-      borderColor = Theme.of(context).colorScheme.error.withOpacity(0.3);
-    } else if (isNearLimit) {
-      progressColor = const Color(0xFFF59E0B); // Orange
-      borderColor = const Color(0xFFF59E0B).withOpacity(0.3);
-    } else {
-      progressColor = const Color(0xFF22C55E); // Green
-      borderColor = Theme.of(context).colorScheme.outline.withOpacity(0.5);
+    switch (alertLevel) {
+      case BudgetAlertLevel.critical:
+        progressColor = const Color(0xFFCC0000); // Dark red
+        borderColor = const Color(0xFFCC0000).withOpacity(0.3);
+        alertIcon = CupertinoIcons.exclamationmark_octagon_fill;
+        alertIconColor = const Color(0xFFCC0000);
+        break;
+      case BudgetAlertLevel.alert:
+        progressColor = Theme.of(context).colorScheme.error;
+        borderColor = Theme.of(context).colorScheme.error.withOpacity(0.3);
+        alertIcon = CupertinoIcons.exclamationmark_triangle_fill;
+        alertIconColor = Theme.of(context).colorScheme.error;
+        break;
+      case BudgetAlertLevel.warning:
+        progressColor = const Color(0xFFF59E0B); // Orange
+        borderColor = const Color(0xFFF59E0B).withOpacity(0.3);
+        alertIcon = CupertinoIcons.exclamationmark_circle_fill;
+        alertIconColor = const Color(0xFFF59E0B);
+        break;
+      case BudgetAlertLevel.normal:
+        progressColor = const Color(0xFF22C55E); // Green
+        borderColor = Theme.of(context).colorScheme.outline.withOpacity(0.5);
+        alertIcon = null;
+        alertIconColor = null;
+        break;
     }
 
     return Container(
@@ -85,13 +104,28 @@ class BudgetCategoryCard extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
-                      child: Text(
-                        category.name,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
+                      child: Row(
+                        children: [
+                          // Alert icon for categories over 80%
+                          if (alertIcon != null) ...[
+                            Icon(
+                              alertIcon,
+                              size: 20,
+                              color: alertIconColor,
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                          Expanded(
+                            child: Text(
+                              category.name,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     Row(

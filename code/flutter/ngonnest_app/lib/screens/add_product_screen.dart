@@ -541,7 +541,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
       // Déclencher les alertes budget après ajout d'un produit
       if (_isConsumable && _foyerId != null) {
         try {
-          await BudgetService.checkBudgetAlertsAfterPurchase(
+          await BudgetService().checkBudgetAlertsAfterPurchase(
             _foyerId!.toString(),
             _selectedCategory,
           );

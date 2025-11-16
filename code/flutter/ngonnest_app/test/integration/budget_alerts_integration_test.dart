@@ -1,18 +1,20 @@
-import 'dart:io'; // Added for Platform
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ngonnest_app/models/budget_category.dart';
 import 'package:ngonnest_app/services/budget_service.dart';
 import 'package:ngonnest_app/main.dart' as app;
-import 'package:sqflite_common_ffi/sqflite_ffi.dart'; // Added for FFI
+
+import '../helpers/test_helper.dart';
 
 void main() {
-  // Initialize FFI for sqflite on desktop platforms for testing
-  setUpAll(() {
-    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-      sqfliteFfiInit();
-      databaseFactory = databaseFactoryFfi;
-    }
+  // Initialize test environment once
+  setUpAll(() async {
+    await TestHelper.initializeTestEnvironment();
+  });
+
+  // Clean up after each test
+  tearDown(() async {
+    await TestHelper.cleanupAfterTest();
   });
 
   group('Budget Alerts Integration Tests', () {
@@ -82,6 +84,9 @@ void main() {
     testWidgets('should show expense history when category is tapped', (
       WidgetTester tester,
     ) async {
+      // Initialize app for testing
+      await tester.initializeApp();
+
       // Create test category
       final testCategory = BudgetCategory(
         name: 'History Test',
@@ -90,42 +95,8 @@ void main() {
         month: BudgetService.getCurrentMonth(),
       );
 
-      // This test requires BudgetService to interact with the database.
-      // Ensure BudgetService itself is properly initialized if it relies on a global DatabaseService instance
-      // or ensure it's provided with a testable DatabaseService.
-      // For integration tests that run app.main(), the DatabaseService provided in main.dart should be used.
-      // However, direct calls to static BudgetService methods might bypass app-level DI if not careful.
-      // For this test, we assume BudgetService.createBudgetCategory can work with the initialized DB.
-
-      // If BudgetService.createBudgetCategory is static and creates its own DB instance,
-      // it won't benefit from the setUpAll FFI init unless it also checks for FFI.
-      // However, if it uses a DatabaseService that is globally available or passed, it should work.
-
-      // For a true integration test running the app, app.main() should set up services.
-      app.main(); // This will re-run main() from main.dart, which includes FFI init.
-      await tester.pumpAndSettle(); // Allow app to initialize
-
-      // It's possible BudgetService.createBudgetCategory needs to be called *after* app.main()
-      // if it relies on services initialized by app.main()
-      // Or, it needs to be made testable with a mock/stub DatabaseService for pure unit/widget tests.
-      // For an integration test, we'll assume it will use the database initialized via app.main -> DatabaseService provider.
-
-      // Let's assume BudgetService.createBudgetCategory is a static method that would use the
-      // globally configured databaseFactory.
-      // If it's not static and part of an instance, that instance needs to be obtained after app init.
-
-      // Given the structure, let's ensure the category is created within the app's context
-      // or that BudgetService is robust enough to handle this.
-      // A cleaner way for integration tests is often to interact via the UI to trigger data creation,
-      // or to have test-specific setup routines that use the app's DI.
-
-      // Re-evaluating: app.main() is called, which sets up the DatabaseService.
-      // If BudgetService.createBudgetCategory internally gets an instance of DatabaseService
-      // (e.g., via a singleton or a service locator that's also FFI-aware), it should work.
-
-      await BudgetService.createBudgetCategory(
-        testCategory,
-      ); // This line might be problematic if BudgetService uses its own DB instance not aware of FFI from main.
+      // Create budget category using the service
+      await BudgetService().createBudgetCategory(testCategory);
       await tester.pumpAndSettle();
 
       // Navigate to budget screen
@@ -155,9 +126,8 @@ void main() {
     testWidgets('should calculate spending percentage correctly', (
       WidgetTester tester,
     ) async {
-      // Similar to the above, ensure services are ready.
-      app.main();
-      await tester.pumpAndSettle();
+      // Initialize app for testing
+      await tester.initializeApp();
 
       // Test various spending scenarios
       final testCases = [
@@ -188,7 +158,7 @@ void main() {
           spent: testCase['spent'] as double,
           month: BudgetService.getCurrentMonth(),
         );
-        await BudgetService.createBudgetCategory(category);
+        await BudgetService().createBudgetCategory(category);
       }
       await tester.pumpAndSettle(); // Pump after all categories are created.
 

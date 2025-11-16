@@ -5,6 +5,8 @@ import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../models/alert.dart';
+import '../models/budget_category.dart';
+import 'analytics_service.dart';
 import 'calendar_sync_service.dart';
 import 'settings_service.dart';
 
@@ -461,5 +463,112 @@ class NotificationService {
     }
 
     return {'name': productName, 'date': expiryDate, 'category': 'Inconnu'};
+  }
+}
+
+/// Extension to NotificationService for budget-specific notifications
+extension BudgetNotifications on NotificationService {
+  /// Show budget alert with appropriate severity based on alert level
+  ///
+  /// Displays system notifications for budget alerts with content and colors
+  /// determined by the budget category's alert level (warning, alert, critical).
+  /// Falls back to in-app banner if notification permissions are denied.
+  ///
+  /// Requirements: 2.1, 2.2, 2.3, 2.4
+  static Future<void> showBudgetAlert({
+    required BudgetCategory category,
+    required AnalyticsService analytics,
+    BuildContext? context,
+  }) async {
+    final percentage = (category.spendingPercentage * 100).round();
+    final remaining = category.remainingBudget;
+
+    String title;
+    String body;
+    Color color;
+
+    // Determine notification content based on alert level
+    switch (category.alertLevel) {
+      case BudgetAlertLevel.warning:
+        title = '⚠️ Budget ${category.name} à 80%';
+        body = 'Il vous reste ${remaining.toStringAsFixed(2)}€ pour ce mois';
+        color = const Color(0xFFFFA500); // Orange
+        break;
+      case BudgetAlertLevel.alert:
+        title = '🚨 Budget ${category.name} dépassé';
+        body =
+            'Vous avez dépensé ${category.spent.toStringAsFixed(2)}€ sur ${category.limit.toStringAsFixed(2)}€';
+        color = const Color(0xFFFF4444); // Red
+        break;
+      case BudgetAlertLevel.critical:
+        title = '⛔ Budget ${category.name} largement dépassé';
+        body = 'Attention à vos dépenses - Dépassement de $percentage%';
+        color = const Color(0xFFCC0000); // Dark red
+        break;
+      default:
+        return; // No notification for normal level
+    }
+
+    // Track analytics first (before attempting notification)
+    // Requirements: 2.5, 9.5
+    await analytics.logEvent('budget_alert_triggered', parameters: {
+      'category': category.name,
+      'percentage': percentage,
+      'alert_level': category.alertLevel.toString(),
+      'spent': category.spent,
+      'limit': category.limit,
+    });
+
+    try {
+      // Show system notification
+      final androidPlatformChannelSpecifics = AndroidNotificationDetails(
+        'budget_alert_channel',
+        'Alertes budget',
+        channelDescription: 'Notifications pour les dépassements de budget',
+        importance: Importance.high,
+        priority: Priority.high,
+        showWhen: true,
+        icon: '@mipmap/ic_launcher',
+        color: color,
+      );
+
+      const iOSPlatformChannelSpecifics = DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      );
+
+      final platformChannelSpecifics = NotificationDetails(
+        android: androidPlatformChannelSpecifics,
+        iOS: iOSPlatformChannelSpecifics,
+      );
+
+      await NotificationService._flutterLocalNotificationsPlugin.show(
+        category.id ?? DateTime.now().millisecondsSinceEpoch,
+        title,
+        body,
+        platformChannelSpecifics,
+        payload: 'budget_alert_${category.id}',
+      );
+    } catch (e) {
+      // Fallback to in-app banner if permissions denied or notification fails
+      // Requirement: 2.6
+      if (context != null && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$title\n$body'),
+            backgroundColor: color,
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'OK',
+              textColor: Colors.white,
+              onPressed: () {},
+            ),
+          ),
+        );
+      }
+
+      debugPrint('[BudgetNotifications] Failed to show notification: $e');
+    }
   }
 }

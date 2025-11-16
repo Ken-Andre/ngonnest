@@ -32,6 +32,10 @@ class DatabaseService {
   static const Duration _connectionValidationInterval = Duration(minutes: 5);
   static final _lock = Lock(); // Thread-safe synchronization
 
+  // Test-specific flags to handle test environment
+  static bool _isTestEnvironment = false;
+  static bool _forceReinitialize = false;
+
   // For general DB operations retry
   static const int _maxDbOperationRetries = 2;
   static const Duration _dbOperationRetryDelay = Duration(milliseconds: 200);
@@ -63,6 +67,13 @@ class DatabaseService {
           return _database!;
         }
       }
+
+      // For test environment, force reinitialize if needed
+      if (_isTestEnvironment && _forceReinitialize) {
+        await _forceCloseDatabase();
+        _forceReinitialize = false;
+      }
+
       return await _establishDatabaseConnection();
     });
   }
@@ -192,6 +203,21 @@ class DatabaseService {
         }
       }
       throw Exception('New connection validation failed: $e');
+    }
+  }
+
+  Future<void> _forceCloseDatabase() async {
+    if (_database != null) {
+      try {
+        if (_database!.isOpen) {
+          await _database!.close();
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('[DatabaseService] Error force closing database: $e');
+        }
+      }
+      _database = null;
     }
   }
 
@@ -743,6 +769,70 @@ class DatabaseService {
         await db.delete(tableName);
       }
     }, ErrorContext.debugOperation);
+  }
+
+  /// Configure for test environment
+  static void configureForTests() {
+    _isTestEnvironment = true;
+    _forceReinitialize = true;
+  }
+
+  /// Reset database state for tests
+  static Future<void> resetForTests() async {
+    if (!_isTestEnvironment) return;
+
+    await _lock.synchronized(() async {
+      if (_database != null) {
+        try {
+          if (_database!.isOpen) {
+            await _database!.close();
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            print('[DatabaseService] Error closing database during test reset: $e');
+          }
+        }
+      }
+
+      _database = null;
+      _isConnected = false;
+      _isInitializing = false;
+      _lastConnectionCheck = null;
+      _connectionRetryCount = 0;
+      _forceReinitialize = true;
+
+      if (kDebugMode) {
+        print('[DatabaseService] Database state reset for tests');
+      }
+    });
+  }
+
+  /// Force database reinitialization
+  Future<void> forceReinitialize() async {
+    await _lock.synchronized(() async {
+      if (_database != null) {
+        try {
+          if (_database!.isOpen) {
+            await _database!.close();
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            print('[DatabaseService] Error closing database during force reinitialize: $e');
+          }
+        }
+      }
+
+      _database = null;
+      _isConnected = false;
+      _isInitializing = false;
+      _lastConnectionCheck = null;
+      _connectionRetryCount = 0;
+      _forceReinitialize = true;
+
+      if (kDebugMode) {
+        print('[DatabaseService] Database force reinitialized');
+      }
+    });
   }
 }
 

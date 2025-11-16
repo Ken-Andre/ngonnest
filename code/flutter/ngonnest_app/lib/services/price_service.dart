@@ -36,7 +36,12 @@ import '../services/error_logger_service.dart';
 /// Dernière mise à jour: Janvier 2024
 /// Source: Marchés locaux Douala/Yaoundé
 class PriceService {
-  static final DatabaseService _databaseService = DatabaseService();
+  final DatabaseService _databaseService;
+
+  static final PriceService _instance = PriceService._internal();
+  factory PriceService() => _instance;
+  PriceService._internal() : _databaseService = DatabaseService();
+  PriceService._test(this._databaseService);
 
   /// Taux de change FCFA vers Euro (taux officiel BCE)
   /// Source: Banque Centrale Européenne

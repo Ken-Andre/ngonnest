@@ -57,9 +57,10 @@ class _SavingsTipsScreenState extends State<SavingsTipsScreen>
 
     try {
       final foyerId = context.read<FoyerProvider>().foyerId;
+      final budgetService = context.read<BudgetService>();
       if (foyerId != null) {
-        final tips = await BudgetService.generateSavingsTips(foyerId);
-        final history = await BudgetService.getSpendingHistory(foyerId);
+        final tips = await budgetService.generateSavingsTips(foyerId);
+        final history = await budgetService.getSpendingHistory(foyerId);
 
         if (!mounted) return;
         setState(() {

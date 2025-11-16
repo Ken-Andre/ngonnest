@@ -48,7 +48,7 @@ void main() {
       ),
     );
 
-    await BudgetService.createBudgetCategory(
+    await BudgetService().createBudgetCategory(
       BudgetCategory(
         name: 'Hygiène',
         limit: 10.0,
@@ -70,7 +70,7 @@ void main() {
 
     await inventoryRepository.create(objet);
 
-    final categories = await BudgetService.getBudgetCategories();
+    final categories = await BudgetService().getBudgetCategories();
     final hygiene = categories.firstWhere((c) => c.name == 'Hygiène');
     expect(hygiene.isOverBudget, isTrue);
   });

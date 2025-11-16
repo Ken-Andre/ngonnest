@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../models/budget_category.dart';
 import '../services/budget_service.dart';
@@ -37,8 +38,9 @@ class _BudgetExpenseHistoryState extends State<BudgetExpenseHistory> {
 
     try {
       final startTime = DateTime.now();
+      final budgetService = context.read<BudgetService>();
 
-      final history = await BudgetService.getMonthlyExpenseHistory(
+      final history = await budgetService.getMonthlyExpenseHistory(
         widget.idFoyer.toString(),
         widget.category.name,
         monthsBack: 6, // Changed from 12 to 6

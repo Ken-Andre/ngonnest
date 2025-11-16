@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
 
 import '../models/budget_category.dart';
+import 'analytics_service.dart';
 import 'database_service.dart';
 import 'error_logger_service.dart';
+import 'notification_service.dart';
 import 'price_service.dart';
 
 /// Service de gestion des budgets avec recommandations intelligentes
@@ -17,7 +19,19 @@ import 'price_service.dart';
 /// - Conseils d'économie contextualisés
 /// - Analyse des tendances de dépenses
 /// - Alertes de dépassement budgétaire
-class BudgetService {
+class BudgetService extends ChangeNotifier {
+  final DatabaseService _databaseService;
+  final PriceService _priceService;
+
+  // Singleton instance
+  static final BudgetService _instance = BudgetService._internal();
+  factory BudgetService() => _instance;
+  BudgetService._internal() 
+    : _databaseService = DatabaseService(),
+      _priceService = PriceService();
+
+  BudgetService._test(this._databaseService, this._priceService);
+
   /// Get current month in YYYY-MM format
   static String getCurrentMonth() {
     final now = DateTime.now();
@@ -25,11 +39,11 @@ class BudgetService {
   }
 
   /// Get all budget categories for a specific month
-  static Future<List<BudgetCategory>> getBudgetCategories({
+  Future<List<BudgetCategory>> getBudgetCategories({
     String? month,
   }) async {
     try {
-      final db = await DatabaseService().database;
+      final db = await _databaseService.database;
       final targetMonth = month ?? getCurrentMonth();
 
       final List<Map<String, dynamic>> maps = await db.query(
@@ -54,10 +68,18 @@ class BudgetService {
   }
 
   /// Create a new budget category
-  static Future<String> createBudgetCategory(BudgetCategory category) async {
+  Future<String> createBudgetCategory(
+    BudgetCategory category, {
+    bool notify = true,
+  }) async {
     try {
       final db = await DatabaseService().database;
       final id = await db.insert('budget_categories', category.toMap());
+
+      // Notify listeners of change only if requested
+      if (notify) {
+        notifyListeners();
+      }
 
       return id.toString();
     } catch (e, stackTrace) {
@@ -73,7 +95,10 @@ class BudgetService {
   }
 
   /// Update an existing budget category
-  static Future<int> updateBudgetCategory(BudgetCategory category) async {
+  Future<int> updateBudgetCategory(
+    BudgetCategory category, {
+    bool notify = true,
+  }) async {
     try {
       final db = await DatabaseService().database;
       final result = await db.update(
@@ -82,6 +107,11 @@ class BudgetService {
         where: 'id = ?',
         whereArgs: [category.id],
       );
+
+      // Notify listeners of change only if requested
+      if (notify) {
+        notifyListeners();
+      }
 
       return result;
     } catch (e, stackTrace) {
@@ -97,10 +127,13 @@ class BudgetService {
   }
 
   /// Delete a budget category
-  static Future<String> deleteBudgetCategory(String id) async {
+  Future<String> deleteBudgetCategory(String id) async {
     try {
       final db = await DatabaseService().database;
       await db.delete('budget_categories', where: 'id = ?', whereArgs: [id]);
+
+      // Notify listeners of change
+      notifyListeners();
 
       return id;
     } catch (e, stackTrace) {
@@ -116,7 +149,7 @@ class BudgetService {
   }
 
   /// Sync budget categories with actual purchases
-  static Future<void> syncBudgetWithPurchases(
+  Future<void> syncBudgetWithPurchases(
     String idFoyer, {
     String? month,
   }) async {
@@ -124,7 +157,7 @@ class BudgetService {
   }
 
   /// Calculate and update spending for all categories based on actual purchases
-  static Future<void> _updateSpendingFromPurchases(
+  Future<void> _updateSpendingFromPurchases(
     String idFoyer, {
     String? month,
   }) async {
@@ -148,10 +181,11 @@ class BudgetService {
           updatedAt: DateTime.now(),
         );
 
-        await updateBudgetCategory(updatedCategory);
+        // Update without notifying to avoid infinite loops during sync
+        await updateBudgetCategory(updatedCategory, notify: false);
 
-        // Check if budget is exceeded and trigger alert if needed
-        if (updatedCategory.isOverBudget) {
+        // Check if budget alert should be triggered (warning, alert, or critical)
+        if (updatedCategory.alertLevel != BudgetAlertLevel.normal) {
           await _triggerBudgetAlert(updatedCategory);
         }
       }
@@ -167,7 +201,7 @@ class BudgetService {
   }
 
   /// Calculate spending for a specific category in a given month
-  static Future<double> _calculateCategorySpending(
+  Future<double> _calculateCategorySpending(
     String idFoyer,
     String categoryName,
     String month,
@@ -215,14 +249,17 @@ class BudgetService {
   }
 
   /// Trigger budget alert when spending exceeds limit
-  static Future<void> _triggerBudgetAlert(BudgetCategory category) async {
+  ///
+  /// Shows real system notifications using NotificationService.showBudgetAlert()
+  /// instead of console logs. Falls back to in-app banner if permissions denied.
+  ///
+  /// Requirements: 2.4, 2.6
+  Future<void> _triggerBudgetAlert(BudgetCategory category) async {
     try {
-      final percentage = (category.spendingPercentage * 100).round();
-
-      // TODO: Implement NotificationService.showBudgetAlert when service is available
-      // For now, we'll log the alert to console
-      debugPrint(
-        'BUDGET ALERT: ${category.name} exceeded budget by $percentage% (Spent: ${category.spent}, Limit: ${category.limit})',
+      // Call NotificationService.showBudgetAlert() instead of debugPrint()
+      await BudgetNotifications.showBudgetAlert(
+        category: category,
+        analytics: AnalyticsService(),
       );
     } catch (e, stackTrace) {
       await ErrorLoggerService.logError(
@@ -236,7 +273,7 @@ class BudgetService {
   }
 
   /// Get monthly expense history for a category
-  static Future<List<Map<String, dynamic>>> getMonthlyExpenseHistory(
+  Future<List<Map<String, dynamic>>> getMonthlyExpenseHistory(
     String idFoyer,
     String categoryName, {
     int monthsBack = 12,
@@ -299,7 +336,7 @@ class BudgetService {
   }
 
   /// Initialize default budget categories for a new user
-  static Future<void> initializeDefaultCategories({String? month}) async {
+  Future<void> initializeDefaultCategories({String? month}) async {
     try {
       final targetMonth = month ?? getCurrentMonth();
 
@@ -316,7 +353,8 @@ class BudgetService {
       ];
 
       for (final category in defaultCategories) {
-        await createBudgetCategory(category);
+        // Create without notifying to avoid triggering listeners during initialization
+        await createBudgetCategory(category, notify: false);
       }
     } catch (e, stackTrace) {
       await ErrorLoggerService.logError(
@@ -330,7 +368,7 @@ class BudgetService {
   }
 
   /// Trigger budget check and alerts after item purchase/update
-  static Future<void> checkBudgetAlertsAfterPurchase(
+  Future<void> checkBudgetAlertsAfterPurchase(
     String idFoyer,
     String categoryName, {
     String? month,
@@ -360,8 +398,8 @@ class BudgetService {
 
         await updateBudgetCategory(updatedCategory);
 
-        // Check if budget is exceeded and trigger alert
-        if (updatedCategory.isOverBudget) {
+        // Check if budget alert should be triggered (warning, alert, or critical)
+        if (updatedCategory.alertLevel != BudgetAlertLevel.normal) {
           await _triggerBudgetAlert(updatedCategory);
         }
       }
@@ -381,7 +419,7 @@ class BudgetService {
   /// When the user updates their total monthly budget, this method
   /// recalculates all category limits while maintaining their percentages.
   /// This ensures budget allocations remain proportional to the new total.
-  static Future<void> recalculateCategoryBudgets(
+  Future<void> recalculateCategoryBudgets(
     String idFoyer,
     double newTotalBudget, {
     String? month,
@@ -428,7 +466,7 @@ class BudgetService {
   }
 
   /// Get budget summary for dashboard (read-only)
-  static Future<Map<String, dynamic>> getBudgetSummary({String? month}) async {
+  Future<Map<String, dynamic>> getBudgetSummary({String? month}) async {
     try {
       final categories = await getBudgetCategories(month: month);
 
@@ -474,7 +512,7 @@ class BudgetService {
   // ===== PHASE 2: BUDGET INTELLIGENT & RECOMMANDATIONS =====
 
   /// Calculer automatiquement le budget recommandé basé sur le profil foyer
-  static Future<Map<String, double>> calculateRecommendedBudget(
+  Future<Map<String, double>> calculateRecommendedBudget(
     String idFoyer,
   ) async {
     try {
@@ -553,7 +591,7 @@ class BudgetService {
   }
 
   /// Générer des conseils d'économies contextualisés
-  static Future<List<Map<String, dynamic>>> generateSavingsTips(
+  Future<List<Map<String, dynamic>>> generateSavingsTips(
     String idFoyer, {
     String? month,
   }) async {
@@ -596,7 +634,7 @@ class BudgetService {
   }
 
   /// Conseils spécifiques par catégorie
-  static Future<List<Map<String, dynamic>>> _getCategorySpecificTips(
+  Future<List<Map<String, dynamic>>> _getCategorySpecificTips(
     String categoryName,
     double spendingPercentage,
   ) async {
@@ -668,7 +706,7 @@ class BudgetService {
   }
 
   /// Conseils généraux basés sur l'historique
-  static Future<List<Map<String, dynamic>>> _getGeneralSavingsTips(
+  Future<List<Map<String, dynamic>>> _getGeneralSavingsTips(
     String idFoyer,
     String month,
   ) async {
@@ -736,7 +774,7 @@ class BudgetService {
   }
 
   /// Obtenir l'historique des dépenses avec tendances
-  static Future<Map<String, dynamic>> getSpendingHistory(
+  Future<Map<String, dynamic>> getSpendingHistory(
     String idFoyer, {
     int monthsBack = 6,
   }) async {
@@ -879,7 +917,7 @@ class BudgetService {
   }
 
   /// Initialiser les budgets recommandés pour un nouveau foyer
-  static Future<void> initializeRecommendedBudgets(
+  Future<void> initializeRecommendedBudgets(
     int idFoyer, {
     String? month,
   }) async {

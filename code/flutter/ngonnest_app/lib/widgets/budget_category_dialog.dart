@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
 import '../models/budget_category.dart';
 import '../services/budget_service.dart';
@@ -48,6 +49,7 @@ class _BudgetCategoryDialogState extends State<BudgetCategoryDialog> {
       final name = _nameController.text.trim();
       final limit = double.parse(_limitController.text);
       final month = widget.month ?? BudgetService.getCurrentMonth();
+      final budgetService = context.read<BudgetService>();
 
       if (_isEditing) {
         // Update existing category
@@ -56,7 +58,7 @@ class _BudgetCategoryDialogState extends State<BudgetCategoryDialog> {
           limit: limit,
           updatedAt: DateTime.now(),
         );
-        await BudgetService.updateBudgetCategory(updatedCategory);
+        await budgetService.updateBudgetCategory(updatedCategory);
       } else {
         // Create new category
         final newCategory = BudgetCategory(
@@ -64,7 +66,7 @@ class _BudgetCategoryDialogState extends State<BudgetCategoryDialog> {
           limit: limit,
           month: month,
         );
-        await BudgetService.createBudgetCategory(newCategory);
+        await budgetService.createBudgetCategory(newCategory);
       }
 
       if (mounted) {

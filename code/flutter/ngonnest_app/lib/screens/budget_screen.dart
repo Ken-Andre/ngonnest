@@ -21,9 +21,12 @@ class BudgetScreen extends StatefulWidget {
 
 class _BudgetScreenState extends State<BudgetScreen> {
   List<BudgetCategory> _categories = [];
-  bool _isLoading = true;
+  bool _isLoading = false;
+  String? _errorMessage;
   String _currentMonth = BudgetService.getCurrentMonth();
   Map<String, dynamic> _budgetSummary = {};
+  BudgetService? _budgetService;
+  bool _isLoadingData = false; // Flag to prevent infinite loops
 
   @override
   void initState() {
@@ -42,36 +45,65 @@ class _BudgetScreenState extends State<BudgetScreen> {
       }
     });
 
+    // Register as listener to BudgetService
+    _budgetService = context.read<BudgetService>();
+    _budgetService?.addListener(_onBudgetChanged);
+
+    // Load data without blocking UI
     _loadBudgetData();
   }
 
+  @override
+  void dispose() {
+    // Unregister listener to prevent memory leaks
+    _budgetService?.removeListener(_onBudgetChanged);
+    super.dispose();
+  }
+
+  /// Listener callback to reload data when budget changes
+  void _onBudgetChanged() {
+    if (mounted && !_isLoadingData) {
+      _loadBudgetData();
+    }
+  }
+
   Future<void> _loadBudgetData() async {
-    if (!mounted) return;
-    setState(() => _isLoading = true);
+    if (!mounted || _isLoadingData) return;
+    
+    _isLoadingData = true;
+    
+    // Only show loading for refresh, not initial load
+    if (_categories.isNotEmpty) {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+    }
 
     try {
-      // Initialize default categories if none exist
-      await BudgetService.initializeDefaultCategories(
+      // Initialize default categories if none exist (without notifying)
+      await _budgetService?.initializeDefaultCategories(
         month: _currentMonth.toString(),
       );
 
-      // Ensure spending is up-to-date with purchases for this foyer
+      // Ensure spending is up-to-date with purchases for this foyer (without notifying)
       final foyerId = context.read<FoyerProvider>().foyerId;
       if (foyerId != null) {
-        await BudgetService.syncBudgetWithPurchases(
+        await _budgetService?.syncBudgetWithPurchases(
           foyerId,
           month: _currentMonth,
         );
       }
 
       // Load categories and summary
-      final categories = await BudgetService.getBudgetCategories(
+      final categories = await _budgetService?.getBudgetCategories(
         month: _currentMonth,
-      );
-      final summary = await BudgetService.getBudgetSummary(
+      ) ?? [];
+      final summary = await _budgetService?.getBudgetSummary(
         month: _currentMonth,
-      );
+      ) ?? {};
 
+      // Load foyer total budget instead of sum of limits
       final foyerBudget =
           context.read<FoyerProvider>().foyer?.budgetMensuelEstime ?? 0.0;
       summary['totalBudget'] = foyerBudget;
@@ -82,16 +114,16 @@ class _BudgetScreenState extends State<BudgetScreen> {
         _categories = categories;
         _budgetSummary = summary;
         _isLoading = false;
+        _errorMessage = null;
       });
     } catch (e) {
       if (!mounted) return;
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erreur lors du chargement: ${e.toString()}'),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Erreur lors du chargement des données budgétaires';
+      });
+    } finally {
+      _isLoadingData = false;
     }
   }
 
@@ -133,7 +165,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
 
     if (confirmed == true && category.id != null) {
       try {
-        await BudgetService.deleteBudgetCategory(category.id!.toString());
+        await _budgetService?.deleteBudgetCategory(category.id!.toString());
         _loadBudgetData();
 
         if (mounted) {
@@ -156,8 +188,49 @@ class _BudgetScreenState extends State<BudgetScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    // Show error state with retry button only if there's an error and no data
+    if (_errorMessage != null && _categories.isEmpty) {
+      return Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  CupertinoIcons.exclamationmark_triangle,
+                  size: 64,
+                  color: Theme.of(context).colorScheme.error,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  _errorMessage!,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: _loadBudgetData,
+                  icon: const Icon(CupertinoIcons.refresh),
+                  label: const Text('Réessayer'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
     }
 
     return MainNavigationWrapper(
@@ -250,7 +323,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                     const SizedBox(width: 12),
                     _buildStatCard(
                       context: context,
-                      title: 'Budget',
+                      title: 'Budget total',
                       value:
                           '${(_budgetSummary['totalBudget'] ?? 0.0).toStringAsFixed(1)} €',
 

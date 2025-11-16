@@ -344,6 +344,7 @@ void main() async {
           create: (_) => AuthService.instance,
         ),
         ChangeNotifierProvider<SyncService>(create: (_) => SyncService()),
+        ChangeNotifierProvider<BudgetService>(create: (_) => BudgetService()),
         // Firebase Remote Config Services
         // TODO: Initialize services asynchronously to avoid blocking app startup
         // TODO: Add error handling for service initialization failures
@@ -700,7 +701,7 @@ class _SplashScreenState extends State<SplashScreen>
       if (hasProfile) {
         final foyerId = context.read<FoyerProvider>().foyerId;
         if (foyerId != null) {
-          await BudgetService.initializeRecommendedBudgets(
+          await BudgetService().initializeRecommendedBudgets(
             int.tryParse(foyerId) ?? 0,
           );
         }

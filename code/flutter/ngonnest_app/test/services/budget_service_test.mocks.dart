@@ -663,4 +663,13 @@ class MockDatabaseService extends _i1.Mock implements _i6.DatabaseService {
             returnValueForMissingStub: _i3.Future<void>.value(),
           )
           as _i3.Future<void>);
+
+  @override
+  _i3.Future<void> forceReinitialize() =>
+      (super.noSuchMethod(
+            Invocation.method(#forceReinitialize, []),
+            returnValue: _i3.Future<void>.value(),
+            returnValueForMissingStub: _i3.Future<void>.value(),
+          )
+          as _i3.Future<void>);
 }

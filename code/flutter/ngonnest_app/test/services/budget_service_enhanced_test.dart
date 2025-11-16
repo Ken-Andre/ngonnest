@@ -7,16 +7,27 @@ import 'package:ngonnest_app/services/database_service.dart';
 import 'package:ngonnest_app/services/price_service.dart';
 import 'package:sqflite/sqflite.dart';
 
-@GenerateMocks([Database, DatabaseService, PriceService])
+import '../helpers/test_helper.dart';
+
+@GenerateMocks([Database, PriceService, DatabaseService])
 import 'budget_service_enhanced_test.mocks.dart';
 
 void main() {
-  group('BudgetService Enhanced Tests', () {
-    late MockDatabase mockDatabase;
+  TestHelper.initializeUnitTestEnvironment();
 
-    setUp(() {
-      mockDatabase = MockDatabase();
-    });
+group('BudgetService Enhanced Tests', () {
+  late MockDatabase mockDatabase;
+  late MockPriceService mockPriceService;
+  late MockDatabaseService mockDbService;
+  late BudgetService testBudgetService;
+
+  setUp(() {
+    mockDatabase = MockDatabase();
+    mockPriceService = MockPriceService();
+    mockDbService = MockDatabaseService();
+    when(mockDbService.database).thenReturn(mockDatabase);
+    testBudgetService = BudgetService._test(mockDbService, mockPriceService);
+  });
 
     group('getBudgetCategories', () {
       test(
@@ -44,11 +55,11 @@ void main() {
             ),
           ).thenAnswer((_) async => testCategories);
 
-          final result = await BudgetService.getBudgetCategories();
-          expect(result, hasLength(1));
-          expect(result[0].name, equals('Hygiène'));
-          expect(result[0].limit, equals(120.0));
-          expect(result[0].spent, equals(80.0));
+        final result = await testBudgetService.getBudgetCategories();
+        expect(result, hasLength(1));
+        expect(result[0].name, equals('Hygiène'));
+        expect(result[0].limit, equals(120.0));
+        expect(result[0].spent, equals(80.0));
         },
       );
 
@@ -75,7 +86,7 @@ void main() {
           ),
         ).thenAnswer((_) async => testCategories);
 
-        final result = await BudgetService.getBudgetCategories(
+        final result = await testBudgetService.getBudgetCategories(
           month: specificMonth,
         );
         expect(result, hasLength(1));
@@ -92,7 +103,7 @@ void main() {
           ),
         ).thenThrow(Exception('Database error'));
 
-        final result = await BudgetService.getBudgetCategories();
+        final result = await testBudgetService.getBudgetCategories();
         expect(result, isEmpty);
       });
     });
@@ -109,8 +120,8 @@ void main() {
           mockDatabase.insert('budget_categories', any),
         ).thenAnswer((_) async => 5);
 
-        final result = await BudgetService.createBudgetCategory(category);
-        expect(result, equals(5));
+        final result = await testBudgetService.createBudgetCategory(category);
+        expect(result, equals('5'));
         verify(
           mockDatabase.insert('budget_categories', category.toMap()),
         ).called(1);
@@ -128,7 +139,7 @@ void main() {
         ).thenThrow(Exception('Insert failed'));
 
         expect(
-          () => BudgetService.createBudgetCategory(category),
+          () => testBudgetService.createBudgetCategory(category),
           throwsA(isA<Exception>()),
         );
       });
@@ -153,7 +164,7 @@ void main() {
           ),
         ).thenAnswer((_) async => 1);
 
-        final result = await BudgetService.updateBudgetCategory(category);
+        final result = await testBudgetService.updateBudgetCategory(category);
         expect(result, equals(1));
 
         verify(
@@ -209,7 +220,7 @@ void main() {
           ),
         ).thenAnswer((_) async => 1);
 
-        await BudgetService.syncBudgetWithPurchases(idFoyer, month: month);
+        await testBudgetService.syncBudgetWithPurchases(idFoyer, month: month);
 
         verify(
           mockDatabase.update(
@@ -255,7 +266,7 @@ void main() {
           PriceService.getAverageCategoryPrice('Divers'),
         ).thenAnswer((_) async => 5.0);
 
-        final result = await BudgetService.calculateRecommendedBudget(idFoyer);
+        final result = await testBudgetService.calculateRecommendedBudget(idFoyer);
 
         expect(result, isA<Map<String, double>>());
         expect(result.containsKey('Hygiène'), isTrue);
@@ -279,7 +290,7 @@ void main() {
           ),
         ).thenAnswer((_) async => []); // No foyer found
 
-        final result = await BudgetService.calculateRecommendedBudget(idFoyer);
+        final result = await testBudgetService.calculateRecommendedBudget(idFoyer);
 
         expect(
           result,
@@ -323,7 +334,7 @@ void main() {
           PriceService.getAverageCategoryPrice('Divers'),
         ).thenAnswer((_) async => 5.0);
 
-        final result = await BudgetService.calculateRecommendedBudget(idFoyer);
+        final result = await testBudgetService.calculateRecommendedBudget(idFoyer);
 
         // Nettoyage should be higher for house (more rooms) and house type
         expect(result['Nettoyage']! > 60.0, isTrue);
@@ -357,7 +368,7 @@ void main() {
         // Mock general tips query
         when(mockDatabase.rawQuery(any, any)).thenAnswer((_) async => []);
 
-        final result = await BudgetService.generateSavingsTips(
+        final result = await testBudgetService.generateSavingsTips(
           idFoyer,
           month: month,
         );
@@ -397,7 +408,7 @@ void main() {
 
         when(mockDatabase.rawQuery(any, any)).thenAnswer((_) async => []);
 
-        final result = await BudgetService.generateSavingsTips(
+        final result = await testBudgetService.generateSavingsTips(
           idFoyer,
           month: month,
         );
@@ -454,7 +465,7 @@ void main() {
 
         when(mockDatabase.rawQuery(any, any)).thenAnswer((_) async => []);
 
-        final result = await BudgetService.generateSavingsTips(
+        final result = await testBudgetService.generateSavingsTips(
           idFoyer,
           month: month,
         );
@@ -477,7 +488,7 @@ void main() {
 
         when(mockDatabase.rawQuery(any, any)).thenAnswer((_) async => []);
 
-        final result = await BudgetService.generateSavingsTips(
+        final result = await testBudgetService.generateSavingsTips(
           idFoyer,
           month: julyMonth,
         );
@@ -504,7 +515,7 @@ void main() {
           mockDatabase.rawQuery(any, any),
         ).thenAnswer((_) async => spendingData);
 
-        final result = await BudgetService.getSpendingHistory(
+        final result = await testBudgetService.getSpendingHistory(
           idFoyer,
           monthsBack: monthsBack,
         );
@@ -545,7 +556,7 @@ void main() {
           mockDatabase.rawQuery(any, any),
         ).thenAnswer((_) async => increasingSpendingData);
 
-        final result = await BudgetService.getSpendingHistory(
+        final result = await testBudgetService.getSpendingHistory(
           idFoyer,
           monthsBack: 6,
         );
@@ -610,7 +621,10 @@ void main() {
           mockDatabase.insert('budget_categories', any),
         ).thenAnswer((_) async => 1);
 
-        await BudgetService.initializeRecommendedBudgets(int.parse(idFoyer), month: month);
+        await testBudgetService.initializeRecommendedBudgets(
+          int.parse(idFoyer),
+          month: month,
+        );
 
         // Should create 4 default categories
         verify(mockDatabase.insert('budget_categories', any)).called(4);
@@ -640,7 +654,10 @@ void main() {
           ],
         );
 
-        await BudgetService.initializeRecommendedBudgets(int.parse(idFoyer), month: month);
+        await testBudgetService.initializeRecommendedBudgets(
+          int.parse(idFoyer),
+          month: month,
+        );
 
         // Should not create any new categories
         verifyNever(mockDatabase.insert('budget_categories', any));
@@ -688,7 +705,7 @@ void main() {
             ),
           ).thenAnswer((_) async => 1);
 
-        await BudgetService.checkBudgetAlertsAfterPurchase(
+        await testBudgetService.checkBudgetAlertsAfterPurchase(
           idFoyer,
           categoryName,
           month: month,
@@ -742,7 +759,7 @@ void main() {
           ),
         ).thenAnswer((_) async => categories.map((c) => c.toMap()).toList());
 
-        final result = await BudgetService.getBudgetSummary(month: month);
+        final result = await testBudgetService.getBudgetSummary(month: month);
 
         expect(result['totalBudget'], equals(350.0));
         expect(result['totalSpent'], equals(240.0));
@@ -766,7 +783,7 @@ void main() {
           ),
         ).thenAnswer((_) async => []);
 
-        final result = await BudgetService.getBudgetSummary();
+        final result = await testBudgetService.getBudgetSummary();
 
         expect(result['totalBudget'], equals(0.0));
         expect(result['totalSpent'], equals(0.0));
@@ -788,7 +805,7 @@ void main() {
           ),
         ).thenThrow(Exception('Database connection failed'));
 
-        final result = await BudgetService.getBudgetCategories();
+        final result = await testBudgetService.getBudgetCategories();
         expect(result, isEmpty);
         // Error should be logged with ErrorLoggerService
       });
@@ -810,7 +827,7 @@ void main() {
 
         final futures = List.generate(
           3,
-          (_) => BudgetService.createBudgetCategory(category),
+          (_) => testBudgetService.createBudgetCategory(category),
         );
         final results = await Future.wait(futures);
 
@@ -833,8 +850,8 @@ void main() {
           mockDatabase.insert('budget_categories', any),
         ).thenAnswer((_) async => 1);
 
-        final result = await BudgetService.createBudgetCategory(category);
-        expect(result, equals(1));
+        final result = await testBudgetService.createBudgetCategory(category);
+        expect(result, equals('1'));
       });
 
       test('should handle Cameroon-specific categories and pricing', () async {
@@ -872,7 +889,7 @@ void main() {
           PriceService.getAverageCategoryPrice('Divers'),
         ).thenAnswer((_) async => 8.0);
 
-        final result = await BudgetService.calculateRecommendedBudget(idFoyer);
+        final result = await testBudgetService.calculateRecommendedBudget(idFoyer);
 
         // Should account for large family size and house type
         expect(result['Hygiène']! > 200.0, isTrue); // Higher for 6 people
@@ -892,7 +909,7 @@ void main() {
           ],
         );
 
-        final result = await BudgetService.getMonthlyExpenseHistory(
+        final result = await testBudgetService.getMonthlyExpenseHistory(
           idFoyer,
           categoryName,
           monthsBack: 3,

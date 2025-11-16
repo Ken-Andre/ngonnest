@@ -37,19 +37,24 @@ class InventoryRepository {
     try {
       final objetWithRuptureDate = PredictionService.updateRuptureDate(objet);
       final id = await _databaseService.insertObjet(objetWithRuptureDate);
-      try {
-        await BudgetService.checkBudgetAlertsAfterPurchase(
-          objetWithRuptureDate.idFoyer.toString(),
-          objetWithRuptureDate.categorie,
-        );
-      } catch (e, stackTrace) {
-        await ErrorLoggerService.logError(
-          component: 'InventoryRepository',
-          operation: 'create.checkBudgetAlertsAfterPurchase',
-          error: e,
-          stackTrace: stackTrace,
-          severity: ErrorSeverity.medium,
-        );
+      
+      // Only trigger budget alerts if prixUnitaire is set and > 0
+      if (objetWithRuptureDate.prixUnitaire != null && 
+          objetWithRuptureDate.prixUnitaire! > 0) {
+        try {
+                await BudgetService().checkBudgetAlertsAfterPurchase(
+                  objetWithRuptureDate.idFoyer.toString(),
+                  objetWithRuptureDate.categorie,
+                );
+        } catch (e, stackTrace) {
+          await ErrorLoggerService.logError(
+            component: 'InventoryRepository',
+            operation: 'create.checkBudgetAlertsAfterPurchase',
+            error: e,
+            stackTrace: stackTrace,
+            severity: ErrorSeverity.medium,
+          );
+        }
       }
       return id;
     } catch (e, stackTrace) {
@@ -64,19 +69,24 @@ class InventoryRepository {
             await Future.delayed(const Duration(milliseconds: 200));
             final objetWithRuptureDate = PredictionService.updateRuptureDate(objet);
             final id = await _databaseService.insertObjet(objetWithRuptureDate);
-            try {
-              await BudgetService.checkBudgetAlertsAfterPurchase(
-                objetWithRuptureDate.idFoyer.toString(),
-                objetWithRuptureDate.categorie,
-              );
-            } catch (e, stackTrace) {
-              await ErrorLoggerService.logError(
-                component: 'InventoryRepository',
-                operation: 'create_recovery.checkBudgetAlertsAfterPurchase',
-                error: e,
-                stackTrace: stackTrace,
-                severity: ErrorSeverity.medium,
-              );
+            
+            // Only trigger budget alerts if prixUnitaire is set and > 0
+            if (objetWithRuptureDate.prixUnitaire != null && 
+                objetWithRuptureDate.prixUnitaire! > 0) {
+              try {
+                await BudgetService().checkBudgetAlertsAfterPurchase(
+                  objetWithRuptureDate.idFoyer.toString(),
+                  objetWithRuptureDate.categorie,
+                );
+              } catch (e, stackTrace) {
+                await ErrorLoggerService.logError(
+                  component: 'InventoryRepository',
+                  operation: 'create_recovery.checkBudgetAlertsAfterPurchase',
+                  error: e,
+                  stackTrace: stackTrace,
+                  severity: ErrorSeverity.medium,
+                );
+              }
             }
             return id;
           }
@@ -168,22 +178,28 @@ class InventoryRepository {
         objetWithUpdatedRuptureDate,
       );
 
+      // Check if prix_unitaire changed in updates
+      final priceChanged = updates.containsKey('prixUnitaire') &&
+          updates['prixUnitaire'] != existingObjet.prixUnitaire;
+      
       final spendingChanged =
           (updates.containsKey('categorie') &&
               updates['categorie'] != existingObjet.categorie) ||
-          (updates.containsKey('prixUnitaire') &&
-              updates['prixUnitaire'] != existingObjet.prixUnitaire) ||
+          priceChanged ||
           (updates.containsKey('quantiteInitiale') &&
               updates['quantiteInitiale'] != existingObjet.quantiteInitiale) ||
           (updates.containsKey('dateAchat') &&
               updates['dateAchat'] != existingObjet.dateAchat);
 
-      if (spendingChanged) {
+      // Only trigger if new price is set and > 0
+      if (spendingChanged && 
+          objetWithUpdatedRuptureDate.prixUnitaire != null &&
+          objetWithUpdatedRuptureDate.prixUnitaire! > 0) {
         try {
-          await BudgetService.checkBudgetAlertsAfterPurchase(
-            objetWithUpdatedRuptureDate.idFoyer.toString(),
-            objetWithUpdatedRuptureDate.categorie,
-          );
+                await BudgetService().checkBudgetAlertsAfterPurchase(
+                  objetWithUpdatedRuptureDate.idFoyer.toString(),
+                  objetWithUpdatedRuptureDate.categorie,
+                );
         } catch (e, stackTrace) {
           await ErrorLoggerService.logError(
             component: 'InventoryRepository',
@@ -221,19 +237,24 @@ class InventoryRepository {
     final result = await _databaseService.updateObjet(
       objetWithUpdatedRuptureDate,
     );
-    try {
-      await BudgetService.checkBudgetAlertsAfterPurchase(
-        objetWithUpdatedRuptureDate.idFoyer.toString(),
-        objetWithUpdatedRuptureDate.categorie,
-      );
-    } catch (e, stackTrace) {
-      await ErrorLoggerService.logError(
-        component: 'InventoryRepository',
-        operation: 'updateObjet.checkBudgetAlertsAfterPurchase',
-        error: e,
-        stackTrace: stackTrace,
-        severity: ErrorSeverity.medium,
-      );
+    
+    // Only trigger if new price is set and > 0
+    if (objetWithUpdatedRuptureDate.prixUnitaire != null &&
+        objetWithUpdatedRuptureDate.prixUnitaire! > 0) {
+      try {
+                await BudgetService().checkBudgetAlertsAfterPurchase(
+                  objetWithUpdatedRuptureDate.idFoyer.toString(),
+                  objetWithUpdatedRuptureDate.categorie,
+                );
+      } catch (e, stackTrace) {
+        await ErrorLoggerService.logError(
+          component: 'InventoryRepository',
+          operation: 'updateObjet.checkBudgetAlertsAfterPurchase',
+          error: e,
+          stackTrace: stackTrace,
+          severity: ErrorSeverity.medium,
+        );
+      }
     }
     return result;
   }
