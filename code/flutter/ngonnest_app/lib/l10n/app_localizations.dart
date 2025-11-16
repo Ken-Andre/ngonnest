@@ -1131,6 +1131,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Choose how to handle your existing data'**
   String get chooseImportOption;
+
+  /// No description provided for @monthlyBudget.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly budget'**
+  String get monthlyBudget;
+
+  /// No description provided for @editMonthlyBudget.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit monthly budget'**
+  String get editMonthlyBudget;
+
+  /// No description provided for @enterBudgetAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your monthly budget amount'**
+  String get enterBudgetAmount;
+
+  /// No description provided for @notSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not set'**
+  String get notSet;
+
+  /// No description provided for @edit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get edit;
+
+  /// No description provided for @invalidAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid amount'**
+  String get invalidAmount;
+
+  /// No description provided for @budgetOutOfRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Budget must be between €50 and €2000'**
+  String get budgetOutOfRange;
+
+  /// No description provided for @budgetUpdatedSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'Budget updated successfully'**
+  String get budgetUpdatedSuccessfully;
+
+  /// No description provided for @errorUpdatingBudget.
+  ///
+  /// In en, this message translates to:
+  /// **'Error updating budget'**
+  String get errorUpdatingBudget;
 }
 
 class _AppLocalizationsDelegate

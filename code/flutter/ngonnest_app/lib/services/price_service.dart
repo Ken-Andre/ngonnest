@@ -1,5 +1,7 @@
 import 'dart:math';
+
 import 'package:sqflite/sqflite.dart';
+
 import '../models/product_price.dart';
 import '../services/database_service.dart';
 import '../services/error_logger_service.dart';
@@ -52,14 +54,16 @@ class PriceService {
   static const double _annualInflationRate = 0.06; // 6% par an
 
   /// Initialiser la base de prix avec les 50 produits essentiels camerounais
-  static Future<void> initializeProductPrices() async {
+  Future<void> initializeProductPrices() async {
     try {
       final db = await _databaseService.database;
 
       // Vérifier si les prix sont déjà initialisés
-      final count = Sqflite.firstIntValue(
-        await db.rawQuery('SELECT COUNT(*) FROM product_prices')
-      ) ?? 0;
+      final count =
+          Sqflite.firstIntValue(
+            await db.rawQuery('SELECT COUNT(*) FROM product_prices'),
+          ) ??
+          0;
 
       if (count > 0) return; // Déjà initialisé
 
@@ -596,7 +600,7 @@ class PriceService {
   }
 
   /// Obtenir le prix estimé d'un produit par nom
-  static Future<ProductPrice?> getProductPrice(String productName) async {
+  Future<ProductPrice?> getProductPrice(String productName) async {
     try {
       final db = await _databaseService.database;
 
@@ -624,7 +628,7 @@ class PriceService {
   }
 
   /// Obtenir tous les prix par catégorie
-  static Future<List<ProductPrice>> getPricesByCategory(String category) async {
+  Future<List<ProductPrice>> getPricesByCategory(String category) async {
     try {
       final db = await _databaseService.database;
 
@@ -649,10 +653,7 @@ class PriceService {
   }
 
   /// Estimer le prix d'un objet basé sur son nom et catégorie
-  static Future<double> estimateObjectPrice(
-    String objectName,
-    String category,
-  ) async {
+  Future<double> estimateObjectPrice(String objectName, String category) async {
     try {
       // Recherche exacte d'abord
       var price = await getProductPrice(objectName);
@@ -697,7 +698,7 @@ class PriceService {
   }
 
   /// Obtenir des suggestions de prix pour l'auto-complétion
-  static Future<List<ProductPrice>> searchProducts(String query) async {
+  Future<List<ProductPrice>> searchProducts(String query) async {
     try {
       final db = await _databaseService.database;
 
@@ -770,7 +771,7 @@ class PriceService {
   }
 
   /// Obtenir le prix moyen d'une catégorie
-  static Future<double> getAverageCategoryPrice(String category) async {
+  Future<double> getAverageCategoryPrice(String category) async {
     try {
       final prices = await getPricesByCategory(category);
       if (prices.isEmpty) return 0.0;
@@ -796,9 +797,7 @@ class PriceService {
   /// - `min`: Prix minimum
   /// - `max`: Prix maximum
   /// - `count`: Nombre de produits
-  static Future<Map<String, dynamic>> getCategoryPriceStats(
-    String category,
-  ) async {
+  Future<Map<String, dynamic>> getCategoryPriceStats(String category) async {
     try {
       final prices = await getPricesByCategory(category);
 

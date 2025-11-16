@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../models/alert.dart';
 import '../models/foyer.dart';
 import '../models/household_profile.dart';
+import '../providers/foyer_provider.dart';
 import '../repository/inventory_repository.dart';
 import '../services/analytics_service.dart';
 import '../services/database_service.dart';
@@ -246,10 +247,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ).colorScheme.onPrimary.withValues(alpha: 0.9),
                   ),
                 ),
-                TextButton(
-                  onPressed: () => throw Exception("error"),
-                  child: const Text("Throw Test Exception 2"),
-                ),
+                // TextButton(
+                //   onPressed: () => throw Exception("error"),
+                //   child: const Text("Throw Test Exception 2"),
+                // ),
               ],
             ),
           ),
@@ -741,60 +742,70 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildHouseholdInfoSection() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(
-              context,
-            ).colorScheme.onSurface.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                CupertinoIcons.house,
-                color: Theme.of(context).colorScheme.primary,
-                size: 24,
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Informations du foyer',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
+    // Use Consumer to listen to FoyerProvider changes
+    return Consumer<FoyerProvider>(
+      builder: (context, foyerProvider, child) {
+        // Use provider data if available, fallback to local state
+        final foyer = foyerProvider.foyer ?? _foyerProfile;
+        
+        if (foyer == null) return const SizedBox.shrink();
+        
+        return Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          _buildInfoRow('Personnes', '${_foyerProfile!.nbPersonnes}'),
-          _buildInfoRow('Pièces', '${_foyerProfile!.nbPieces}'),
-          if (_foyerProfile!.budgetMensuelEstime != null)
-            _buildInfoRow(
-              'Budget mensuel',
-              '${_foyerProfile!.budgetMensuelEstime!.toStringAsFixed(1)} €',
-            ),
-          _buildInfoRow(
-            'Type de logement',
-            LogementType.getDisplayName(_foyerProfile!.typeLogement),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    CupertinoIcons.house,
+                    color: Theme.of(context).colorScheme.primary,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Informations du foyer',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              _buildInfoRow('Personnes', '${foyer.nbPersonnes}'),
+              _buildInfoRow('Pièces', '${foyer.nbPieces}'),
+              if (foyer.budgetMensuelEstime != null)
+                _buildInfoRow(
+                  'Budget mensuel',
+                  '${foyer.budgetMensuelEstime!.toStringAsFixed(1)} €',
+                ),
+              _buildInfoRow(
+                'Type de logement',
+                LogementType.getDisplayName(foyer.typeLogement),
+              ),
+              _buildInfoRow(
+                'Langue',
+                Language.getDisplayName(foyer.langue),
+              ),
+            ],
           ),
-          _buildInfoRow(
-            'Langue',
-            Language.getDisplayName(_foyerProfile!.langue),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 

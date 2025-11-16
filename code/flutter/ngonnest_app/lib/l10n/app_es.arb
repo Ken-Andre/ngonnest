@@ -227,5 +227,16 @@
   "syncDataExplanation": "La sincronización en la nube te permite respaldar tus datos en línea y accederlos desde todos tus dispositivos.",
   "yes": "Sí",
   "noLater": "No, más tarde",
-  "syncLaterMessage": "Puedes activar la sincronización más tarde en configuración"
+  "syncLaterMessage": "Puedes activar la sincronización más tarde en configuración",
+  
+  "budget": "Presupuesto",
+  "monthlyBudget": "Presupuesto mensual",
+  "editMonthlyBudget": "Editar presupuesto mensual",
+  "enterBudgetAmount": "Ingresa el monto de tu presupuesto mensual",
+  "notSet": "No definido",
+  "edit": "Editar",
+  "invalidAmount": "Monto inválido",
+  "budgetOutOfRange": "El presupuesto debe estar entre €50 y €2000",
+  "budgetUpdatedSuccessfully": "Presupuesto actualizado exitosamente",
+  "errorUpdatingBudget": "Error al actualizar el presupuesto"
 }

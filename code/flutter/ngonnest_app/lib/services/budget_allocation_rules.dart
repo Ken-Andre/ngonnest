@@ -32,19 +32,19 @@ class BudgetAllocationRules {
   /// Default percentage allocations for each category
   /// Based on typical household spending patterns for students and families
   static const Map<String, double> defaultPercentages = {
-    'Hygiène': 0.33,    // 33% - Personal hygiene products
-    'Nettoyage': 0.22,  // 22% - Cleaning products
-    'Cuisine': 0.28,    // 28% - Kitchen/cooking supplies
-    'Divers': 0.17,     // 17% - Miscellaneous items
+    'Hygiène': 0.33, // 33% - Personal hygiene products
+    'Nettoyage': 0.22, // 22% - Cleaning products
+    'Cuisine': 0.28, // 28% - Kitchen/cooking supplies
+    'Divers': 0.17, // 17% - Miscellaneous items
   };
 
   /// Fallback base prices (in euros) when PriceService is unavailable
   /// These are average prices per product in each category
   static const Map<String, double> fallbackBasePrices = {
-    'Hygiène': 8.0,     // ~5250 FCFA
-    'Nettoyage': 8.0,   // ~5250 FCFA
-    'Cuisine': 8.33,    // ~5470 FCFA
-    'Divers': 7.5,      // ~4920 FCFA
+    'Hygiène': 8.0, // ~5250 FCFA
+    'Nettoyage': 8.0, // ~5250 FCFA
+    'Cuisine': 8.33, // ~5470 FCFA
+    'Divers': 7.5, // ~4920 FCFA
   };
 
   /// Calculate multiplier based on number of people in household
@@ -111,7 +111,8 @@ class BudgetAllocationRules {
     final personMultiplier = _calculatePersonMultiplier(foyer.nbPersonnes);
     final roomMultiplier = _calculateRoomMultiplier(foyer.nbPieces);
     final housingMultiplier = _calculateHousingMultiplier(foyer.typeLogement);
-    final totalMultiplier = personMultiplier * roomMultiplier * housingMultiplier;
+    final totalMultiplier =
+        personMultiplier * roomMultiplier * housingMultiplier;
 
     // Calculate for each category
     for (final entry in defaultPercentages.entries) {
@@ -121,7 +122,7 @@ class BudgetAllocationRules {
       // Get average price from PriceService or use fallback
       double avgPrice;
       try {
-        avgPrice = await PriceService.getAverageCategoryPrice(categoryName);
+        avgPrice = await PriceService().getAverageCategoryPrice(categoryName);
         // If PriceService returns 0, use fallback
         if (avgPrice == 0.0) {
           avgPrice = fallbackBasePrices[categoryName] ?? 8.0;
@@ -136,19 +137,31 @@ class BudgetAllocationRules {
       switch (categoryName) {
         case 'Hygiène':
           // ~15 products per month, scaled by number of people
-          recommendedAmount = (avgPrice * 15 * personMultiplier).clamp(80.0, 300.0);
+          recommendedAmount = (avgPrice * 15 * personMultiplier).clamp(
+            80.0,
+            300.0,
+          );
           break;
         case 'Nettoyage':
           // ~10 products per month, scaled by number of rooms
-          recommendedAmount = (avgPrice * 10 * roomMultiplier).clamp(60.0, 200.0);
+          recommendedAmount = (avgPrice * 10 * roomMultiplier).clamp(
+            60.0,
+            200.0,
+          );
           break;
         case 'Cuisine':
           // ~12 products per month, scaled by number of people
-          recommendedAmount = (avgPrice * 12 * personMultiplier).clamp(70.0, 250.0);
+          recommendedAmount = (avgPrice * 12 * personMultiplier).clamp(
+            70.0,
+            250.0,
+          );
           break;
         case 'Divers':
           // ~8 products per month, scaled by total household size
-          recommendedAmount = (avgPrice * 8 * totalMultiplier).clamp(40.0, 150.0);
+          recommendedAmount = (avgPrice * 8 * totalMultiplier).clamp(
+            40.0,
+            150.0,
+          );
           break;
         default:
           // Default formula for unknown categories

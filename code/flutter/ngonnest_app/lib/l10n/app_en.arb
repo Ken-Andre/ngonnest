@@ -287,5 +287,16 @@
   "mergeDataDescription": "Combine local and cloud data",
   "syncSuccessMessage": "Synchronization enabled successfully",
   "importOptionsTitle": "Import options",
-  "chooseImportOption": "Choose how to handle your existing data"
+  "chooseImportOption": "Choose how to handle your existing data",
+  
+  "budget": "Budget",
+  "monthlyBudget": "Monthly budget",
+  "editMonthlyBudget": "Edit monthly budget",
+  "enterBudgetAmount": "Enter your monthly budget amount",
+  "notSet": "Not set",
+  "edit": "Edit",
+  "invalidAmount": "Invalid amount",
+  "budgetOutOfRange": "Budget must be between €50 and €2000",
+  "budgetUpdatedSuccessfully": "Budget updated successfully",
+  "errorUpdatingBudget": "Error updating budget"
 }

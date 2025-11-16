@@ -26,7 +26,7 @@ class BudgetService extends ChangeNotifier {
   // Singleton instance
   static final BudgetService _instance = BudgetService._internal();
   factory BudgetService() => _instance;
-  BudgetService._internal() 
+  BudgetService._internal()
     : _databaseService = DatabaseService(),
       _priceService = PriceService();
 
@@ -39,9 +39,7 @@ class BudgetService extends ChangeNotifier {
   }
 
   /// Get all budget categories for a specific month
-  Future<List<BudgetCategory>> getBudgetCategories({
-    String? month,
-  }) async {
+  Future<List<BudgetCategory>> getBudgetCategories({String? month}) async {
     try {
       final db = await _databaseService.database;
       final targetMonth = month ?? getCurrentMonth();
@@ -149,10 +147,7 @@ class BudgetService extends ChangeNotifier {
   }
 
   /// Sync budget categories with actual purchases
-  Future<void> syncBudgetWithPurchases(
-    String idFoyer, {
-    String? month,
-  }) async {
+  Future<void> syncBudgetWithPurchases(String idFoyer, {String? month}) async {
     await _updateSpendingFromPurchases(idFoyer, month: month);
   }
 
@@ -512,9 +507,7 @@ class BudgetService extends ChangeNotifier {
   // ===== PHASE 2: BUDGET INTELLIGENT & RECOMMANDATIONS =====
 
   /// Calculer automatiquement le budget recommandé basé sur le profil foyer
-  Future<Map<String, double>> calculateRecommendedBudget(
-    String idFoyer,
-  ) async {
+  Future<Map<String, double>> calculateRecommendedBudget(String idFoyer) async {
     try {
       final db = await DatabaseService().database;
 
@@ -536,12 +529,16 @@ class BudgetService extends ChangeNotifier {
       final typeLogement = foyer['type_logement'] as String;
 
       // Calculs basés sur les prix moyens FCFA et profil foyer
-      final baseHygiene = await PriceService.getAverageCategoryPrice('Hygiène');
-      final baseNettoyage = await PriceService.getAverageCategoryPrice(
+      final baseHygiene = await PriceService().getAverageCategoryPrice(
+        'Hygiène',
+      );
+      final baseNettoyage = await PriceService().getAverageCategoryPrice(
         'Nettoyage',
       );
-      final baseCuisine = await PriceService.getAverageCategoryPrice('Cuisine');
-      final baseDivers = await PriceService.getAverageCategoryPrice('Divers');
+      final baseCuisine = await PriceService().getAverageCategoryPrice(
+        'Cuisine',
+      );
+      final baseDivers = await PriceService().getAverageCategoryPrice('Divers');
 
       // Facteurs multiplicateurs selon profil
       double facteurPersonnes =
@@ -732,7 +729,7 @@ class BudgetService extends ChangeNotifier {
       for (final item in frequentItems) {
         final productName = item['nom'] as String;
         final avgPrice = (item['avg_price'] as double?) ?? 0.0;
-        final marketPrice = await PriceService.estimateObjectPrice(
+        final marketPrice = await PriceService().estimateObjectPrice(
           productName,
           item['categorie'] as String,
         );
@@ -929,7 +926,9 @@ class BudgetService extends ChangeNotifier {
       if (existing.isNotEmpty) return;
 
       // Calculer les budgets recommandés
-      final recommendedBudgets = await calculateRecommendedBudget(idFoyer.toString());
+      final recommendedBudgets = await calculateRecommendedBudget(
+        idFoyer.toString(),
+      );
 
       // Créer les catégories avec budgets intelligents
       for (final entry in recommendedBudgets.entries) {

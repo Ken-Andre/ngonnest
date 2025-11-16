@@ -572,4 +572,31 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get chooseImportOption =>
       'Choisissez comment gérer vos données existantes';
+
+  @override
+  String get monthlyBudget => 'Budget mensuel';
+
+  @override
+  String get editMonthlyBudget => 'Modifier le budget mensuel';
+
+  @override
+  String get enterBudgetAmount => 'Entrez le montant de votre budget mensuel';
+
+  @override
+  String get notSet => 'Non défini';
+
+  @override
+  String get edit => 'Modifier';
+
+  @override
+  String get invalidAmount => 'Montant invalide';
+
+  @override
+  String get budgetOutOfRange => 'Le budget doit être entre 50€ et 2000€';
+
+  @override
+  String get budgetUpdatedSuccessfully => 'Budget mis à jour avec succès';
+
+  @override
+  String get errorUpdatingBudget => 'Erreur lors de la mise à jour du budget';
 }

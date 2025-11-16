@@ -694,7 +694,7 @@ class _SplashScreenState extends State<SplashScreen>
   Future<void> _initializePhase2Components() async {
     try {
       // Initialize product prices database
-      await PriceService.initializeProductPrices();
+      await PriceService().initializeProductPrices();
 
       // Initialize recommended budgets if user has a profile
       final hasProfile = await HouseholdService.hasHouseholdProfile();

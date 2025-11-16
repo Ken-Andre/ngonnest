@@ -225,5 +225,16 @@
   "mergeDataDescription": "Combiner les données locales et cloud",
   "syncSuccessMessage": "Synchronisation activée avec succès",
   "importOptionsTitle": "Options d'importation",
-  "chooseImportOption": "Choisissez comment gérer vos données existantes"
+  "chooseImportOption": "Choisissez comment gérer vos données existantes",
+  
+  "budget": "Budget",
+  "monthlyBudget": "Budget mensuel",
+  "editMonthlyBudget": "Modifier le budget mensuel",
+  "enterBudgetAmount": "Entrez le montant de votre budget mensuel",
+  "notSet": "Non défini",
+  "edit": "Modifier",
+  "invalidAmount": "Montant invalide",
+  "budgetOutOfRange": "Le budget doit être entre 50€ et 2000€",
+  "budgetUpdatedSuccessfully": "Budget mis à jour avec succès",
+  "errorUpdatingBudget": "Erreur lors de la mise à jour du budget"
 }

@@ -11,9 +11,14 @@ import 'package:provider/provider.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../l10n/app_localizations.dart';
+import '../models/foyer.dart';
+import '../providers/foyer_provider.dart';
 import '../providers/locale_provider.dart';
+import '../repository/foyer_repository.dart';
 import '../services/auth_service.dart';
+import '../services/budget_service.dart';
 import '../services/cloud_import_service.dart';
+import '../services/database_service.dart';
 import '../services/export_import_service.dart';
 import '../services/navigation_service.dart';
 import '../services/notification_permission_service.dart';
@@ -45,6 +50,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _isImporting = false;
   double _exportProgress = 0.0;
   double _importProgress = 0.0;
+  
+  // Budget management state
+  Foyer? _foyer;
+  double? _currentBudget;
 
   static const String _feedbackEndpoint = 'https://httpbin.org/post';
   static const String _bugReportEndpoint = 'https://httpbin.org/post';
@@ -53,6 +62,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     _loadSettings();
+    _loadFoyerData();
   }
 
   /// Load all saved settings when screen opens
@@ -82,6 +92,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
       });
     } catch (e) {
       debugPrint('Error loading settings: $e');
+    }
+  }
+  
+  /// Load foyer data for budget management
+  Future<void> _loadFoyerData() async {
+    try {
+      final foyerRepository = FoyerRepository(DatabaseService());
+      final foyer = await foyerRepository.get();
+      
+      if (mounted) {
+        setState(() {
+          _foyer = foyer;
+          _currentBudget = foyer?.budgetMensuelEstime;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading foyer data: $e');
     }
   }
 
@@ -518,6 +545,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ).colorScheme.primary,
                           ),
                         ),
+                        const SizedBox(height: 32),
+                        // Budget Section
+                        _buildSectionTitle(
+                          AppLocalizations.of(context)?.budget ?? 'Budget',
+                        ),
+                        _buildBudgetSection(),
                         const SizedBox(height: 32),
                         // Support Section
                         _buildSectionTitle(
@@ -1985,6 +2018,214 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ],
       ),
+    );
+  }
+  
+  /// Build budget management section
+  Widget _buildBudgetSection() {
+    final budgetText = _currentBudget != null
+        ? '${_currentBudget!.toStringAsFixed(0)} €'
+        : (AppLocalizations.of(context)?.notSet ?? 'Non défini');
+    
+    return _buildSettingCard(
+      title: AppLocalizations.of(context)?.monthlyBudget ?? 'Budget mensuel',
+      subtitle: budgetText,
+      child: IconButton(
+        onPressed: _showBudgetEditDialog,
+        icon: Icon(
+          CupertinoIcons.pencil,
+          color: Theme.of(context).colorScheme.primary,
+          size: 24,
+        ),
+        tooltip: AppLocalizations.of(context)?.edit ?? 'Modifier',
+      ),
+    );
+  }
+  
+  /// Show budget edit dialog
+  void _showBudgetEditDialog() {
+    showCupertinoModalPopup<String?>(
+      context: context,
+      builder: (BuildContext dialogContext) => _BudgetEditDialog(
+        currentBudget: _currentBudget,
+      ),
+    ).then((result) {
+      if (result != null && result.isNotEmpty) {
+        final amount = double.tryParse(result);
+        if (amount != null) {
+          _updateBudget(amount);
+        } else {
+          _showErrorMessage(
+            AppLocalizations.of(context)?.invalidAmount ?? 'Montant invalide',
+          );
+        }
+      }
+    });
+  }
+  
+  /// Update budget with validation and recalculation
+  Future<void> _updateBudget(double newBudget) async {
+    // Validate budget range (50€ - 2000€)
+    if (newBudget < 50 || newBudget > 2000) {
+      _showErrorMessage(
+        AppLocalizations.of(context)?.budgetOutOfRange ?? 
+        'Le budget doit être entre 50€ et 2000€',
+      );
+      return;
+    }
+    
+    try {
+      setState(() => _isLoading = true);
+      
+      if (_foyer == null) {
+        throw Exception('Foyer data not loaded');
+      }
+      
+      // Update foyer.budgetMensuelEstime in database
+      final foyerRepository = FoyerRepository(DatabaseService());
+      final updatedFoyer = _foyer!.copyWith(budgetMensuelEstime: newBudget);
+      await foyerRepository.update(updatedFoyer);
+      
+      // Call BudgetService.recalculateCategoryBudgets()
+      final budgetService = BudgetService();
+      await budgetService.recalculateCategoryBudgets(
+        _foyer!.id!,
+        newBudget,
+      );
+      
+      // Update FoyerProvider to notify all screens
+      if (mounted) {
+        try {
+          final foyerProvider = Provider.of<FoyerProvider>(context, listen: false);
+          foyerProvider.setFoyer(updatedFoyer);
+        } catch (e) {
+          debugPrint('FoyerProvider not available: $e');
+        }
+      }
+      
+      // Enqueue foyer update for sync
+      // TODO: Add sync service integration when available
+      
+      // Update local state
+      setState(() {
+        _foyer = updatedFoyer;
+        _currentBudget = newBudget;
+      });
+      
+      // Show success message
+      _showSuccessMessage(
+        AppLocalizations.of(context)?.budgetUpdatedSuccessfully ?? 
+        'Budget mis à jour avec succès',
+      );
+    } catch (e) {
+      debugPrint('Error updating budget: $e');
+      _showErrorMessage(
+        AppLocalizations.of(context)?.errorUpdatingBudget ?? 
+        'Erreur lors de la mise à jour du budget',
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+}
+
+/// Separate StatefulWidget for budget edit dialog to properly manage TextEditingController lifecycle
+class _BudgetEditDialog extends StatefulWidget {
+  final double? currentBudget;
+
+  const _BudgetEditDialog({this.currentBudget});
+
+  @override
+  State<_BudgetEditDialog> createState() => _BudgetEditDialogState();
+}
+
+class _BudgetEditDialogState extends State<_BudgetEditDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(
+      text: widget.currentBudget?.toStringAsFixed(0) ?? '',
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CupertinoAlertDialog(
+      title: Text(
+        AppLocalizations.of(context)?.editMonthlyBudget ??
+            'Modifier le budget mensuel',
+      ),
+      content: Column(
+        children: [
+          const SizedBox(height: 12),
+          Text(
+            AppLocalizations.of(context)?.enterBudgetAmount ??
+                'Entrez le montant de votre budget mensuel',
+            style: const TextStyle(fontSize: 14),
+          ),
+          const SizedBox(height: 16),
+          Material(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.3),
+                ),
+              ),
+              child: TextField(
+                controller: _controller,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(
+                  hintText: '360',
+                  suffixText: '€',
+                  border: InputBorder.none,
+                  hintStyle: TextStyle(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.5),
+                  ),
+                ),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        CupertinoDialogAction(
+          child: Text(AppLocalizations.of(context)?.cancel ?? 'Annuler'),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        CupertinoDialogAction(
+          child: Text(AppLocalizations.of(context)?.save ?? 'Enregistrer'),
+          onPressed: () {
+            final text = _controller.text.trim();
+            Navigator.of(context).pop(text);
+          },
+        ),
+      ],
     );
   }
 }
