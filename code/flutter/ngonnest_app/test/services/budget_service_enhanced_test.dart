@@ -8,26 +8,28 @@ import 'package:ngonnest_app/services/price_service.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../helpers/test_helper.dart';
-
 @GenerateMocks([Database, PriceService, DatabaseService])
 import 'budget_service_enhanced_test.mocks.dart';
 
 void main() {
-  TestHelper.initializeUnitTestEnvironment();
+  TestHelper.initializeTestEnvironment();
 
-group('BudgetService Enhanced Tests', () {
-  late MockDatabase mockDatabase;
-  late MockPriceService mockPriceService;
-  late MockDatabaseService mockDbService;
-  late BudgetService testBudgetService;
+  group('BudgetService Enhanced Tests', () {
+    late MockDatabase mockDatabase;
+    late MockPriceService mockPriceService;
+    late MockDatabaseService mockDbService;
+    late BudgetService testBudgetService;
 
-  setUp(() {
-    mockDatabase = MockDatabase();
-    mockPriceService = MockPriceService();
-    mockDbService = MockDatabaseService();
-    when(mockDbService.database).thenReturn(mockDatabase);
-    testBudgetService = BudgetService._test(mockDbService, mockPriceService);
-  });
+    setUp(() {
+      mockDatabase = MockDatabase();
+      mockPriceService = MockPriceService();
+      mockDbService = MockDatabaseService();
+      when(
+        mockDbService.database,
+      ).thenAnswer((_) async => Future.value(mockDatabase));
+      // testBudgetService = BudgetService();
+      testBudgetService = BudgetService.test(mockDbService, mockPriceService);
+    });
 
     group('getBudgetCategories', () {
       test(
@@ -38,9 +40,10 @@ group('BudgetService Enhanced Tests', () {
             {
               'id': 1,
               'name': 'Hygiène',
-              'limit': 120.0,
-              'spent': 80.0,
+              'limit_amount': 120.0,
+              'spent_amount': 80.0,
               'month': currentMonth,
+              'percentage': 0.25,
               'created_at': DateTime.now().toIso8601String(),
               'updated_at': DateTime.now().toIso8601String(),
             },
@@ -55,11 +58,11 @@ group('BudgetService Enhanced Tests', () {
             ),
           ).thenAnswer((_) async => testCategories);
 
-        final result = await testBudgetService.getBudgetCategories();
-        expect(result, hasLength(1));
-        expect(result[0].name, equals('Hygiène'));
-        expect(result[0].limit, equals(120.0));
-        expect(result[0].spent, equals(80.0));
+          final result = await testBudgetService.getBudgetCategories();
+          expect(result, hasLength(1));
+          expect(result[0].name, equals('Hygiène'));
+          expect(result[0].limit, equals(120.0));
+          expect(result[0].spent, equals(80.0));
         },
       );
 
@@ -254,19 +257,21 @@ group('BudgetService Enhanced Tests', () {
 
         // Mock price service calls
         when(
-          PriceService.getAverageCategoryPrice('Hygiène'),
+          mockPriceService.getAverageCategoryPrice('Hygiène'),
         ).thenAnswer((_) async => 8.0);
         when(
-          PriceService.getAverageCategoryPrice('Nettoyage'),
+          mockPriceService.getAverageCategoryPrice('Nettoyage'),
         ).thenAnswer((_) async => 6.0);
         when(
-          PriceService.getAverageCategoryPrice('Cuisine'),
+          mockPriceService.getAverageCategoryPrice('Cuisine'),
         ).thenAnswer((_) async => 10.0);
         when(
-          PriceService.getAverageCategoryPrice('Divers'),
+          mockPriceService.getAverageCategoryPrice('Divers'),
         ).thenAnswer((_) async => 5.0);
 
-        final result = await testBudgetService.calculateRecommendedBudget(idFoyer);
+        final result = await testBudgetService.calculateRecommendedBudget(
+          idFoyer,
+        );
 
         expect(result, isA<Map<String, double>>());
         expect(result.containsKey('Hygiène'), isTrue);
@@ -274,9 +279,14 @@ group('BudgetService Enhanced Tests', () {
         expect(result.containsKey('Cuisine'), isTrue);
         expect(result.containsKey('Divers'), isTrue);
 
-        // Budget should be adjusted for family size (4 people)
+        // Budget should be adjusted for family size (4 people) and pricing
         expect(result['Hygiène']! > 80.0, isTrue); // Should be above minimum
         expect(result['Hygiène']! < 300.0, isTrue); // Should be below maximum
+        // With 4 people and base price 8.0, calculation should be: 8.0 * 15 * (1.0 + (4-1)*0.3) = 528.0, clamped to 300.0 max
+        expect(
+          result['Hygiène']! >= 200.0,
+          isTrue,
+        ); // Should be at higher end due to family size
       });
 
       test('should return default values on error', () async {
@@ -290,7 +300,9 @@ group('BudgetService Enhanced Tests', () {
           ),
         ).thenAnswer((_) async => []); // No foyer found
 
-        final result = await testBudgetService.calculateRecommendedBudget(idFoyer);
+        final result = await testBudgetService.calculateRecommendedBudget(
+          idFoyer,
+        );
 
         expect(
           result,
@@ -322,19 +334,21 @@ group('BudgetService Enhanced Tests', () {
         ).thenAnswer((_) async => [maisonData]);
 
         when(
-          PriceService.getAverageCategoryPrice('Hygiène'),
+          mockPriceService.getAverageCategoryPrice('Hygiène'),
         ).thenAnswer((_) async => 5.0);
         when(
-          PriceService.getAverageCategoryPrice('Nettoyage'),
+          mockPriceService.getAverageCategoryPrice('Nettoyage'),
         ).thenAnswer((_) async => 5.0);
         when(
-          PriceService.getAverageCategoryPrice('Cuisine'),
+          mockPriceService.getAverageCategoryPrice('Cuisine'),
         ).thenAnswer((_) async => 5.0);
         when(
-          PriceService.getAverageCategoryPrice('Divers'),
+          mockPriceService.getAverageCategoryPrice('Divers'),
         ).thenAnswer((_) async => 5.0);
 
-        final result = await testBudgetService.calculateRecommendedBudget(idFoyer);
+        final result = await testBudgetService.calculateRecommendedBudget(
+          idFoyer,
+        );
 
         // Nettoyage should be higher for house (more rooms) and house type
         expect(result['Nettoyage']! > 60.0, isTrue);
@@ -604,16 +618,16 @@ group('BudgetService Enhanced Tests', () {
 
         // Mock price service
         when(
-          PriceService.getAverageCategoryPrice('Hygiène'),
+          mockPriceService.getAverageCategoryPrice('Hygiène'),
         ).thenAnswer((_) async => 5.0);
         when(
-          PriceService.getAverageCategoryPrice('Nettoyage'),
+          mockPriceService.getAverageCategoryPrice('Nettoyage'),
         ).thenAnswer((_) async => 5.0);
         when(
-          PriceService.getAverageCategoryPrice('Cuisine'),
+          mockPriceService.getAverageCategoryPrice('Cuisine'),
         ).thenAnswer((_) async => 5.0);
         when(
-          PriceService.getAverageCategoryPrice('Divers'),
+          mockPriceService.getAverageCategoryPrice('Divers'),
         ).thenAnswer((_) async => 5.0);
 
         // Mock category creation
@@ -621,10 +635,7 @@ group('BudgetService Enhanced Tests', () {
           mockDatabase.insert('budget_categories', any),
         ).thenAnswer((_) async => 1);
 
-        await testBudgetService.initializeRecommendedBudgets(
-          int.parse(idFoyer),
-          month: month,
-        );
+        await testBudgetService.initializeRecommendedBudgets('1', month: month);
 
         // Should create 4 default categories
         verify(mockDatabase.insert('budget_categories', any)).called(4);
@@ -655,7 +666,7 @@ group('BudgetService Enhanced Tests', () {
         );
 
         await testBudgetService.initializeRecommendedBudgets(
-          int.parse(idFoyer),
+          idFoyer,
           month: month,
         );
 
@@ -705,20 +716,20 @@ group('BudgetService Enhanced Tests', () {
             ),
           ).thenAnswer((_) async => 1);
 
-        await testBudgetService.checkBudgetAlertsAfterPurchase(
-          idFoyer,
-          categoryName,
-          month: month,
-        );
+          await testBudgetService.checkBudgetAlertsAfterPurchase(
+            idFoyer,
+            categoryName,
+            month: month,
+          );
 
-        verify(
-          mockDatabase.update(
-            'budget_categories',
-            argThat(isA<Map<String, dynamic>>()),
-            where: 'id = ?',
-            whereArgs: [1],
-          ),
-        ).called(1);
+          verify(
+            mockDatabase.update(
+              'budget_categories',
+              argThat(isA<Map<String, dynamic>>()),
+              where: 'id = ?',
+              whereArgs: [1],
+            ),
+          ).called(1);
         },
       );
     });
@@ -777,9 +788,9 @@ group('BudgetService Enhanced Tests', () {
         when(
           mockDatabase.query(
             'budget_categories',
-            where: 'month = ?',
-            whereArgs: [any],
-            orderBy: 'name ASC',
+            where: anyNamed('where'),
+            whereArgs: anyNamed('whereArgs'),
+            orderBy: anyNamed('orderBy'),
           ),
         ).thenAnswer((_) async => []);
 
@@ -833,7 +844,7 @@ group('BudgetService Enhanced Tests', () {
 
         expect(results, hasLength(3));
         for (final result in results) {
-          expect(result, equals(1));
+          expect(result, equals('1'));
         }
       });
     });
@@ -877,19 +888,21 @@ group('BudgetService Enhanced Tests', () {
 
         // Mock Cameroon pricing (higher values)
         when(
-          PriceService.getAverageCategoryPrice('Hygiène'),
+          mockPriceService.getAverageCategoryPrice('Hygiène'),
         ).thenAnswer((_) async => 15.0);
         when(
-          PriceService.getAverageCategoryPrice('Nettoyage'),
+          mockPriceService.getAverageCategoryPrice('Nettoyage'),
         ).thenAnswer((_) async => 12.0);
         when(
-          PriceService.getAverageCategoryPrice('Cuisine'),
+          mockPriceService.getAverageCategoryPrice('Cuisine'),
         ).thenAnswer((_) async => 20.0);
         when(
-          PriceService.getAverageCategoryPrice('Divers'),
+          mockPriceService.getAverageCategoryPrice('Divers'),
         ).thenAnswer((_) async => 8.0);
 
-        final result = await testBudgetService.calculateRecommendedBudget(idFoyer);
+        final result = await testBudgetService.calculateRecommendedBudget(
+          idFoyer,
+        );
 
         // Should account for large family size and house type
         expect(result['Hygiène']! > 200.0, isTrue); // Higher for 6 people

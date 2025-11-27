@@ -7,10 +7,11 @@ import 'dart:async' as _i3;
 
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:mockito/src/dummies.dart' as _i4;
-import 'package:ngonnest_app/models/alert.dart' as _i10;
-import 'package:ngonnest_app/models/foyer.dart' as _i8;
-import 'package:ngonnest_app/models/objet.dart' as _i9;
-import 'package:ngonnest_app/services/database_service.dart' as _i7;
+import 'package:ngonnest_app/models/alert.dart' as _i11;
+import 'package:ngonnest_app/models/foyer.dart' as _i9;
+import 'package:ngonnest_app/models/objet.dart' as _i10;
+import 'package:ngonnest_app/models/product_price.dart' as _i7;
+import 'package:ngonnest_app/services/database_service.dart' as _i8;
 import 'package:ngonnest_app/services/price_service.dart' as _i6;
 import 'package:sqflite/sqflite.dart' as _i2;
 import 'package:sqflite_common/sql.dart' as _i5;
@@ -424,12 +425,78 @@ class MockPriceService extends _i1.Mock implements _i6.PriceService {
   MockPriceService() {
     _i1.throwOnMissingStub(this);
   }
+
+  @override
+  _i3.Future<void> initializeProductPrices() =>
+      (super.noSuchMethod(
+            Invocation.method(#initializeProductPrices, []),
+            returnValue: _i3.Future<void>.value(),
+            returnValueForMissingStub: _i3.Future<void>.value(),
+          )
+          as _i3.Future<void>);
+
+  @override
+  _i3.Future<_i7.ProductPrice?> getProductPrice(String? productName) =>
+      (super.noSuchMethod(
+            Invocation.method(#getProductPrice, [productName]),
+            returnValue: _i3.Future<_i7.ProductPrice?>.value(),
+          )
+          as _i3.Future<_i7.ProductPrice?>);
+
+  @override
+  _i3.Future<List<_i7.ProductPrice>> getPricesByCategory(String? category) =>
+      (super.noSuchMethod(
+            Invocation.method(#getPricesByCategory, [category]),
+            returnValue: _i3.Future<List<_i7.ProductPrice>>.value(
+              <_i7.ProductPrice>[],
+            ),
+          )
+          as _i3.Future<List<_i7.ProductPrice>>);
+
+  @override
+  _i3.Future<double> estimateObjectPrice(
+    String? objectName,
+    String? category,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#estimateObjectPrice, [objectName, category]),
+            returnValue: _i3.Future<double>.value(0.0),
+          )
+          as _i3.Future<double>);
+
+  @override
+  _i3.Future<List<_i7.ProductPrice>> searchProducts(String? query) =>
+      (super.noSuchMethod(
+            Invocation.method(#searchProducts, [query]),
+            returnValue: _i3.Future<List<_i7.ProductPrice>>.value(
+              <_i7.ProductPrice>[],
+            ),
+          )
+          as _i3.Future<List<_i7.ProductPrice>>);
+
+  @override
+  _i3.Future<double> getAverageCategoryPrice(String? category) =>
+      (super.noSuchMethod(
+            Invocation.method(#getAverageCategoryPrice, [category]),
+            returnValue: _i3.Future<double>.value(0.0),
+          )
+          as _i3.Future<double>);
+
+  @override
+  _i3.Future<Map<String, dynamic>> getCategoryPriceStats(String? category) =>
+      (super.noSuchMethod(
+            Invocation.method(#getCategoryPriceStats, [category]),
+            returnValue: _i3.Future<Map<String, dynamic>>.value(
+              <String, dynamic>{},
+            ),
+          )
+          as _i3.Future<Map<String, dynamic>>);
 }
 
 /// A class which mocks [DatabaseService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockDatabaseService extends _i1.Mock implements _i7.DatabaseService {
+class MockDatabaseService extends _i1.Mock implements _i8.DatabaseService {
   MockDatabaseService() {
     _i1.throwOnMissingStub(this);
   }
@@ -445,15 +512,15 @@ class MockDatabaseService extends _i1.Mock implements _i7.DatabaseService {
           as _i3.Future<_i2.Database>);
 
   @override
-  _i3.Future<_i8.Foyer?> getFoyer() =>
+  _i3.Future<_i9.Foyer?> getFoyer() =>
       (super.noSuchMethod(
             Invocation.method(#getFoyer, []),
-            returnValue: _i3.Future<_i8.Foyer?>.value(),
+            returnValue: _i3.Future<_i9.Foyer?>.value(),
           )
-          as _i3.Future<_i8.Foyer?>);
+          as _i3.Future<_i9.Foyer?>);
 
   @override
-  _i3.Future<String> insertFoyer(_i8.Foyer? foyer) =>
+  _i3.Future<String> insertFoyer(_i9.Foyer? foyer) =>
       (super.noSuchMethod(
             Invocation.method(#insertFoyer, [foyer]),
             returnValue: _i3.Future<String>.value(
@@ -466,7 +533,7 @@ class MockDatabaseService extends _i1.Mock implements _i7.DatabaseService {
           as _i3.Future<String>);
 
   @override
-  _i3.Future<int> updateFoyer(_i8.Foyer? foyer) =>
+  _i3.Future<int> updateFoyer(_i9.Foyer? foyer) =>
       (super.noSuchMethod(
             Invocation.method(#updateFoyer, [foyer]),
             returnValue: _i3.Future<int>.value(0),
@@ -482,23 +549,26 @@ class MockDatabaseService extends _i1.Mock implements _i7.DatabaseService {
           as _i3.Future<int>);
 
   @override
-  _i3.Future<List<_i9.Objet>> getObjets({int? idFoyer, _i9.TypeObjet? type}) =>
+  _i3.Future<List<_i10.Objet>> getObjets({
+    int? idFoyer,
+    _i10.TypeObjet? type,
+  }) =>
       (super.noSuchMethod(
             Invocation.method(#getObjets, [], {#idFoyer: idFoyer, #type: type}),
-            returnValue: _i3.Future<List<_i9.Objet>>.value(<_i9.Objet>[]),
+            returnValue: _i3.Future<List<_i10.Objet>>.value(<_i10.Objet>[]),
           )
-          as _i3.Future<List<_i9.Objet>>);
+          as _i3.Future<List<_i10.Objet>>);
 
   @override
-  _i3.Future<_i9.Objet?> getObjet(int? id) =>
+  _i3.Future<_i10.Objet?> getObjet(int? id) =>
       (super.noSuchMethod(
             Invocation.method(#getObjet, [id]),
-            returnValue: _i3.Future<_i9.Objet?>.value(),
+            returnValue: _i3.Future<_i10.Objet?>.value(),
           )
-          as _i3.Future<_i9.Objet?>);
+          as _i3.Future<_i10.Objet?>);
 
   @override
-  _i3.Future<int> insertObjet(_i9.Objet? objet) =>
+  _i3.Future<int> insertObjet(_i10.Objet? objet) =>
       (super.noSuchMethod(
             Invocation.method(#insertObjet, [objet]),
             returnValue: _i3.Future<int>.value(0),
@@ -506,7 +576,7 @@ class MockDatabaseService extends _i1.Mock implements _i7.DatabaseService {
           as _i3.Future<int>);
 
   @override
-  _i3.Future<int> updateObjet(_i9.Objet? objet) =>
+  _i3.Future<int> updateObjet(_i10.Objet? objet) =>
       (super.noSuchMethod(
             Invocation.method(#updateObjet, [objet]),
             returnValue: _i3.Future<int>.value(0),
@@ -538,12 +608,12 @@ class MockDatabaseService extends _i1.Mock implements _i7.DatabaseService {
           as _i3.Future<int>);
 
   @override
-  _i3.Future<List<_i9.Objet>> getObjetsWithAlerts(int? idFoyer) =>
+  _i3.Future<List<_i10.Objet>> getObjetsWithAlerts(int? idFoyer) =>
       (super.noSuchMethod(
             Invocation.method(#getObjetsWithAlerts, [idFoyer]),
-            returnValue: _i3.Future<List<_i9.Objet>>.value(<_i9.Objet>[]),
+            returnValue: _i3.Future<List<_i10.Objet>>.value(<_i10.Objet>[]),
           )
-          as _i3.Future<List<_i9.Objet>>);
+          as _i3.Future<List<_i10.Objet>>);
 
   @override
   _i3.Future<Map<String, double>> getBudgetMensuel(int? idFoyer) =>
@@ -556,26 +626,26 @@ class MockDatabaseService extends _i1.Mock implements _i7.DatabaseService {
           as _i3.Future<Map<String, double>>);
 
   @override
-  _i3.Future<List<_i10.Alert>> getAlerts({int? idFoyer, bool? unreadOnly}) =>
+  _i3.Future<List<_i11.Alert>> getAlerts({int? idFoyer, bool? unreadOnly}) =>
       (super.noSuchMethod(
             Invocation.method(#getAlerts, [], {
               #idFoyer: idFoyer,
               #unreadOnly: unreadOnly,
             }),
-            returnValue: _i3.Future<List<_i10.Alert>>.value(<_i10.Alert>[]),
+            returnValue: _i3.Future<List<_i11.Alert>>.value(<_i11.Alert>[]),
           )
-          as _i3.Future<List<_i10.Alert>>);
+          as _i3.Future<List<_i11.Alert>>);
 
   @override
-  _i3.Future<_i10.Alert?> getAlert(int? id) =>
+  _i3.Future<_i11.Alert?> getAlert(int? id) =>
       (super.noSuchMethod(
             Invocation.method(#getAlert, [id]),
-            returnValue: _i3.Future<_i10.Alert?>.value(),
+            returnValue: _i3.Future<_i11.Alert?>.value(),
           )
-          as _i3.Future<_i10.Alert?>);
+          as _i3.Future<_i11.Alert?>);
 
   @override
-  _i3.Future<int> insertAlert(_i10.Alert? alert) =>
+  _i3.Future<int> insertAlert(_i11.Alert? alert) =>
       (super.noSuchMethod(
             Invocation.method(#insertAlert, [alert]),
             returnValue: _i3.Future<int>.value(0),
@@ -583,7 +653,7 @@ class MockDatabaseService extends _i1.Mock implements _i7.DatabaseService {
           as _i3.Future<int>);
 
   @override
-  _i3.Future<int> updateAlert(_i10.Alert? alert) =>
+  _i3.Future<int> updateAlert(_i11.Alert? alert) =>
       (super.noSuchMethod(
             Invocation.method(#updateAlert, [alert]),
             returnValue: _i3.Future<int>.value(0),
@@ -599,7 +669,7 @@ class MockDatabaseService extends _i1.Mock implements _i7.DatabaseService {
           as _i3.Future<int>);
 
   @override
-  _i3.Future<int> insertObjetWithAlerts(_i9.Objet? objet, int? idFoyer) =>
+  _i3.Future<int> insertObjetWithAlerts(_i10.Objet? objet, int? idFoyer) =>
       (super.noSuchMethod(
             Invocation.method(#insertObjetWithAlerts, [objet, idFoyer]),
             returnValue: _i3.Future<int>.value(0),

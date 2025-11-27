@@ -586,6 +586,15 @@ Future<void> _migrateToVersion12(Database db) async {
       debugPrint('[DB Migration V12] ✅ Performance indexes created.');
     });
 
+    // Track budget migration completion
+    await AnalyticsService().logEvent(
+      'budget_migration_completed',
+      parameters: {
+        'from_version': 11,
+        'to_version': 12,
+      },
+    );
+
     debugPrint('[DB Migration V12] ✅ Migration completed successfully.');
   } catch (e, stackTrace) {
     debugPrint('[DB Migration V12] ❌ Migration failed: $e');

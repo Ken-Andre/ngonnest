@@ -8,6 +8,7 @@ import '../models/alert.dart';
 import '../models/budget_category.dart';
 import 'analytics_service.dart';
 import 'calendar_sync_service.dart';
+import 'error_logger_service.dart';
 import 'settings_service.dart';
 
 class NotificationService {
@@ -550,7 +551,23 @@ extension BudgetNotifications on NotificationService {
         platformChannelSpecifics,
         payload: 'budget_alert_${category.id}',
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      // Log notification failures
+      // Requirements: 10.6, 2.6
+      await ErrorLoggerService.logError(
+        component: 'BudgetNotifications',
+        operation: 'showBudgetAlert',
+        error: e,
+        stackTrace: stackTrace,
+        severity: ErrorSeverity.medium,
+        metadata: {
+          'category_name': category.name,
+          'alert_level': category.alertLevel.toString(),
+          'percentage': percentage,
+          'context_message': 'Failed to show budget notification, falling back to in-app banner',
+        },
+      );
+      
       // Fallback to in-app banner if permissions denied or notification fails
       // Requirement: 2.6
       if (context != null && context.mounted) {

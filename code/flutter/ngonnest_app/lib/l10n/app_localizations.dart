@@ -1185,6 +1185,192 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Error updating budget'**
   String get errorUpdatingBudget;
+
+  /// No description provided for @errorDatabaseConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to connect to database. Please try again.'**
+  String get errorDatabaseConnection;
+
+  /// No description provided for @errorBudgetCalculation.
+  ///
+  /// In en, this message translates to:
+  /// **'Error calculating budget. Using default values.'**
+  String get errorBudgetCalculation;
+
+  /// No description provided for @errorSyncFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Synchronization failed. Your data is saved locally.'**
+  String get errorSyncFailed;
+
+  /// No description provided for @errorNotificationPermission.
+  ///
+  /// In en, this message translates to:
+  /// **'Notification permission denied. Enable it in settings.'**
+  String get errorNotificationPermission;
+
+  /// No description provided for @errorMigrationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Database update failed. App continues with old version.'**
+  String get errorMigrationFailed;
+
+  /// No description provided for @errorValidationBudgetAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Budget amount must be a positive number.'**
+  String get errorValidationBudgetAmount;
+
+  /// No description provided for @errorNetworkUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No internet connection. Operating in offline mode.'**
+  String get errorNetworkUnavailable;
+
+  /// No description provided for @errorLoadingBudgetCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load budget categories.'**
+  String get errorLoadingBudgetCategories;
+
+  /// No description provided for @errorSavingBudgetCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Error saving category.'**
+  String get errorSavingBudgetCategory;
+
+  /// No description provided for @errorDeletingBudgetCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Error deleting category.'**
+  String get errorDeletingBudgetCategory;
+
+  /// No description provided for @errorRecalculatingBudgets.
+  ///
+  /// In en, this message translates to:
+  /// **'Error recalculating budgets.'**
+  String get errorRecalculatingBudgets;
+
+  /// No description provided for @errorInvalidMonthFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid month format. Use YYYY-MM.'**
+  String get errorInvalidMonthFormat;
+
+  /// No description provided for @errorMissingFoyerData.
+  ///
+  /// In en, this message translates to:
+  /// **'Missing household data. Please complete your profile.'**
+  String get errorMissingFoyerData;
+
+  /// No description provided for @errorBudgetNotificationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to display budget notification.'**
+  String get errorBudgetNotificationFailed;
+
+  /// No description provided for @errorSyncRetryExhausted.
+  ///
+  /// In en, this message translates to:
+  /// **'Synchronization failed after multiple attempts.'**
+  String get errorSyncRetryExhausted;
+
+  /// No description provided for @warningBudgetCalculationFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'Budget calculation failed. Using default values.'**
+  String get warningBudgetCalculationFallback;
+
+  /// No description provided for @warningInvalidPercentage.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid percentage detected. Using default value.'**
+  String get warningInvalidPercentage;
+
+  /// No description provided for @budgetNotSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly budget not set'**
+  String get budgetNotSet;
+
+  /// No description provided for @budgetNotSetMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Please set your monthly budget in settings to start tracking your expenses.'**
+  String get budgetNotSetMessage;
+
+  /// No description provided for @goToSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to settings'**
+  String get goToSettings;
+
+  /// No description provided for @updateMonthlyBudget.
+  ///
+  /// In en, this message translates to:
+  /// **'Update monthly budget'**
+  String get updateMonthlyBudget;
+
+  /// No description provided for @budgetWillBeRecalculated.
+  ///
+  /// In en, this message translates to:
+  /// **'Your budget category limits will be recalculated proportionally.'**
+  String get budgetWillBeRecalculated;
+
+  /// No description provided for @enterAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter amount'**
+  String get enterAmount;
+
+  /// No description provided for @pleaseEnterValidAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid amount'**
+  String get pleaseEnterValidAmount;
+
+  /// No description provided for @errorLoadingHouseholdData.
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading household data'**
+  String get errorLoadingHouseholdData;
+
+  /// No description provided for @setBudgetInSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Set your monthly budget'**
+  String get setBudgetInSettings;
+
+  /// No description provided for @modify.
+  ///
+  /// In en, this message translates to:
+  /// **'Modify'**
+  String get modify;
+
+  /// No description provided for @budgetLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load budget data. Check your connection.'**
+  String get budgetLoadError;
+
+  /// No description provided for @budgetRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get budgetRetry;
+
+  /// No description provided for @budgetUpdateError.
+  ///
+  /// In en, this message translates to:
+  /// **'Error updating budget'**
+  String get budgetUpdateError;
+
+  /// No description provided for @budgetDeleteError.
+  ///
+  /// In en, this message translates to:
+  /// **'Error deleting category'**
+  String get budgetDeleteError;
 }
 
 class _AppLocalizationsDelegate

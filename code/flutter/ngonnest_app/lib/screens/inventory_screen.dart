@@ -443,111 +443,129 @@ class _InventoryScreenState extends State<InventoryScreen>
 
   Widget _buildConsommablesTab() {
     if (_consommables.isEmpty) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.shopping_cart_outlined, size: 64, color: Colors.grey),
-            SizedBox(height: 16),
-            Text(
-              'Aucun consommable ajouté',
-              style: TextStyle(fontSize: 18, color: Colors.grey),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'Appuyez sur le bouton + pour ajouter votre premier consommable',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey),
-            ),
-          ],
+      return RefreshIndicator(
+        onRefresh: _loadInventory,
+        child: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.shopping_cart_outlined, size: 64, color: Colors.grey),
+              SizedBox(height: 16),
+              Text(
+                'Aucun consommable ajouté',
+                style: TextStyle(fontSize: 18, color: Colors.grey),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Appuyez sur le bouton + pour ajouter votre premier consommable',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey),
+              ),
+            ],
+          ),
         ),
       );
     }
 
     if (_filteredConsommables.isEmpty && _searchQuery.isNotEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.search_off, size: 64, color: Colors.grey),
-            const SizedBox(height: 16),
-            Text(
-              'Aucun consommable trouvé pour "$_searchQuery"',
-              style: const TextStyle(fontSize: 18, color: Colors.grey),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Essayez avec un autre terme de recherche',
-              style: TextStyle(color: Colors.grey),
-            ),
-          ],
+      return RefreshIndicator(
+        onRefresh: _loadInventory,
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.search_off, size: 64, color: Colors.grey),
+              const SizedBox(height: 16),
+              Text(
+                'Aucun consommable trouvé pour "$_searchQuery"',
+                style: const TextStyle(fontSize: 18, color: Colors.grey),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Essayez avec un autre terme de recherche',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ],
+          ),
         ),
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: _filteredConsommables.length,
-      itemBuilder: (context, index) {
-        final objet = _filteredConsommables[index];
-        return _buildObjetCard(objet);
-      },
+    return RefreshIndicator(
+      onRefresh: _loadInventory,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: _filteredConsommables.length,
+        itemBuilder: (context, index) {
+          final objet = _filteredConsommables[index];
+          return _buildObjetCard(objet);
+        },
+      ),
     );
   }
 
   Widget _buildDurablesTab() {
     if (_durables.isEmpty) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey),
-            SizedBox(height: 16),
-            Text(
-              'Aucun bien durable ajouté',
-              style: TextStyle(fontSize: 18, color: Colors.grey),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'Appuyez sur le bouton + pour ajouter votre premier bien durable',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey),
-            ),
-          ],
+      return RefreshIndicator(
+        onRefresh: _loadInventory,
+        child: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey),
+              SizedBox(height: 16),
+              Text(
+                'Aucun bien durable ajouté',
+                style: TextStyle(fontSize: 18, color: Colors.grey),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Appuyez sur le bouton + pour ajouter votre premier bien durable',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey),
+              ),
+            ],
+          ),
         ),
       );
     }
 
     if (_filteredDurables.isEmpty && _searchQuery.isNotEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.search_off, size: 64, color: Colors.grey),
-            const SizedBox(height: 16),
-            Text(
-              'Aucun bien durable trouvé pour "$_searchQuery"',
-              style: const TextStyle(fontSize: 18, color: Colors.grey),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Essayez avec un autre terme de recherche',
-              style: TextStyle(color: Colors.grey),
-            ),
-          ],
+      return RefreshIndicator(
+        onRefresh: _loadInventory,
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.search_off, size: 64, color: Colors.grey),
+              const SizedBox(height: 16),
+              Text(
+                'Aucun bien durable trouvé pour "$_searchQuery"',
+                style: const TextStyle(fontSize: 18, color: Colors.grey),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Essayez avec un autre terme de recherche',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ],
+          ),
         ),
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: _filteredDurables.length,
-      itemBuilder: (context, index) {
-        final objet = _filteredDurables[index];
-        return _buildObjetCard(objet);
-      },
+    return RefreshIndicator(
+      onRefresh: _loadInventory,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: _filteredDurables.length,
+        itemBuilder: (context, index) {
+          final objet = _filteredDurables[index];
+          return _buildObjetCard(objet);
+        },
+      ),
     );
   }
 

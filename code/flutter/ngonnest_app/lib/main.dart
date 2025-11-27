@@ -46,6 +46,7 @@ import 'services/auth_service.dart';
 import 'services/background_task_service.dart' show callbackDispatcher;
 import 'services/budget_service.dart';
 import 'services/connectivity_service.dart';
+import 'services/currency_service.dart';
 import 'services/database_service.dart';
 import 'services/household_service.dart';
 import 'services/notification_service.dart';
@@ -345,6 +346,9 @@ void main() async {
         ),
         ChangeNotifierProvider<SyncService>(create: (_) => SyncService()),
         ChangeNotifierProvider<BudgetService>(create: (_) => BudgetService()),
+        ChangeNotifierProvider<CurrencyService>(
+          create: (_) => CurrencyService(),
+        ),
         // Firebase Remote Config Services
         // TODO: Initialize services asynchronously to avoid blocking app startup
         // TODO: Add error handling for service initialization failures
@@ -701,9 +705,7 @@ class _SplashScreenState extends State<SplashScreen>
       if (hasProfile) {
         final foyerId = context.read<FoyerProvider>().foyerId;
         if (foyerId != null) {
-          await BudgetService().initializeRecommendedBudgets(
-            int.tryParse(foyerId) ?? 0,
-          );
+          await BudgetService().initializeRecommendedBudgets(foyerId);
         }
       }
     } catch (e, stackTrace) {

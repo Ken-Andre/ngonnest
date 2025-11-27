@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'console_logger.dart';
+import 'app_feature_flags.dart';
+
 class QuickAction {
   final String title;
   final String subtitle;
@@ -18,6 +21,11 @@ class QuickAction {
 
 class QuickActionsService {
   static List<QuickAction> getQuickActions(BuildContext context) {
+    if (!AppFeatureFlags.instance.areQuickActionsEnabled) {
+      ConsoleLogger.info('[QuickActions] Disabled in this build');
+      return [];
+    }
+
     return [
       QuickAction(
         title: 'Ajouter un article',

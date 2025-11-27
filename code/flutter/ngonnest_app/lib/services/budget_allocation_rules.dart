@@ -96,86 +96,158 @@ class BudgetAllocationRules {
   /// - Divers: avgPrice * 8 * totalMultiplier (clamped 40-150€)
   ///
   /// If PriceService fails, fallback base prices are used.
+  /// Handles division by zero and null/missing foyer data gracefully.
   ///
   /// Parameters:
   /// - [foyer]: The household profile containing nbPersonnes, nbPieces, typeLogement
   /// - [priceService]: Optional PriceService instance for testing (uses static methods by default)
   ///
   /// Returns: Map of category names to BudgetAllocation objects
+  /// Requirements: 10.3
   static Future<Map<String, BudgetAllocation>> calculateRecommendedBudgets({
     required Foyer foyer,
   }) async {
     final allocations = <String, BudgetAllocation>{};
 
-    // Calculate household multipliers
-    final personMultiplier = _calculatePersonMultiplier(foyer.nbPersonnes);
-    final roomMultiplier = _calculateRoomMultiplier(foyer.nbPieces);
-    final housingMultiplier = _calculateHousingMultiplier(foyer.typeLogement);
-    final totalMultiplier =
-        personMultiplier * roomMultiplier * housingMultiplier;
+    try {
+      // Validate foyer data to handle null/missing values
+      if (foyer.nbPersonnes <= 0) {
+        throw ArgumentError('Number of people must be positive, got: ${foyer.nbPersonnes}');
+      }
+      if (foyer.nbPieces <= 0) {
+        throw ArgumentError('Number of rooms must be positive, got: ${foyer.nbPieces}');
+      }
 
-    // Calculate for each category
+      // Calculate household multipliers with validated data
+      final personMultiplier = _calculatePersonMultiplier(foyer.nbPersonnes);
+      final roomMultiplier = _calculateRoomMultiplier(foyer.nbPieces);
+      final housingMultiplier = _calculateHousingMultiplier(foyer.typeLogement);
+      final totalMultiplier =
+          personMultiplier * roomMultiplier * housingMultiplier;
+
+      // Validate multipliers to prevent division by zero
+      if (personMultiplier <= 0 || roomMultiplier <= 0 || totalMultiplier <= 0) {
+        throw StateError(
+          'Invalid multipliers calculated: person=$personMultiplier, room=$roomMultiplier, total=$totalMultiplier',
+        );
+      }
+
+      // Calculate for each category
+      for (final entry in defaultPercentages.entries) {
+        final categoryName = entry.key;
+        final percentage = entry.value;
+
+        // Get average price from PriceService or use fallback
+        double avgPrice;
+        try {
+          avgPrice = await PriceService().getAverageCategoryPrice(categoryName);
+          // If PriceService returns 0 or invalid value, use fallback
+          if (avgPrice <= 0.0) {
+            avgPrice = fallbackBasePrices[categoryName] ?? 8.0;
+          }
+        } catch (e) {
+          // Use fallback on any error
+          avgPrice = fallbackBasePrices[categoryName] ?? 8.0;
+        }
+
+        // Calculate recommended amount based on category-specific formula
+        double recommendedAmount;
+        try {
+          switch (categoryName) {
+            case 'Hygiène':
+              // ~15 products per month, scaled by number of people
+              recommendedAmount = (avgPrice * 15 * personMultiplier).clamp(
+                80.0,
+                300.0,
+              );
+              break;
+            case 'Nettoyage':
+              // ~10 products per month, scaled by number of rooms
+              recommendedAmount = (avgPrice * 10 * roomMultiplier).clamp(
+                60.0,
+                200.0,
+              );
+              break;
+            case 'Cuisine':
+              // ~12 products per month, scaled by number of people
+              recommendedAmount = (avgPrice * 12 * personMultiplier).clamp(
+                70.0,
+                250.0,
+              );
+              break;
+            case 'Divers':
+              // ~8 products per month, scaled by total household size
+              recommendedAmount = (avgPrice * 8 * totalMultiplier).clamp(
+                40.0,
+                150.0,
+              );
+              break;
+            default:
+              // Default formula for unknown categories
+              recommendedAmount = (avgPrice * 10).clamp(50.0, 200.0);
+          }
+        } catch (e) {
+          // Use fallback calculation if formula fails
+          recommendedAmount = (avgPrice * 10).clamp(50.0, 200.0);
+        }
+
+        // Validate final amount
+        if (recommendedAmount.isNaN || recommendedAmount.isInfinite || recommendedAmount <= 0) {
+          recommendedAmount = fallbackBasePrices[categoryName] ?? 100.0;
+        }
+
+        allocations[categoryName] = BudgetAllocation(
+          categoryName: categoryName,
+          percentage: percentage,
+          recommendedAmount: recommendedAmount,
+          basePrice: avgPrice,
+        );
+      }
+
+      return allocations;
+    } catch (e) {
+      // If calculation fails completely, return fallback allocations
+      return _getFallbackAllocations();
+    }
+  }
+
+  /// Get fallback allocations when calculation fails
+  /// Uses default percentages and fallback base prices
+  static Map<String, BudgetAllocation> _getFallbackAllocations() {
+    final allocations = <String, BudgetAllocation>{};
+    
     for (final entry in defaultPercentages.entries) {
       final categoryName = entry.key;
       final percentage = entry.value;
-
-      // Get average price from PriceService or use fallback
-      double avgPrice;
-      try {
-        avgPrice = await PriceService().getAverageCategoryPrice(categoryName);
-        // If PriceService returns 0, use fallback
-        if (avgPrice == 0.0) {
-          avgPrice = fallbackBasePrices[categoryName] ?? 8.0;
-        }
-      } catch (e) {
-        // Use fallback on any error
-        avgPrice = fallbackBasePrices[categoryName] ?? 8.0;
-      }
-
-      // Calculate recommended amount based on category-specific formula
+      final basePrice = fallbackBasePrices[categoryName] ?? 8.0;
+      
+      // Simple fallback calculation
       double recommendedAmount;
       switch (categoryName) {
         case 'Hygiène':
-          // ~15 products per month, scaled by number of people
-          recommendedAmount = (avgPrice * 15 * personMultiplier).clamp(
-            80.0,
-            300.0,
-          );
+          recommendedAmount = 120.0;
           break;
         case 'Nettoyage':
-          // ~10 products per month, scaled by number of rooms
-          recommendedAmount = (avgPrice * 10 * roomMultiplier).clamp(
-            60.0,
-            200.0,
-          );
+          recommendedAmount = 80.0;
           break;
         case 'Cuisine':
-          // ~12 products per month, scaled by number of people
-          recommendedAmount = (avgPrice * 12 * personMultiplier).clamp(
-            70.0,
-            250.0,
-          );
+          recommendedAmount = 100.0;
           break;
         case 'Divers':
-          // ~8 products per month, scaled by total household size
-          recommendedAmount = (avgPrice * 8 * totalMultiplier).clamp(
-            40.0,
-            150.0,
-          );
+          recommendedAmount = 60.0;
           break;
         default:
-          // Default formula for unknown categories
-          recommendedAmount = avgPrice * 10;
+          recommendedAmount = 100.0;
       }
-
+      
       allocations[categoryName] = BudgetAllocation(
         categoryName: categoryName,
         percentage: percentage,
         recommendedAmount: recommendedAmount,
-        basePrice: avgPrice,
+        basePrice: basePrice,
       );
     }
-
+    
     return allocations;
   }
 

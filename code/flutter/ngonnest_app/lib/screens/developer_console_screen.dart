@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../services/error_logger_service.dart';
+import '../services/app_feature_flags.dart';
 // import '../models/alert.dart';
 
 class DeveloperConsoleScreen extends StatefulWidget {
@@ -176,7 +177,68 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
       ),
       body: _isLoading
           ? const Center(child: CupertinoActivityIndicator(color: Colors.white))
-          : _buildLogsList(),
+          : Column(
+              children: [
+                _buildFeatureFlagsSection(),
+                Expanded(child: _buildLogsList()),
+              ],
+            ),
+    );
+  }
+
+  Widget _buildFeatureFlagsSection() {
+    final flags = AppFeatureFlags.instance.getAllFlags();
+
+    return Card(
+      margin: const EdgeInsets.all(8),
+      color: const Color(0xFF2D2D2D),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Feature Flags',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 8),
+            ...flags.entries.map((entry) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Row(
+                children: [
+                  Icon(
+                    entry.value ? CupertinoIcons.check_mark_circled : CupertinoIcons.xmark_circle,
+                    color: entry.value ? Colors.green : Colors.red,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    entry.key,
+                    style: const TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 12,
+                      color: Colors.white70,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    entry.value ? 'ENABLED' : 'DISABLED',
+                    style: TextStyle(
+                      color: entry.value ? Colors.green : Colors.red,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 10,
+                    ),
+                  ),
+                ],
+              ),
+            )),
+          ],
+        ),
+      ),
     );
   }
 

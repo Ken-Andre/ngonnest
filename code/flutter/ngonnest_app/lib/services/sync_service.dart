@@ -12,6 +12,7 @@ import 'console_logger.dart';
 import 'database_service.dart'; // For ErrorContext if ever needed elsewhere, though not directly in logError calls now
 import 'error_logger_service.dart';
 import 'supabase_api_service.dart';
+import 'app_feature_flags.dart';
 
 /// Service de synchronisation offline-first pour NgonNest
 /// Respecte les principes : offline first, sync optionnelle, local wins, retry logic
@@ -98,6 +99,13 @@ class SyncService extends ChangeNotifier {
 
   /// Active la synchronisation avec consentement utilisateur
   Future<void> enableSync({required bool userConsent}) async {
+    if (!AppFeatureFlags.instance.isCloudSyncEnabled) {
+      ConsoleLogger.warning(
+        '[SyncService] Cloud sync disabled in production mode',
+      );
+      return;
+    }
+
     try {
       final prefs = await SharedPreferences.getInstance();
       _syncEnabled = true;
@@ -154,6 +162,18 @@ class SyncService extends ChangeNotifier {
 
   /// Force une synchronisation avec feedback utilisateur
   Future<void> forceSyncWithFeedback(BuildContext? context) async {
+    if (!AppFeatureFlags.instance.isCloudSyncEnabled) {
+      if (context != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Synchronisation cloud non disponible dans cette version'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+      return;
+    }
+
     if (!_syncEnabled || !_userConsent) {
       if (context != null) {
         ScaffoldMessenger.of(context).showSnackBar(

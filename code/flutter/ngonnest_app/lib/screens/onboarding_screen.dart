@@ -7,6 +7,7 @@ import '../models/foyer.dart';
 import '../models/household_profile.dart';
 import '../providers/foyer_provider.dart';
 import '../services/analytics_service.dart';
+import '../services/budget_service.dart';
 import '../services/household_service.dart';
 import '../theme/app_theme.dart';
 
@@ -121,6 +122,28 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       if (!mounted) return;
       final savedFoyer = foyer.copyWith(id: id.toString());
       context.read<FoyerProvider>().setFoyer(savedFoyer);
+
+      // Call initializeRecommendedBudgets() after foyer creation
+      // Pass foyer_id to initialization
+      // Handle errors gracefully (use defaults if calculation fails)
+      try {
+        await BudgetService().initializeRecommendedBudgets(id.toString());
+        
+        // Log 'onboarding_completed_with_budgets' analytics event
+        final analyticsService = context.read<AnalyticsService>();
+        await analyticsService.logEvent('onboarding_completed_with_budgets', parameters: {
+          'foyer_id': id.toString(),
+          'nb_personnes': nbPersonnes,
+          'nb_pieces': nbPieces,
+          'type_logement': _selectedHousingType,
+          'has_budget': budget != null,
+        });
+      } catch (budgetError, budgetStackTrace) {
+        // Log budget initialization error but don't block onboarding
+        print('Budget initialization error: $budgetError');
+        print('StackTrace: $budgetStackTrace');
+        // Error is already logged in BudgetService, continue with onboarding
+      }
 
       // Track onboarding completion and household profile setup
       final analyticsService = context.read<AnalyticsService>();

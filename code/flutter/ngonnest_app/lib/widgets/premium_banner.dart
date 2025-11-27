@@ -5,6 +5,7 @@ import '../services/ab_testing_service.dart';
 import '../services/analytics_service.dart';
 import '../services/feature_flag_service.dart';
 import '../services/remote_config_service.dart';
+import '../services/app_feature_flags.dart';
 
 class PremiumBanner extends StatefulWidget {
   const PremiumBanner({super.key});
@@ -51,7 +52,7 @@ class _PremiumBannerState extends State<PremiumBanner> {
     final analytics = context.read<AnalyticsService>();
 
     // Check if premium banner should be shown
-    if (!remoteConfig.isPremiumBannerEnabled) {
+    if (!AppFeatureFlags.instance.isPremiumEnabled || !remoteConfig.isPremiumBannerEnabled) {
       return const SizedBox.shrink();
     }
 

@@ -76,18 +76,55 @@ class AnalyticsService {
   // =============================================================================
 
   /// Log a custom event with parameters
+  ///
+  /// Automatically sanitizes boolean parameters to strings ('true'/'false')
+  /// as Firebase Analytics only accepts string, number, or null values.
+  /// Invalid parameter types are logged and skipped to prevent crashes.
+  ///
+  /// Requirements: 2.1, 2.4, 2.5, 2.6
   Future<void> logEvent(
     String eventName, {
     Map<String, Object>? parameters,
   }) async {
     try {
-      await _analytics?.logEvent(name: eventName, parameters: parameters);
+      // Sanitize parameters: convert booleans to strings
+      final sanitizedParams = parameters?.map((key, value) {
+        // Convert boolean to string
+        if (value is bool) {
+          return MapEntry(key, value ? 'true' : 'false');
+        }
+        
+        // Validate parameter type (Firebase only accepts string, number, null)
+        if (value is! String && value is! num && value != null) {
+          // Log warning for invalid parameter type
+          ErrorLoggerService.logError(
+            component: 'AnalyticsService',
+            operation: 'logEvent',
+            error: 'Invalid parameter type detected: ${value.runtimeType} for key "$key"',
+            severity: ErrorSeverity.low,
+            metadata: {
+              'event_name': eventName,
+              'parameter_key': key,
+              'parameter_type': value.runtimeType.toString(),
+              'context_message': 'Parameter skipped to prevent Firebase error',
+            },
+          );
+          // Skip invalid parameter instead of crashing
+          return MapEntry(key, value.toString());
+        }
+        
+        // Leave other valid types unchanged
+        return MapEntry(key, value);
+      });
+      
+      await _analytics?.logEvent(name: eventName, parameters: sanitizedParams);
     } catch (e, stackTrace) {
       await ErrorLoggerService.logError(
         component: 'AnalyticsService',
         operation: 'logEvent',
         error: e,
         stackTrace: stackTrace,
+        severity: ErrorSeverity.low,
       );
     }
   }

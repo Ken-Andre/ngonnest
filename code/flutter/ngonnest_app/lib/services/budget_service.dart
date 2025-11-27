@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart';
 
 import '../models/budget_category.dart';
+import '../models/foyer.dart';
 import 'analytics_service.dart';
+import 'budget_allocation_rules.dart';
 import 'database_service.dart';
 import 'error_logger_service.dart';
 import 'notification_service.dart';
@@ -30,7 +32,8 @@ class BudgetService extends ChangeNotifier {
     : _databaseService = DatabaseService(),
       _priceService = PriceService();
 
-  BudgetService._test(this._databaseService, this._priceService);
+  @visibleForTesting
+  BudgetService.test(this._databaseService, this._priceService);
 
   /// Get current month in YYYY-MM format
   static String getCurrentMonth() {
@@ -39,6 +42,9 @@ class BudgetService extends ChangeNotifier {
   }
 
   /// Get all budget categories for a specific month
+  ///
+  /// Returns empty list on error to prevent app crash (safe default)
+  /// Requirements: 10.1, 10.2
   Future<List<BudgetCategory>> getBudgetCategories({String? month}) async {
     try {
       final db = await _databaseService.database;
@@ -59,6 +65,11 @@ class BudgetService extends ChangeNotifier {
         error: e,
         stackTrace: stackTrace,
         severity: ErrorSeverity.medium,
+        metadata: {
+          'month': month ?? getCurrentMonth(),
+          'context_message':
+              'Failed to retrieve budget categories from database',
+        },
       );
       // Return empty list in case of error to prevent app crash
       return [];
@@ -71,8 +82,14 @@ class BudgetService extends ChangeNotifier {
     bool notify = true,
   }) async {
     try {
-      final db = await DatabaseService().database;
+      final db = await _databaseService.database;
       final id = await db.insert('budget_categories', category.toMap());
+
+      // Track analytics event
+      await AnalyticsService().logEvent(
+        'budget_category_added',
+        parameters: {'category_name': category.name},
+      );
 
       // Notify listeners of change only if requested
       if (notify) {
@@ -96,14 +113,31 @@ class BudgetService extends ChangeNotifier {
   Future<int> updateBudgetCategory(
     BudgetCategory category, {
     bool notify = true,
+    BudgetCategory? oldCategory,
   }) async {
     try {
-      final db = await DatabaseService().database;
+      final db = await _databaseService.database;
+
+      // Check if limit changed for analytics
+      final limitChanged =
+          oldCategory != null && oldCategory.limit != category.limit;
+
       final result = await db.update(
         'budget_categories',
         category.copyWith(updatedAt: DateTime.now()).toMap(),
         where: 'id = ?',
         whereArgs: [category.id],
+      );
+
+      // Track analytics event
+      await AnalyticsService().logEvent(
+        'budget_category_edited',
+        parameters: {
+          'category_name': category.name,
+          'limit_changed': limitChanged ? 'true' : 'false',
+          'old_limit': oldCategory?.limit?.toString() ?? 'null',
+          'new_limit': category.limit.toString(),
+        },
       );
 
       // Notify listeners of change only if requested
@@ -127,8 +161,29 @@ class BudgetService extends ChangeNotifier {
   /// Delete a budget category
   Future<String> deleteBudgetCategory(String id) async {
     try {
-      final db = await DatabaseService().database;
+      final db = await _databaseService.database;
+
+      // Get category name before deletion for analytics
+      final categoryResult = await db.query(
+        'budget_categories',
+        where: 'id = ?',
+        whereArgs: [id],
+        limit: 1,
+      );
+
+      final categoryName = categoryResult.isNotEmpty
+          ? categoryResult.first['name'] as String?
+          : null;
+
       await db.delete('budget_categories', where: 'id = ?', whereArgs: [id]);
+
+      // Track analytics event
+      if (categoryName != null) {
+        await AnalyticsService().logEvent(
+          'budget_category_deleted',
+          parameters: {'category_name': categoryName},
+        );
+      }
 
       // Notify listeners of change
       notifyListeners();
@@ -196,18 +251,33 @@ class BudgetService extends ChangeNotifier {
   }
 
   /// Calculate spending for a specific category in a given month
+  ///
+  /// Returns 0.0 on error to prevent calculation failures
+  /// Handles division by zero and null/missing data gracefully
+  /// Requirements: 10.2, 10.3
   Future<double> _calculateCategorySpending(
     String idFoyer,
     String categoryName,
     String month,
   ) async {
     try {
-      final db = await DatabaseService().database;
+      final db = await _databaseService.database;
 
       // Parse month to get start and end dates
       final monthParts = month.split('-');
-      final year = int.parse(monthParts[0]);
-      final monthNum = int.parse(monthParts[1]);
+      if (monthParts.length != 2) {
+        throw FormatException('Invalid month format: $month. Expected YYYY-MM');
+      }
+
+      final year = int.tryParse(monthParts[0]);
+      final monthNum = int.tryParse(monthParts[1]);
+
+      if (year == null || monthNum == null || monthNum < 1 || monthNum > 12) {
+        throw FormatException(
+          'Invalid month values: year=$year, month=$monthNum',
+        );
+      }
+
       final startDate = DateTime(year, monthNum, 1);
       final endDate = DateTime(year, monthNum + 1, 0); // Last day of month
 
@@ -238,7 +308,14 @@ class BudgetService extends ChangeNotifier {
         error: e,
         stackTrace: stackTrace,
         severity: ErrorSeverity.low,
+        metadata: {
+          'id_foyer': idFoyer,
+          'category_name': categoryName,
+          'month': month,
+          'context_message': 'Failed to calculate category spending',
+        },
       );
+      // Return 0.0 as safe default to prevent calculation failures
       return 0.0;
     }
   }
@@ -247,8 +324,9 @@ class BudgetService extends ChangeNotifier {
   ///
   /// Shows real system notifications using NotificationService.showBudgetAlert()
   /// instead of console logs. Falls back to in-app banner if permissions denied.
+  /// Does not block budget operations on notification failure.
   ///
-  /// Requirements: 2.4, 2.6
+  /// Requirements: 2.4, 2.6, 10.6
   Future<void> _triggerBudgetAlert(BudgetCategory category) async {
     try {
       // Call NotificationService.showBudgetAlert() instead of debugPrint()
@@ -257,13 +335,22 @@ class BudgetService extends ChangeNotifier {
         analytics: AnalyticsService(),
       );
     } catch (e, stackTrace) {
+      // Log notification failures but don't block budget operations
       await ErrorLoggerService.logError(
         component: 'BudgetService',
         operation: '_triggerBudgetAlert',
         error: e,
         stackTrace: stackTrace,
         severity: ErrorSeverity.medium,
+        metadata: {
+          'category_name': category.name,
+          'alert_level': category.alertLevel.toString(),
+          'spending_percentage': category.spendingPercentage,
+          'context_message':
+              'Failed to show budget notification, but budget operation continues',
+        },
       );
+      // Don't rethrow - notification failure should not block budget operations
     }
   }
 
@@ -397,6 +484,9 @@ class BudgetService extends ChangeNotifier {
         if (updatedCategory.alertLevel != BudgetAlertLevel.normal) {
           await _triggerBudgetAlert(updatedCategory);
         }
+
+        // Notify listeners after spending update
+        notifyListeners();
       }
     } catch (e, stackTrace) {
       await ErrorLoggerService.logError(
@@ -414,13 +504,43 @@ class BudgetService extends ChangeNotifier {
   /// When the user updates their total monthly budget, this method
   /// recalculates all category limits while maintaining their percentages.
   /// This ensures budget allocations remain proportional to the new total.
+  ///
+  /// Handles division by zero and null/missing foyer data gracefully.
+  /// Requirements: 7.2, 7.3, 7.4, 7.5, 7.6, 7.7, 10.3
   Future<void> recalculateCategoryBudgets(
     String idFoyer,
     double newTotalBudget, {
     String? month,
+    double? oldTotalBudget,
   }) async {
     try {
       final targetMonth = month ?? getCurrentMonth();
+
+      // Handle zero total budget - use default fallback amounts
+      // Requirements: 7.5
+      if (newTotalBudget <= 0) {
+        await ErrorLoggerService.logError(
+          component: 'BudgetService',
+          operation: 'recalculateCategoryBudgets',
+          error: 'Zero or negative total budget provided: $newTotalBudget',
+          severity: ErrorSeverity.medium,
+          metadata: {
+            'id_foyer': idFoyer,
+            'new_total_budget': newTotalBudget,
+            'old_total_budget': oldTotalBudget,
+            'month': targetMonth,
+            'context_message':
+                'Using default fallback amounts for zero budget',
+          },
+        );
+
+        // Use default fallback amounts
+        await _initializeDefaultBudgets(month: targetMonth);
+        
+        // Notify listeners even with fallback
+        notifyListeners();
+        return;
+      }
 
       // Load all categories for current month
       final categories = await getBudgetCategories(month: targetMonth);
@@ -434,6 +554,14 @@ class BudgetService extends ChangeNotifier {
 
       // Calculate new limits based on percentages and new total
       for (final category in categories) {
+        // Handle division by zero in percentage calculations
+        if (category.percentage <= 0 || category.percentage > 1) {
+          debugPrint(
+            '[BudgetService] Invalid percentage for ${category.name}: ${category.percentage}, skipping',
+          );
+          continue;
+        }
+
         final newLimit = newTotalBudget * category.percentage;
 
         // Update category in database
@@ -445,16 +573,39 @@ class BudgetService extends ChangeNotifier {
         await updateBudgetCategory(updatedCategory);
       }
 
+      // Track analytics event
+      // Requirements: 7.7
+      await AnalyticsService().logEvent(
+        'budget_total_updated',
+        parameters: {
+          if (oldTotalBudget != null) 'old_amount': oldTotalBudget,
+          'new_amount': newTotalBudget,
+          'categories_recalculated': categories.length,
+        },
+      );
+
+      // Notify listeners after recalculation
+      // Requirements: 7.4
+      notifyListeners();
+
       debugPrint(
         '[BudgetService] Recalculated ${categories.length} categories for new total: $newTotalBudget',
       );
     } catch (e, stackTrace) {
+      // Requirements: 7.6
       await ErrorLoggerService.logError(
         component: 'BudgetService',
         operation: 'recalculateCategoryBudgets',
         error: e,
         stackTrace: stackTrace,
         severity: ErrorSeverity.high,
+        metadata: {
+          'id_foyer': idFoyer,
+          'new_total_budget': newTotalBudget,
+          'old_total_budget': oldTotalBudget,
+          'month': month ?? getCurrentMonth(),
+          'context_message': 'Failed to recalculate category budgets',
+        },
       );
       rethrow;
     }
@@ -509,7 +660,7 @@ class BudgetService extends ChangeNotifier {
   /// Calculer automatiquement le budget recommandé basé sur le profil foyer
   Future<Map<String, double>> calculateRecommendedBudget(String idFoyer) async {
     try {
-      final db = await DatabaseService().database;
+      final db = await _databaseService.database;
 
       // Récupérer les infos du foyer
       final foyerResult = await db.query(
@@ -710,7 +861,7 @@ class BudgetService extends ChangeNotifier {
     final tips = <Map<String, dynamic>>[];
 
     try {
-      final db = await DatabaseService().database;
+      final db = await _databaseService.database;
 
       // Analyser les achats fréquents
       final frequentItems = await db.rawQuery(
@@ -776,7 +927,7 @@ class BudgetService extends ChangeNotifier {
     int monthsBack = 6,
   }) async {
     try {
-      final db = await DatabaseService().database;
+      final db = await _databaseService.database;
       final now = DateTime.now();
       final history = <Map<String, dynamic>>[];
 
@@ -914,8 +1065,14 @@ class BudgetService extends ChangeNotifier {
   }
 
   /// Initialiser les budgets recommandés pour un nouveau foyer
+  ///
+  /// Uses BudgetAllocationRules to calculate intelligent budget allocations
+  /// based on household profile (number of people, rooms, housing type).
+  /// Creates budget categories with both amounts and percentages stored.
+  ///
+  /// Requirements: 1.1, 1.3, 6.4, 6.5, 6.6, 6.7
   Future<void> initializeRecommendedBudgets(
-    int idFoyer, {
+    String idFoyer, {
     String? month,
   }) async {
     try {
@@ -925,20 +1082,42 @@ class BudgetService extends ChangeNotifier {
       final existing = await getBudgetCategories(month: targetMonth);
       if (existing.isNotEmpty) return;
 
-      // Calculer les budgets recommandés
-      final recommendedBudgets = await calculateRecommendedBudget(
-        idFoyer.toString(),
+      // Get foyer data
+      final foyerDb = await _databaseService.database;
+      final foyerResult = await foyerDb.query(
+        'foyer',
+        where: 'id = ?',
+        whereArgs: [idFoyer],
+        limit: 1,
       );
 
-      // Créer les catégories avec budgets intelligents
-      for (final entry in recommendedBudgets.entries) {
+      if (foyerResult.isEmpty) {
+        throw Exception('Foyer not found: $idFoyer');
+      }
+
+      final foyerMap = foyerResult.first;
+      final foyer = Foyer.fromMap(foyerMap);
+
+      // Call BudgetAllocationRules.calculateRecommendedBudgets()
+      final allocations =
+          await BudgetAllocationRules.calculateRecommendedBudgets(foyer: foyer);
+
+      // Create categories with calculated amounts and percentages
+      for (final allocation in allocations.values) {
         final category = BudgetCategory(
-          name: entry.key,
-          limit: entry.value,
+          name: allocation.categoryName,
+          limit: allocation.recommendedAmount,
+          percentage: allocation.percentage,
           month: targetMonth,
         );
-        await createBudgetCategory(category);
+
+        // Store percentage in database
+        await createBudgetCategory(category, notify: false);
       }
+
+      debugPrint(
+        '[BudgetService] Initialized ${allocations.length} budget categories for foyer $idFoyer',
+      );
     } catch (e, stackTrace) {
       await ErrorLoggerService.logError(
         component: 'BudgetService',
@@ -946,6 +1125,64 @@ class BudgetService extends ChangeNotifier {
         error: e,
         stackTrace: stackTrace,
         severity: ErrorSeverity.medium,
+      );
+
+      // Use defaults if calculation fails
+      await _initializeDefaultBudgets(month: month);
+    }
+  }
+
+  /// Fallback method to initialize default budgets if calculation fails
+  Future<void> _initializeDefaultBudgets({String? month}) async {
+    try {
+      final targetMonth = month ?? getCurrentMonth();
+
+      // Check if categories already exist
+      final existing = await getBudgetCategories(month: targetMonth);
+      if (existing.isNotEmpty) return;
+
+      // Create default categories with default percentages
+      final defaultCategories = [
+        BudgetCategory(
+          name: 'Hygiène',
+          limit: 120.0,
+          percentage: 0.33,
+          month: targetMonth,
+        ),
+        BudgetCategory(
+          name: 'Nettoyage',
+          limit: 80.0,
+          percentage: 0.22,
+          month: targetMonth,
+        ),
+        BudgetCategory(
+          name: 'Cuisine',
+          limit: 100.0,
+          percentage: 0.28,
+          month: targetMonth,
+        ),
+        BudgetCategory(
+          name: 'Divers',
+          limit: 60.0,
+          percentage: 0.17,
+          month: targetMonth,
+        ),
+      ];
+
+      for (final category in defaultCategories) {
+        await createBudgetCategory(category, notify: false);
+      }
+
+      debugPrint(
+        '[BudgetService] Initialized default budget categories as fallback',
+      );
+    } catch (e, stackTrace) {
+      await ErrorLoggerService.logError(
+        component: 'BudgetService',
+        operation: '_initializeDefaultBudgets',
+        error: e,
+        stackTrace: stackTrace,
+        severity: ErrorSeverity.low,
       );
     }
   }

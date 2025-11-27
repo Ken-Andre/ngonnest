@@ -599,4 +599,119 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get errorUpdatingBudget => 'Erreur lors de la mise à jour du budget';
+
+  @override
+  String get errorDatabaseConnection =>
+      'Impossible de se connecter à la base de données. Veuillez réessayer.';
+
+  @override
+  String get errorBudgetCalculation =>
+      'Erreur lors du calcul du budget. Utilisation des valeurs par défaut.';
+
+  @override
+  String get errorSyncFailed =>
+      'La synchronisation a échoué. Vos données sont sauvegardées localement.';
+
+  @override
+  String get errorNotificationPermission =>
+      'Permission de notification refusée. Activez-la dans les paramètres.';
+
+  @override
+  String get errorMigrationFailed =>
+      'Échec de la mise à jour de la base de données. L\'application continue avec l\'ancienne version.';
+
+  @override
+  String get errorValidationBudgetAmount =>
+      'Le montant du budget doit être un nombre positif.';
+
+  @override
+  String get errorNetworkUnavailable =>
+      'Pas de connexion internet. Fonctionnement en mode hors ligne.';
+
+  @override
+  String get errorLoadingBudgetCategories =>
+      'Impossible de charger les catégories budgétaires.';
+
+  @override
+  String get errorSavingBudgetCategory =>
+      'Erreur lors de la sauvegarde de la catégorie.';
+
+  @override
+  String get errorDeletingBudgetCategory =>
+      'Erreur lors de la suppression de la catégorie.';
+
+  @override
+  String get errorRecalculatingBudgets =>
+      'Erreur lors du recalcul des budgets.';
+
+  @override
+  String get errorInvalidMonthFormat =>
+      'Format de mois invalide. Utilisez AAAA-MM.';
+
+  @override
+  String get errorMissingFoyerData =>
+      'Données du foyer manquantes. Veuillez compléter votre profil.';
+
+  @override
+  String get errorBudgetNotificationFailed =>
+      'Impossible d\'afficher la notification de budget.';
+
+  @override
+  String get errorSyncRetryExhausted =>
+      'Échec de la synchronisation après plusieurs tentatives.';
+
+  @override
+  String get warningBudgetCalculationFallback =>
+      'Calcul du budget échoué. Utilisation des valeurs par défaut.';
+
+  @override
+  String get warningInvalidPercentage =>
+      'Pourcentage invalide détecté. Utilisation de la valeur par défaut.';
+
+  @override
+  String get budgetNotSet => 'Budget mensuel non défini';
+
+  @override
+  String get budgetNotSetMessage =>
+      'Veuillez définir votre budget mensuel dans les paramètres pour commencer à suivre vos dépenses.';
+
+  @override
+  String get goToSettings => 'Aller aux paramètres';
+
+  @override
+  String get updateMonthlyBudget => 'Mettre à jour le budget mensuel';
+
+  @override
+  String get budgetWillBeRecalculated =>
+      'Les limites de vos catégories budgétaires seront recalculées proportionnellement.';
+
+  @override
+  String get enterAmount => 'Entrez le montant';
+
+  @override
+  String get pleaseEnterValidAmount => 'Veuillez entrer un montant valide';
+
+  @override
+  String get errorLoadingHouseholdData =>
+      'Erreur lors du chargement des données du foyer';
+
+  @override
+  String get setBudgetInSettings => 'Définissez votre budget mensuel';
+
+  @override
+  String get modify => 'Modifier';
+
+  @override
+  String get budgetLoadError =>
+      'Impossible de charger les données budgétaires. Vérifiez votre connexion.';
+
+  @override
+  String get budgetRetry => 'Réessayer';
+
+  @override
+  String get budgetUpdateError => 'Erreur lors de la mise à jour du budget';
+
+  @override
+  String get budgetDeleteError =>
+      'Erreur lors de la suppression de la catégorie';
 }

@@ -594,9 +594,118 @@ class AppLocalizationsEs extends AppLocalizations {
   String get budgetOutOfRange => 'El presupuesto debe estar entre €50 y €2000';
 
   @override
-  String get budgetUpdatedSuccessfully =>
-      'Presupuesto actualizado exitosamente';
+  String get budgetUpdatedSuccessfully => 'Presupuesto actualizado con éxito';
 
   @override
   String get errorUpdatingBudget => 'Error al actualizar el presupuesto';
+
+  @override
+  String get errorDatabaseConnection =>
+      'No se puede conectar a la base de datos. Por favor, inténtelo de nuevo.';
+
+  @override
+  String get errorBudgetCalculation =>
+      'Error al calcular el presupuesto. Usando valores predeterminados.';
+
+  @override
+  String get errorSyncFailed =>
+      'La sincronización falló. Sus datos están guardados localmente.';
+
+  @override
+  String get errorNotificationPermission =>
+      'Permiso de notificación denegado. Actívelo en la configuración.';
+
+  @override
+  String get errorMigrationFailed =>
+      'Error al actualizar la base de datos. La aplicación continúa con la versión anterior.';
+
+  @override
+  String get errorValidationBudgetAmount =>
+      'El monto del presupuesto debe ser un número positivo.';
+
+  @override
+  String get errorNetworkUnavailable =>
+      'Sin conexión a internet. Funcionando en modo sin conexión.';
+
+  @override
+  String get errorLoadingBudgetCategories =>
+      'No se pueden cargar las categorías de presupuesto.';
+
+  @override
+  String get errorSavingBudgetCategory => 'Error al guardar la categoría.';
+
+  @override
+  String get errorDeletingBudgetCategory => 'Error al eliminar la categoría.';
+
+  @override
+  String get errorRecalculatingBudgets =>
+      'Error al recalcular los presupuestos.';
+
+  @override
+  String get errorInvalidMonthFormat => 'Formato de mes inválido. Use AAAA-MM.';
+
+  @override
+  String get errorMissingFoyerData =>
+      'Faltan datos del hogar. Por favor, complete su perfil.';
+
+  @override
+  String get errorBudgetNotificationFailed =>
+      'No se puede mostrar la notificación de presupuesto.';
+
+  @override
+  String get errorSyncRetryExhausted =>
+      'Sincronización fallida después de varios intentos.';
+
+  @override
+  String get warningBudgetCalculationFallback =>
+      'Cálculo de presupuesto fallido. Usando valores predeterminados.';
+
+  @override
+  String get warningInvalidPercentage =>
+      'Porcentaje inválido detectado. Usando valor predeterminado.';
+
+  @override
+  String get budgetNotSet => 'Presupuesto mensual no establecido';
+
+  @override
+  String get budgetNotSetMessage =>
+      'Por favor, establezca su presupuesto mensual en la configuración para comenzar a rastrear sus gastos.';
+
+  @override
+  String get goToSettings => 'Ir a configuración';
+
+  @override
+  String get updateMonthlyBudget => 'Actualizar presupuesto mensual';
+
+  @override
+  String get budgetWillBeRecalculated =>
+      'Los límites de sus categorías de presupuesto se recalcularán proporcionalmente.';
+
+  @override
+  String get enterAmount => 'Ingrese el monto';
+
+  @override
+  String get pleaseEnterValidAmount => 'Por favor, ingrese un monto válido';
+
+  @override
+  String get errorLoadingHouseholdData => 'Error al cargar los datos del hogar';
+
+  @override
+  String get setBudgetInSettings => 'Establezca su presupuesto mensual';
+
+  @override
+  String get modify => 'Modificar';
+
+  @override
+  String get budgetLoadError =>
+      'No se pueden cargar los datos del presupuesto. Verifique su conexión.';
+
+  @override
+  String get budgetRetry => 'Reintentar';
+
+  @override
+  String get budgetUpdateError => 'Error al actualizar el presupuesto';
+
+  @override
+  String get budgetDeleteError => 'Error al eliminar la categoría';
 }

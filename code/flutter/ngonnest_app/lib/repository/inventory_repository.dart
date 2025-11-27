@@ -27,6 +27,7 @@ import '../services/budget_service.dart';
 ///       - Memory usage may be excessive
 class InventoryRepository {
   final DatabaseService _databaseService;
+  final BudgetService _budgetService = BudgetService();
 
   InventoryRepository(this._databaseService);
 
@@ -42,17 +43,17 @@ class InventoryRepository {
       if (objetWithRuptureDate.prixUnitaire != null && 
           objetWithRuptureDate.prixUnitaire! > 0) {
         try {
-                await BudgetService().checkBudgetAlertsAfterPurchase(
-                  objetWithRuptureDate.idFoyer.toString(),
-                  objetWithRuptureDate.categorie,
-                );
+          await _budgetService.checkBudgetAlertsAfterPurchase(
+            objetWithRuptureDate.idFoyer.toString(),
+            objetWithRuptureDate.categorie,
+          );
         } catch (e, stackTrace) {
           await ErrorLoggerService.logError(
             component: 'InventoryRepository',
             operation: 'create.checkBudgetAlertsAfterPurchase',
             error: e,
             stackTrace: stackTrace,
-            severity: ErrorSeverity.medium,
+            severity: ErrorSeverity.low,
           );
         }
       }
@@ -74,7 +75,7 @@ class InventoryRepository {
             if (objetWithRuptureDate.prixUnitaire != null && 
                 objetWithRuptureDate.prixUnitaire! > 0) {
               try {
-                await BudgetService().checkBudgetAlertsAfterPurchase(
+                await _budgetService.checkBudgetAlertsAfterPurchase(
                   objetWithRuptureDate.idFoyer.toString(),
                   objetWithRuptureDate.categorie,
                 );
@@ -84,7 +85,7 @@ class InventoryRepository {
                   operation: 'create_recovery.checkBudgetAlertsAfterPurchase',
                   error: e,
                   stackTrace: stackTrace,
-                  severity: ErrorSeverity.medium,
+                  severity: ErrorSeverity.low,
                 );
               }
             }
@@ -196,17 +197,17 @@ class InventoryRepository {
           objetWithUpdatedRuptureDate.prixUnitaire != null &&
           objetWithUpdatedRuptureDate.prixUnitaire! > 0) {
         try {
-                await BudgetService().checkBudgetAlertsAfterPurchase(
-                  objetWithUpdatedRuptureDate.idFoyer.toString(),
-                  objetWithUpdatedRuptureDate.categorie,
-                );
+          await _budgetService.checkBudgetAlertsAfterPurchase(
+            objetWithUpdatedRuptureDate.idFoyer.toString(),
+            objetWithUpdatedRuptureDate.categorie,
+          );
         } catch (e, stackTrace) {
           await ErrorLoggerService.logError(
             component: 'InventoryRepository',
             operation: 'update.checkBudgetAlertsAfterPurchase',
             error: e,
             stackTrace: stackTrace,
-            severity: ErrorSeverity.medium,
+            severity: ErrorSeverity.low,
           );
         }
       }
@@ -242,17 +243,17 @@ class InventoryRepository {
     if (objetWithUpdatedRuptureDate.prixUnitaire != null &&
         objetWithUpdatedRuptureDate.prixUnitaire! > 0) {
       try {
-                await BudgetService().checkBudgetAlertsAfterPurchase(
-                  objetWithUpdatedRuptureDate.idFoyer.toString(),
-                  objetWithUpdatedRuptureDate.categorie,
-                );
+        await _budgetService.checkBudgetAlertsAfterPurchase(
+          objetWithUpdatedRuptureDate.idFoyer.toString(),
+          objetWithUpdatedRuptureDate.categorie,
+        );
       } catch (e, stackTrace) {
         await ErrorLoggerService.logError(
           component: 'InventoryRepository',
           operation: 'updateObjet.checkBudgetAlertsAfterPurchase',
           error: e,
           stackTrace: stackTrace,
-          severity: ErrorSeverity.medium,
+          severity: ErrorSeverity.low,
         );
       }
     }

@@ -30,6 +30,7 @@ import '../widgets/main_navigation_wrapper.dart';
 import '../widgets/settings_import_dialog.dart';
 import '../widgets/sync_status_dialog.dart';
 import '../widgets/sync_status_indicator.dart';
+import '../services/app_feature_flags.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -865,6 +866,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildSyncStatusSection() {
     return Consumer2<SyncService, AuthService>(
       builder: (context, syncService, authService, child) {
+        final featureFlags = AppFeatureFlags.instance;
+        final isCloudSyncEnabled = featureFlags.isCloudSyncEnabled;
+
         return Column(
           children: [
             // Sync status indicator
@@ -872,29 +876,84 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 16),
             // Sync toggle
             _buildSettingCard(
-              title: syncService.syncEnabled
-                  ? (AppLocalizations.of(context)?.enableCloudSync ??
-                        'Cloud sync enabled')
-                  : (AppLocalizations.of(context)?.disableCloudSync ??
-                        'Cloud sync disabled'),
-              subtitle: authService.isAuthenticated
+              title: isCloudSyncEnabled
                   ? (syncService.syncEnabled
-                        ? 'Vos données sont sauvegardées dans le cloud'
-                        : 'Activez pour sauvegarder vos données')
-                  : (AppLocalizations.of(context)?.connectToEnableSync ??
-                        'Connect to enable sync'),
-              child: CupertinoSwitch(
-                value: syncService.syncEnabled && authService.isAuthenticated,
-                onChanged: (value) =>
-                    _handleSyncToggle(value, syncService, authService),
-                activeTrackColor: Theme.of(context).colorScheme.primary,
-              ),
+                      ? (AppLocalizations.of(context)?.enableCloudSync ??
+                          'Cloud sync enabled')
+                      : (AppLocalizations.of(context)?.disableCloudSync ??
+                          'Cloud sync disabled'))
+                  : 'Synchronisation Cloud',
+              subtitle: isCloudSyncEnabled
+                  ? (authService.isAuthenticated
+                      ? (syncService.syncEnabled
+                          ? 'Vos données sont sauvegardées dans le cloud'
+                          : 'Activez pour sauvegarder vos données')
+                      : (AppLocalizations.of(context)?.connectToEnableSync ??
+                          'Connect to enable sync'))
+                  : 'Fonctionnalité bientôt disponible',
+              child: isCloudSyncEnabled
+                  ? CupertinoSwitch(
+                      value: syncService.syncEnabled && authService.isAuthenticated,
+                      onChanged: (value) =>
+                          _handleSyncToggle(value, syncService, authService),
+                      activeTrackColor: Theme.of(context).colorScheme.primary,
+                    )
+                  : IconButton(
+                      icon: Icon(
+                        CupertinoIcons.info,
+                        color: Theme.of(context).disabledColor,
+                      ),
+                      onPressed: () => _showFeatureComingSoonDialog('Synchronisation Cloud'),
+                    ),
             ),
           ],
         );
       },
     );
   }
+
+  // Nouveau dialogue pour features désactivées
+  void _showFeatureComingSoonDialog(String featureName) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(featureName),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              CupertinoIcons.clock,
+              size: 48,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Cette fonctionnalité sera bientôt disponible!',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Nous travaillons activement sur son implémentation.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(AppLocalizations.of(context)?.ok ?? 'Compris'),
+          ),
+        ],
+      ),
+    );
+  }
+
+
 
   /// Handle sync toggle with authentication check
   Future<void> _handleSyncToggle(

@@ -1,11 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../l10n/app_localizations.dart';
 import '../models/budget_category.dart';
 import '../providers/foyer_provider.dart';
 import '../services/analytics_service.dart';
 import '../services/budget_service.dart';
+import '../services/error_logger_service.dart';
 import '../services/navigation_service.dart';
 import '../widgets/budget_category_card.dart';
 import '../widgets/budget_category_dialog.dart';
@@ -26,7 +30,9 @@ class _BudgetScreenState extends State<BudgetScreen> {
   String _currentMonth = BudgetService.getCurrentMonth();
   Map<String, dynamic> _budgetSummary = {};
   BudgetService? _budgetService;
+  FoyerProvider? _foyerProvider;
   bool _isLoadingData = false; // Flag to prevent infinite loops
+  Timer? _debounceTimer; // Timer for debouncing updates
 
   @override
   void initState() {
@@ -49,29 +55,46 @@ class _BudgetScreenState extends State<BudgetScreen> {
     _budgetService = context.read<BudgetService>();
     _budgetService?.addListener(_onBudgetChanged);
 
+    // Register as listener to FoyerProvider to detect budget changes
+    _foyerProvider = context.read<FoyerProvider>();
+    _foyerProvider?.addListener(_onBudgetChanged);
+
     // Load data without blocking UI
     _loadBudgetData();
   }
 
   @override
   void dispose() {
-    // Unregister listener to prevent memory leaks
+    // Cancel debounce timer
+    _debounceTimer?.cancel();
+
+    // Unregister listeners to prevent memory leaks
     _budgetService?.removeListener(_onBudgetChanged);
+    _foyerProvider?.removeListener(_onBudgetChanged);
     super.dispose();
   }
 
   /// Listener callback to reload data when budget changes
+  /// Debounced to prevent excessive updates
   void _onBudgetChanged() {
-    if (mounted && !_isLoadingData) {
-      _loadBudgetData();
-    }
+    if (!mounted || _isLoadingData) return;
+
+    // Cancel existing timer if any
+    _debounceTimer?.cancel();
+
+    // Set new timer with 500ms debounce
+    _debounceTimer = Timer(const Duration(milliseconds: 500), () {
+      if (mounted && !_isLoadingData) {
+        _loadBudgetData();
+      }
+    });
   }
 
   Future<void> _loadBudgetData() async {
     if (!mounted || _isLoadingData) return;
-    
+
     _isLoadingData = true;
-    
+
     // Only show loading for refresh, not initial load
     if (_categories.isNotEmpty) {
       setState(() {
@@ -96,12 +119,10 @@ class _BudgetScreenState extends State<BudgetScreen> {
       }
 
       // Load categories and summary
-      final categories = await _budgetService?.getBudgetCategories(
-        month: _currentMonth,
-      ) ?? [];
-      final summary = await _budgetService?.getBudgetSummary(
-        month: _currentMonth,
-      ) ?? {};
+      final categories =
+          await _budgetService?.getBudgetCategories(month: _currentMonth) ?? [];
+      final summary =
+          await _budgetService?.getBudgetSummary(month: _currentMonth) ?? {};
 
       // Load foyer total budget instead of sum of limits
       final foyerBudget =
@@ -116,11 +137,21 @@ class _BudgetScreenState extends State<BudgetScreen> {
         _isLoading = false;
         _errorMessage = null;
       });
-    } catch (e) {
+    } catch (e, stackTrace) {
+      // Log technical error for debugging
+      await ErrorLoggerService.logError(
+        component: 'BudgetScreen',
+        operation: '_loadBudgetData',
+        error: e,
+        stackTrace: stackTrace,
+        severity: ErrorSeverity.medium,
+      );
+
       if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
       setState(() {
         _isLoading = false;
-        _errorMessage = 'Erreur lors du chargement des données budgétaires';
+        _errorMessage = l10n.budgetLoadError;
       });
     } finally {
       _isLoadingData = false;
@@ -140,6 +171,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
   }
 
   Future<void> _deleteCategory(BudgetCategory category) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -150,7 +182,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Annuler'),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(true),
@@ -173,11 +205,21 @@ class _BudgetScreenState extends State<BudgetScreen> {
             context,
           ).showSnackBar(const SnackBar(content: Text('Catégorie supprimée')));
         }
-      } catch (e) {
+      } catch (e, stackTrace) {
+        // Log technical error for debugging
+        await ErrorLoggerService.logError(
+          component: 'BudgetScreen',
+          operation: '_deleteCategory',
+          error: e,
+          stackTrace: stackTrace,
+          severity: ErrorSeverity.medium,
+          metadata: {'category_name': category.name},
+        );
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Erreur: ${e.toString()}'),
+              content: Text(l10n.budgetDeleteError),
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
           );
@@ -188,8 +230,76 @@ class _BudgetScreenState extends State<BudgetScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Check if budget is not set (null or zero)
+    final foyerBudget = context
+        .watch<FoyerProvider>()
+        .foyer
+        ?.budgetMensuelEstime;
+    if (foyerBudget == null || foyerBudget <= 0) {
+      final l10n = AppLocalizations.of(context)!;
+      return Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  CupertinoIcons.money_dollar_circle,
+                  size: 64,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  l10n.budgetNotSet,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  l10n.budgetNotSetMessage,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.7),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    // Navigate to settings screen
+                    NavigationService.navigateToTab(
+                      context,
+                      4,
+                    ); // Settings is index 4
+                  },
+                  icon: const Icon(CupertinoIcons.settings),
+                  label: Text(l10n.goToSettings),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     // Show error state with retry button only if there's an error and no data
     if (_errorMessage != null && _categories.isEmpty) {
+      final l10n = AppLocalizations.of(context)!;
       return Scaffold(
         body: Center(
           child: Padding(
@@ -216,7 +326,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                 ElevatedButton.icon(
                   onPressed: _loadBudgetData,
                   icon: const Icon(CupertinoIcons.refresh),
-                  label: const Text('Réessayer'),
+                  label: Text(l10n.budgetRetry),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.primary,
                     foregroundColor: Theme.of(context).colorScheme.onPrimary,

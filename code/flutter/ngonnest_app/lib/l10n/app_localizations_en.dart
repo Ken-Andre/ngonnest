@@ -591,4 +591,113 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errorUpdatingBudget => 'Error updating budget';
+
+  @override
+  String get errorDatabaseConnection =>
+      'Unable to connect to database. Please try again.';
+
+  @override
+  String get errorBudgetCalculation =>
+      'Error calculating budget. Using default values.';
+
+  @override
+  String get errorSyncFailed =>
+      'Synchronization failed. Your data is saved locally.';
+
+  @override
+  String get errorNotificationPermission =>
+      'Notification permission denied. Enable it in settings.';
+
+  @override
+  String get errorMigrationFailed =>
+      'Database update failed. App continues with old version.';
+
+  @override
+  String get errorValidationBudgetAmount =>
+      'Budget amount must be a positive number.';
+
+  @override
+  String get errorNetworkUnavailable =>
+      'No internet connection. Operating in offline mode.';
+
+  @override
+  String get errorLoadingBudgetCategories =>
+      'Unable to load budget categories.';
+
+  @override
+  String get errorSavingBudgetCategory => 'Error saving category.';
+
+  @override
+  String get errorDeletingBudgetCategory => 'Error deleting category.';
+
+  @override
+  String get errorRecalculatingBudgets => 'Error recalculating budgets.';
+
+  @override
+  String get errorInvalidMonthFormat => 'Invalid month format. Use YYYY-MM.';
+
+  @override
+  String get errorMissingFoyerData =>
+      'Missing household data. Please complete your profile.';
+
+  @override
+  String get errorBudgetNotificationFailed =>
+      'Unable to display budget notification.';
+
+  @override
+  String get errorSyncRetryExhausted =>
+      'Synchronization failed after multiple attempts.';
+
+  @override
+  String get warningBudgetCalculationFallback =>
+      'Budget calculation failed. Using default values.';
+
+  @override
+  String get warningInvalidPercentage =>
+      'Invalid percentage detected. Using default value.';
+
+  @override
+  String get budgetNotSet => 'Monthly budget not set';
+
+  @override
+  String get budgetNotSetMessage =>
+      'Please set your monthly budget in settings to start tracking your expenses.';
+
+  @override
+  String get goToSettings => 'Go to settings';
+
+  @override
+  String get updateMonthlyBudget => 'Update monthly budget';
+
+  @override
+  String get budgetWillBeRecalculated =>
+      'Your budget category limits will be recalculated proportionally.';
+
+  @override
+  String get enterAmount => 'Enter amount';
+
+  @override
+  String get pleaseEnterValidAmount => 'Please enter a valid amount';
+
+  @override
+  String get errorLoadingHouseholdData => 'Error loading household data';
+
+  @override
+  String get setBudgetInSettings => 'Set your monthly budget';
+
+  @override
+  String get modify => 'Modify';
+
+  @override
+  String get budgetLoadError =>
+      'Unable to load budget data. Check your connection.';
+
+  @override
+  String get budgetRetry => 'Retry';
+
+  @override
+  String get budgetUpdateError => 'Error updating budget';
+
+  @override
+  String get budgetDeleteError => 'Error deleting category';
 }

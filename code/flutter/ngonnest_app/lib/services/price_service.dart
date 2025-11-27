@@ -24,13 +24,13 @@ import '../services/error_logger_service.dart';
 ///       - No price history tracking
 /// Features:
 /// - ✅ 50+ produits essentiels camerounais avec prix FCFA
-/// - ✅ Conversion automatique FCFA ↔ Euro
+/// - ✅ Conversion automatique FCFA ↔ Euro ↔ USD ↔ CAD
 /// - ✅ Ajustement d'inflation annuel (6% par défaut)
 /// - ✅ Recherche par nom et catégorie
 /// - ✅ Estimation de prix par catégorie
 ///
 /// Catégories supportées:
-/// - Hygiène (savon, dentifrice, shampoing, etc.)
+/// - Hygiène (savon, dentifrice, shampoing, brosse etc.)
 /// - Nettoyage (lessive, eau de javel, détergent, etc.)
 /// - Cuisine (huile, riz, farine, sucre, sel, etc.)
 /// - Divers (insecticide, allumettes, bougies, piles, etc.)
