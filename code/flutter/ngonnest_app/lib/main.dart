@@ -10,6 +10,7 @@ import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:ngonnest_app/services/ab_testing_service.dart';
+import 'package:ngonnest_app/services/alert_generation_service.dart';
 import 'package:ngonnest_app/services/analytics_debug_helper.dart';
 import 'package:ngonnest_app/services/analytics_service.dart';
 import 'package:ngonnest_app/services/breadcrumb_service.dart';
@@ -315,6 +316,10 @@ void main() async {
   // Initialize settings service
   await SettingsService.initialize();
 
+  // Initialize AlertGenerationService
+  final databaseService = DatabaseService();
+  await AlertGenerationService().initialize(databaseService);
+
   final initialThemeMode = await ThemeModeNotifier.loadThemeMode();
 
   // Initialize locale provider
@@ -348,6 +353,9 @@ void main() async {
         ChangeNotifierProvider<BudgetService>(create: (_) => BudgetService()),
         ChangeNotifierProvider<CurrencyService>(
           create: (_) => CurrencyService(),
+        ),
+        Provider<AlertGenerationService>(
+          create: (_) => AlertGenerationService(),
         ),
         // Firebase Remote Config Services
         // TODO: Initialize services asynchronously to avoid blocking app startup

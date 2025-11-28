@@ -381,21 +381,23 @@ class NotificationService {
 
   // Helper method to create product-specific notifications from alerts
   static Future<void> processAlertForNotification(Alert alert) async {
-    switch (alert.typeAlerte) {
-      case AlertType.stockFaible:
+    switch (alert.type) {
+      case AlertType.stockCritical:
+      case AlertType.stockLow:
         final productInfo = _extractProductInfoFromMessage(alert.message);
         await showLowStockNotification(
-          id: alert.id?.hashCode ?? DateTime.now().millisecondsSinceEpoch,
+          id: alert.id.hashCode,
           productName: productInfo['name'] ?? 'Produit',
           remainingQuantity: productInfo['quantity'] ?? 0,
           category: productInfo['category'] ?? 'Inconnu',
         );
         break;
 
-      case AlertType.expirationProche:
+      case AlertType.expired:
+      case AlertType.expiringSoon:
         final expiryInfo = _extractExpiryInfoFromMessage(alert.message);
         await showExpiryNotification(
-          id: alert.id?.hashCode ?? DateTime.now().millisecondsSinceEpoch,
+          id: alert.id.hashCode,
           productName: expiryInfo['name'] ?? 'Produit',
           expiryDate: expiryInfo['date'] ?? 'Bientôt',
           category: expiryInfo['category'] ?? 'Inconnu',
@@ -404,16 +406,28 @@ class NotificationService {
 
       case AlertType.reminder:
         await showReminderNotification(
-          id: alert.id?.hashCode ?? DateTime.now().millisecondsSinceEpoch,
-          reminderTitle: alert.titre,
+          id: alert.id.hashCode,
+          reminderTitle: alert.title,
           message: alert.message,
         );
         break;
 
+      case AlertType.budgetHigh:
+      case AlertType.budgetUncertain:
+        await showBudgetAlert(
+          id: alert.id.hashCode,
+          categoryName: 'Budget', // Generic since we don't have category in Alert yet
+          spentAmount: 0, // Placeholder
+          limitAmount: 0, // Placeholder
+          percentage: 0, // Placeholder
+        );
+        break;
+      case AlertType.recommendation:
+      case AlertType.maintenanceDue:
       case AlertType.system:
         await showReminderNotification(
-          id: alert.id?.hashCode ?? DateTime.now().millisecondsSinceEpoch,
-          reminderTitle: alert.titre,
+          id: alert.id.hashCode,
+          reminderTitle: alert.title,
           message: alert.message,
         );
         break;

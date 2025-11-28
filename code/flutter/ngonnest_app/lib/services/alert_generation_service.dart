@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../config/cameroon_prices.dart';
+import '../models/alert.dart';
 import '../models/foyer.dart';
 import '../models/objet.dart';
 import '../repository/foyer_repository.dart';
@@ -53,6 +54,9 @@ class AlertGenerationService {
         return alerts;
       }
 
+      // Récupérer les états persistants des alertes
+      final alertStates = await _databaseService.getAlertStates();
+
       // 1. Alertes de rupture de stock
       alerts.addAll(await _generateStockAlerts(inventory));
 
@@ -67,6 +71,18 @@ class AlertGenerationService {
 
       // 5. Alertes de maintenance (durables)
       alerts.addAll(await _generateMaintenanceAlerts(inventory));
+
+      // Appliquer les états persistants (lu/résolu)
+      for (var i = 0; i < alerts.length; i++) {
+        final alert = alerts[i];
+        if (alertStates.containsKey(alert.id)) {
+          final state = alertStates[alert.id]!;
+          alerts[i] = alert.copyWith(
+            isRead: state['isRead'],
+            isResolved: state['isResolved'],
+          );
+        }
+      }
 
       // Trier par priorité et urgence
       alerts.sort((a, b) {
@@ -461,16 +477,25 @@ class AlertGenerationService {
   }
 
   /// Filtre les alertes selon les préférences utilisateur
-  List<Alert> filterAlerts(List<Alert> alerts, AlertFilter filter) {
+  List<Alert> filterAlerts(List<Alert> alerts, {
+    AlertPriority? minPriority,
+    List<AlertType>? types,
+    bool actionRequiredOnly = false,
+    bool includeRead = false,
+    bool includeResolved = false,
+  }) {
     return alerts.where((alert) {
-      if (filter.minPriority != null &&
-          alert.priority.index > filter.minPriority!.index) {
+      if (!includeRead && alert.isRead) return false;
+      if (!includeResolved && alert.isResolved) return false;
+      
+      if (minPriority != null &&
+          alert.priority.index > minPriority.index) {
         return false;
       }
-      if (filter.types != null && !filter.types!.contains(alert.type)) {
+      if (types != null && !types.contains(alert.type)) {
         return false;
       }
-      if (filter.actionRequiredOnly && !alert.actionRequired) {
+      if (actionRequiredOnly && !alert.actionRequired) {
         return false;
       }
       return true;
@@ -478,140 +503,28 @@ class AlertGenerationService {
   }
 
   /// Marque une alerte comme lue
-  Future<void> markAlertAsRead(String alertId) async {
-    // TODO: Implémenter la persistance des alertes lues
-    if (kDebugMode) {
-      print('Alert marked as read: $alertId');
+  Future<void> markAlertAsRead(int alertId) async {
+    try {
+      await _databaseService.saveAlertState(alertId, isRead: true);
+      if (kDebugMode) {
+        print('Alert marked as read: $alertId');
+      }
+    } catch (e) {
+      print('Error marking alert as read: $e');
     }
   }
 
   /// Marque une alerte comme résolue
-  Future<void> resolveAlert(String alertId) async {
-    // TODO: Implémenter la persistance des alertes résolues
-    if (kDebugMode) {
-      print('Alert resolved: $alertId');
+  Future<void> resolveAlert(int alertId) async {
+    try {
+      await _databaseService.saveAlertState(alertId, isResolved: true);
+      if (kDebugMode) {
+        print('Alert resolved: $alertId');
+      }
+    } catch (e) {
+      print('Error resolving alert: $e');
     }
   }
 }
 
-/// Modèle pour une alerte
-class Alert {
-  final int id;
-  final AlertType type;
-  final AlertPriority priority;
-  final String title;
-  final String message;
-  final String? productId;
-  final String? productName;
-  final int urgencyScore; // 0-100
-  final bool actionRequired;
-  final List<String> suggestedActions;
-  final DateTime createdAt;
-  final Map<String, dynamic>? metadata;
-  final bool isRead;
-  final bool isResolved;
 
-  const Alert({
-    required this.id,
-    required this.type,
-    required this.priority,
-    required this.title,
-    required this.message,
-    this.productId,
-    this.productName,
-    required this.urgencyScore,
-    required this.actionRequired,
-    required this.suggestedActions,
-    required this.createdAt,
-    this.metadata,
-    this.isRead = false,
-    this.isResolved = false,
-  });
-
-  Alert copyWith({bool? isRead, bool? isResolved}) {
-    return Alert(
-      id: id,
-      type: type,
-      priority: priority,
-      title: title,
-      message: message,
-      productId: productId,
-      productName: productName,
-      urgencyScore: urgencyScore,
-      actionRequired: actionRequired,
-      suggestedActions: suggestedActions,
-      createdAt: createdAt,
-      metadata: metadata,
-      isRead: isRead ?? this.isRead,
-      isResolved: isResolved ?? this.isResolved,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'type': type.toString(),
-      'priority': priority.toString(),
-      'title': title,
-      'message': message,
-      'productId': productId,
-      'productName': productName,
-      'urgencyScore': urgencyScore,
-      'actionRequired': actionRequired,
-      'suggestedActions': suggestedActions,
-      'createdAt': createdAt.toIso8601String(),
-      'metadata': metadata,
-      'isRead': isRead,
-      'isResolved': isResolved,
-    };
-  }
-}
-
-/// Types d'alertes
-enum AlertType {
-  stockCritical,
-  stockLow,
-  budgetHigh,
-  budgetUncertain,
-  recommendation,
-  expired,
-  expiringSoon,
-  maintenanceDue,
-}
-
-/// Priorités d'alertes
-enum AlertPriority {
-  critical, // Rouge - Action immédiate requise
-  high, // Orange - Action requise bientôt
-  medium, // Jaune - À surveiller
-  low, // Bleu - Information
-}
-
-/// Filtre pour les alertes
-class AlertFilter {
-  final AlertPriority? minPriority;
-  final List<AlertType>? types;
-  final bool actionRequiredOnly;
-
-  const AlertFilter({
-    this.minPriority,
-    this.types,
-    this.actionRequiredOnly = false,
-  });
-}
-
-// TODO-S1: AlertGenerationService - Persistence Implementation (HIGH PRIORITY)
-// Description: Implement persistence for alert read/resolved states
-// Details:
-// - Add database table for alert states (see TODO-D1 in db.dart)
-// - Implement markAlertAsRead() method to save read state to alert_states table
-// - Implement markAlertAsResolved() method to save resolved state to alert_states table
-// - Add alert state filtering in getFilteredAlerts() to exclude read/resolved alerts
-// - Add methods: getAlertState(alertId), isAlertRead(alertId), isAlertResolved(alertId)
-// Impact: Users can't track which alerts they've seen or resolved
-// Required methods to add:
-//   Future<void> markAlertAsRead(int alertId)
-//   Future<void> markAlertAsResolved(int alertId)
-//   Future<bool> isAlertRead(int alertId)
-//   Future<bool> isAlertResolved(int alertId)
-//   Future<List<Alert>> getFilteredAlerts({bool includeRead = false, bool includeResolved = false})

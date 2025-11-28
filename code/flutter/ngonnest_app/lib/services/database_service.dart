@@ -589,6 +589,55 @@ class DatabaseService {
     }, ErrorContext.deleteAllReadAlerts);
   }
 
+  /// Récupère l'état de toutes les alertes (lu/résolu)
+  Future<Map<int, Map<String, bool>>> getAlertStates() async {
+    return _executeDbOperation((db) async {
+      final List<Map<String, dynamic>> maps = await db.query('alert_states');
+      final Map<int, Map<String, bool>> states = {};
+      for (final map in maps) {
+        states[map['alert_id'] as int] = {
+          'isRead': (map['is_read'] as int) == 1,
+          'isResolved': (map['is_resolved'] as int) == 1,
+        };
+      }
+      return states;
+    }, ErrorContext.getAlertStates);
+  }
+
+  /// Sauvegarde l'état d'une alerte
+  Future<void> saveAlertState(int alertId, {bool? isRead, bool? isResolved}) async {
+    return _executeDbOperation((db) async {
+      // Check if exists
+      final List<Map<String, dynamic>> existing = await db.query(
+        'alert_states',
+        where: 'alert_id = ?',
+        whereArgs: [alertId],
+      );
+
+      if (existing.isEmpty) {
+        await db.insert('alert_states', {
+          'alert_id': alertId,
+          'is_read': isRead == true ? 1 : 0,
+          'is_resolved': isResolved == true ? 1 : 0,
+          'last_updated': DateTime.now().toIso8601String(),
+        });
+      } else {
+        final Map<String, dynamic> update = {
+          'last_updated': DateTime.now().toIso8601String(),
+        };
+        if (isRead != null) update['is_read'] = isRead ? 1 : 0;
+        if (isResolved != null) update['is_resolved'] = isResolved ? 1 : 0;
+
+        await db.update(
+          'alert_states',
+          update,
+          where: 'alert_id = ?',
+          whereArgs: [alertId],
+        );
+      }
+    }, ErrorContext.saveAlertState);
+  }
+
   Future<void> generateAlerts(int idFoyer) async {
     return _executeDbOperation((db) async {
       final now = DateTime.now();
@@ -865,5 +914,7 @@ enum ErrorContext {
   debugOperation,
   inventory, // Added
   sync, // Added
+  getAlertStates, // Added
+  saveAlertState, // Added
   unknown,
 }

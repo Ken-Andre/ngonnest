@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:workmanager/workmanager.dart';
 
 import '../models/alert.dart';
-import '../models/foyer.dart'; // Changed from household_profile.dart to foyer.dart
+import '../models/foyer.dart';
+import 'alert_generation_service.dart';
 import 'database_service.dart';
 import 'error_logger_service.dart';
 import 'household_service.dart';
@@ -20,6 +21,8 @@ void callbackDispatcher() {
     // Initialize the database and services
     // NOTE: Remove separate database initialization to avoid competing with main app instance
     final dbService = DatabaseService();
+    // Initialize AlertGenerationService with the database service
+    await AlertGenerationService().initialize(dbService);
     // HouseholdService is static, no need to instantiate: final householdService = HouseholdService();
 
     // Re-initialize NotificationService for background context
@@ -34,10 +37,15 @@ void callbackDispatcher() {
 
       if (foyer != null && foyer.id != null) {
         print('[BackgroundTask] Processing alerts for foyer: ${foyer.id}');
-        // Get unread alerts from the database - using shared DatabaseService instance
-        final List<Alert> unreadAlerts = await dbService.getAlerts(
-          idFoyer: int.parse(foyer.id!), // foyer.id is a String, convert to int
-          unreadOnly: true,
+        // Get unread alerts from AlertGenerationService
+        final allAlerts = await AlertGenerationService().generateAllAlerts(
+          int.parse(foyer.id!),
+        );
+        
+        final List<Alert> unreadAlerts = AlertGenerationService().filterAlerts(
+          allAlerts,
+          includeRead: false,
+          includeResolved: false,
         );
 
         print('[BackgroundTask] Found ${unreadAlerts.length} unread alerts');
@@ -46,8 +54,8 @@ void callbackDispatcher() {
           // Process each unread alert and show a local notification
           await NotificationService.processAlertForNotification(alert);
           // Optionally mark the alert as read after showing notification
-          await dbService.markAlertAsRead(alert.id!);
-          print('[BackgroundTask] Processed alert: ${alert.titre}');
+          await AlertGenerationService().markAlertAsRead(alert.id);
+          print('[BackgroundTask] Processed alert: ${alert.title}');
         }
       } else {
         print('[BackgroundTask] No valid household profile found');

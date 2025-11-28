@@ -8,7 +8,7 @@ import 'package:sqflite/sqflite.dart';
 import 'services/analytics_service.dart';
 import 'services/error_logger_service.dart';
 
-const int _databaseVersion = 13; // UUID migration implemented
+const int _databaseVersion = 14; // Alert states persistence implemented
 
 Future<Database> initDatabase() async {
   final databasesPath = await getDatabasesPath();
@@ -614,6 +614,27 @@ Future<void> _migrateToVersion12(Database db) async {
   }
 }
 
+
+Future<void> _migrateToVersion14(Database db) async {
+  debugPrint('[DB Migration V14] Creating alert_states table for persistence');
+  final tables = await db.rawQuery(
+    "SELECT name FROM sqlite_master WHERE type='table' AND name='alert_states'",
+  );
+  if (tables.isEmpty) {
+    await db.execute('''
+      CREATE TABLE alert_states (
+        alert_id INTEGER PRIMARY KEY,
+        is_read INTEGER NOT NULL DEFAULT 0,
+        is_resolved INTEGER NOT NULL DEFAULT 0,
+        last_updated TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    ''');
+    debugPrint('[DB Migration V14] ✅ alert_states table created.');
+  } else {
+    debugPrint('[DB Migration V14] ✅ alert_states table already exists.');
+  }
+}
+
 // --- UUID Migration Functions Removed ---
 // The UUID migration (V13) has been completed and the migration functions
 // have been removed to clean up the codebase. The database now uses UUID
@@ -631,9 +652,9 @@ final Map<int, Future<void> Function(Database)> _migrations = {
   8: _migrateToVersion8,
   9: _migrateToVersion9,
   10: _migrateToVersion10,
-  11: _migrateToVersion11,
   12: _migrateToVersion12,
   // 13: _migrateToVersion13, // UUID migration - removed after completion
+  14: _migrateToVersion14,
 };
 
 // --- Debug (Optional, can be removed or conditional) ---

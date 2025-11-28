@@ -196,7 +196,7 @@ void main() {
         ).thenAnswer((_) async => alertMaps);
         final result = await databaseService.getAlerts(idFoyer: idFoyer);
         expect(result, hasLength(1));
-        expect(result[0].titre, equals('Stock faible'));
+        expect(result[0].title, equals('Stock faible'));
       });
 
       test('should mark alert as read', () async {

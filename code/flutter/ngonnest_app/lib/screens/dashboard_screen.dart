@@ -8,6 +8,7 @@ import '../models/foyer.dart';
 import '../models/household_profile.dart';
 import '../providers/foyer_provider.dart';
 import '../repository/inventory_repository.dart';
+import '../services/alert_generation_service.dart';
 import '../services/analytics_service.dart';
 import '../services/database_service.dart';
 import '../services/error_logger_service.dart';
@@ -96,17 +97,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
       if (foyer != null) {
         // Batch all database calls in parallel for better performance
         final foyerIdInt = int.parse(foyer.id!);
+        
+        // Get the AlertGenerationService from context instead of creating a new instance
+        final alertService = context.read<AlertGenerationService>();
+        
         final results = await Future.wait([
           _inventoryRepository.getTotalCount(foyerIdInt),
           _inventoryRepository.getExpiringSoonCount(foyerIdInt),
-          _databaseService.getAlerts(idFoyer: foyerIdInt, unreadOnly: true),
+          alertService.generateAllAlerts(foyerIdInt),
         ]);
 
         setState(() {
           _foyerProfile = foyer;
           _totalItems = int.parse(results[0] as String);
           _expiringSoon = int.parse(results[1] as String);
-          _notifications = results[2] as List<Alert>;
+          
+          // Filter out read alerts
+          final allAlerts = results[2] as List<Alert>;
+          _notifications = alertService.filterAlerts(
+            allAlerts, 
+            includeRead: false,
+            includeResolved: false,
+          );
+          
           _urgentAlerts = _notifications.length;
           _lastSyncTime =
               DateTime.now(); // Update sync time on successful data load
@@ -561,12 +574,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: _getNotificationColor(
-                    notification.urgences,
+                    notification.priority,
                   ).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: _getNotificationColor(
-                      notification.urgences,
+                      notification.priority,
                     ).withValues(alpha: 0.3),
                     width: 1,
                   ),
@@ -574,8 +587,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: Row(
                   children: [
                     Icon(
-                      _getNotificationIcon(notification.typeAlerte),
-                      color: _getNotificationColor(notification.urgences),
+                      _getNotificationIcon(notification.type),
+                      color: _getNotificationColor(notification.priority),
                       size: 20,
                     ),
                     const SizedBox(width: 12),
@@ -584,7 +597,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            notification.titre,
+                            notification.title,
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
@@ -606,7 +619,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ],
                       ),
                     ),
-                    if (!notification.lu)
+                    if (!notification.isRead)
                       CupertinoButton(
                         padding: EdgeInsets.zero,
                         onPressed: () {
@@ -1031,15 +1044,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: _getNotificationColor(
-                            notification.urgences,
+                            notification.priority,
                           ).withValues(alpha: 0.3),
                         ),
                       ),
                       child: Row(
                         children: [
                           Icon(
-                            _getNotificationIcon(notification.typeAlerte),
-                            color: _getNotificationColor(notification.urgences),
+                            _getNotificationIcon(notification.type),
+                            color: _getNotificationColor(notification.priority),
                             size: 20,
                           ),
                           const SizedBox(width: 12),
@@ -1048,7 +1061,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  notification.titre,
+                                  notification.title,
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
@@ -1073,7 +1086,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               ],
                             ),
                           ),
-                          if (!notification.lu)
+                          if (!notification.isRead)
                             CupertinoButton(
                               padding: EdgeInsets.zero,
                               onPressed: () {
@@ -1101,32 +1114,56 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _markNotificationAsRead(Alert notification) async {
-    await _databaseService.markAlertAsRead(notification.id!);
-    // Only reload notifications instead of entire dashboard for better performance
     try {
-      if (_foyerProfile?.id != null) {
-        final alerts = await _databaseService.getAlerts(
-          idFoyer: int.parse(_foyerProfile!.id!),
-          unreadOnly: true,
-        );
-        setState(() {
-          _notifications = alerts;
-          _urgentAlerts = alerts.length;
-        });
-      }
+      // Use the context-provided AlertGenerationService instance
+      final alertService = context.read<AlertGenerationService>();
+      await alertService.markAlertAsRead(notification.id);
+      
+      setState(() {
+        _notifications.removeWhere((n) => n.id == notification.id);
+        _urgentAlerts = _notifications.length;
+      });
     } catch (e) {
-      // Fallback to full reload if partial update fails
-      _loadDashboardData();
+      if (kDebugMode) {
+        print('Error marking notification as read: $e');
+      }
     }
   }
 
-  Color _getNotificationColor(AlertUrgency urgency) {
-    switch (urgency) {
-      case AlertUrgency.high:
+  Future<void> _refreshNotifications() async {
+    try {
+      final foyer = await HouseholdService.getFoyer();
+      if (foyer != null && foyer.id != null) {
+        final foyerIdInt = int.parse(foyer.id!);
+        
+        // Use the context-provided AlertGenerationService instance
+        final alertService = context.read<AlertGenerationService>();
+        final alerts = await alertService.generateAllAlerts(foyerIdInt);
+        
+        setState(() {
+          _notifications = alertService.filterAlerts(
+            alerts,
+            includeRead: false,
+            includeResolved: false,
+          );
+          _urgentAlerts = _notifications.length;
+        });
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error refreshing notifications: $e');
+      }
+    }
+  }
+
+  Color _getNotificationColor(AlertPriority priority) {
+    switch (priority) {
+      case AlertPriority.critical:
+      case AlertPriority.high:
         return AppTheme.primaryRed;
-      case AlertUrgency.medium:
+      case AlertPriority.medium:
         return AppTheme.primaryOrange;
-      case AlertUrgency.low:
+      case AlertPriority.low:
         return AppTheme.primaryGreen;
       default:
         return Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7);
@@ -1135,12 +1172,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   IconData _getNotificationIcon(AlertType type) {
     switch (type) {
-      case AlertType.stockFaible:
+      case AlertType.stockCritical:
+      case AlertType.stockLow:
         return CupertinoIcons.exclamationmark_triangle;
-      case AlertType.expirationProche:
+      case AlertType.expired:
+      case AlertType.expiringSoon:
         return CupertinoIcons.time;
       case AlertType.reminder:
+      case AlertType.maintenanceDue:
         return CupertinoIcons.bell;
+      case AlertType.budgetHigh:
+      case AlertType.budgetUncertain:
+        return CupertinoIcons.money_dollar_circle;
+      case AlertType.recommendation:
+        return CupertinoIcons.lightbulb;
       case AlertType.system:
         return CupertinoIcons.info_circle;
       default:
