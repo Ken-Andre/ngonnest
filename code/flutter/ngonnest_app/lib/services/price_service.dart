@@ -43,12 +43,11 @@ class PriceService {
   static final PriceService _instance = PriceService._internal();
   factory PriceService() => _instance;
   PriceService._internal() : _databaseService = DatabaseService();
-  PriceService._test(this._databaseService);
 
   /// Taux de change FCFA vers Euro (taux officiel BCE)
   /// Source: Banque Centrale Européenne
   /// 1 EUR = 655.957 FCFA (taux fixe)
-  static const double _fcfaToEuroRate = 0.00152; // 1 FCFA = 0.00152 EUR
+  static const double fcfaToEuroRate = 0.00152; // 1 FCFA = 0.00152 EUR
 
   /// Taux d'inflation annuel au Cameroun (moyenne)
   static const double _annualInflationRate = 0.06; // 6% par an
@@ -72,9 +71,10 @@ class PriceService {
         // Hygiène personnelle
         ProductPrice(
           name: 'Savon de toilette',
+          nameNormalized: 'savon de toilette',
           category: 'Hygiène',
-          priceFcfa: 500,
-          priceEuro: 500 * _fcfaToEuroRate,
+          priceLocal: 500,
+          currencyCode: 'XAF',
           unit: 'piece',
           description: 'Savon standard 100g',
           createdAt: now,
@@ -82,9 +82,10 @@ class PriceService {
         ),
         ProductPrice(
           name: 'Dentifrice',
+          nameNormalized: 'dentifrice',
           category: 'Hygiène',
-          priceFcfa: 1200,
-          priceEuro: 1200 * _fcfaToEuroRate,
+          priceLocal: 1200,
+          currencyCode: 'XAF',
           unit: 'piece',
           description: 'Tube 75ml',
           createdAt: now,
@@ -92,18 +93,20 @@ class PriceService {
         ),
         ProductPrice(
           name: 'Brosse à dents',
+          nameNormalized: 'brosse a dents',
           category: 'Hygiène',
-          priceFcfa: 800,
-          priceEuro: 800 * _fcfaToEuroRate,
+          priceLocal: 800,
+          currencyCode: 'XAF',
           unit: 'piece',
           createdAt: now,
           updatedAt: now,
         ),
         ProductPrice(
           name: 'Shampoing',
+          nameNormalized: 'shampoing',
           category: 'Hygiène',
-          priceFcfa: 2500,
-          priceEuro: 2500 * _fcfaToEuroRate,
+          priceLocal: 2500,
+          currencyCode: 'XAF',
           unit: 'piece',
           description: 'Flacon 400ml',
           createdAt: now,
@@ -111,9 +114,10 @@ class PriceService {
         ),
         ProductPrice(
           name: 'Déodorant',
+          nameNormalized: 'deodorant',
           category: 'Hygiène',
-          priceFcfa: 1800,
-          priceEuro: 1800 * _fcfaToEuroRate,
+          priceLocal: 1800,
+          currencyCode: 'XAF',
           unit: 'piece',
           description: 'Spray 150ml',
           createdAt: now,
@@ -121,9 +125,10 @@ class PriceService {
         ),
         ProductPrice(
           name: 'Papier toilette',
+          nameNormalized: 'papier toilette',
           category: 'Hygiène',
-          priceFcfa: 2000,
-          priceEuro: 2000 * _fcfaToEuroRate,
+          priceLocal: 2000,
+          currencyCode: 'XAF',
           unit: 'paquet',
           description: 'Paquet 4 rouleaux',
           createdAt: now,
@@ -131,9 +136,10 @@ class PriceService {
         ),
         ProductPrice(
           name: 'Serviettes hygiéniques',
+          nameNormalized: 'serviettes hygieniques',
           category: 'Hygiène',
-          priceFcfa: 1500,
-          priceEuro: 1500 * _fcfaToEuroRate,
+          priceLocal: 1500,
+          currencyCode: 'XAF',
           unit: 'paquet',
           description: 'Paquet 10 pièces',
           createdAt: now,
@@ -141,18 +147,20 @@ class PriceService {
         ),
         ProductPrice(
           name: 'Rasoir jetable',
+          nameNormalized: 'rasoir jetable',
           category: 'Hygiène',
-          priceFcfa: 300,
-          priceEuro: 300 * _fcfaToEuroRate,
+          priceLocal: 300,
+          currencyCode: 'XAF',
           unit: 'piece',
           createdAt: now,
           updatedAt: now,
         ),
         ProductPrice(
           name: 'Crème hydratante',
+          nameNormalized: 'crème hydratante',
           category: 'Hygiène',
-          priceFcfa: 3000,
-          priceEuro: 3000 * _fcfaToEuroRate,
+          priceLocal: 3000,
+          currencyCode: 'XAF',
           unit: 'piece',
           description: 'Tube 200ml',
           createdAt: now,
@@ -160,9 +168,10 @@ class PriceService {
         ),
         ProductPrice(
           name: 'Gel douche',
+          nameNormalized: 'gel douche',
           category: 'Hygiène',
-          priceFcfa: 2200,
-          priceEuro: 2200 * _fcfaToEuroRate,
+          priceLocal: 2200,
+          currencyCode: 'XAF',
           unit: 'piece',
           description: 'Flacon 500ml',
           createdAt: now,
@@ -172,9 +181,10 @@ class PriceService {
         // Nettoyage maison
         ProductPrice(
           name: 'Lessive en poudre',
+          nameNormalized: 'lessive en poudre',
           category: 'Nettoyage',
-          priceFcfa: 3500,
-          priceEuro: 3500 * _fcfaToEuroRate,
+          priceLocal: 3500,
+          currencyCode: 'XAF',
           unit: 'kg',
           description: 'Sac 2kg',
           createdAt: now,
@@ -182,9 +192,10 @@ class PriceService {
         ),
         ProductPrice(
           name: 'Savon de Marseille',
+          nameNormalized: 'savon de marseille',
           category: 'Nettoyage',
-          priceFcfa: 800,
-          priceEuro: 800 * _fcfaToEuroRate,
+          priceLocal: 800,
+          currencyCode: 'XAF',
           unit: 'piece',
           description: 'Pain 300g',
           createdAt: now,
@@ -192,18 +203,20 @@ class PriceService {
         ),
         ProductPrice(
           name: 'Eau de Javel',
+          nameNormalized: 'eau de javel',
           category: 'Nettoyage',
-          priceFcfa: 600,
-          priceEuro: 600 * _fcfaToEuroRate,
+          priceLocal: 600,
+          currencyCode: 'XAF',
           unit: 'litre',
           createdAt: now,
           updatedAt: now,
         ),
         ProductPrice(
           name: 'Détergent vaisselle',
+          nameNormalized: 'detergent vaisselle',
           category: 'Nettoyage',
-          priceFcfa: 1200,
-          priceEuro: 1200 * _fcfaToEuroRate,
+          priceLocal: 1200,
+          currencyCode: 'XAF',
           unit: 'piece',
           description: 'Flacon 500ml',
           createdAt: now,
@@ -211,45 +224,50 @@ class PriceService {
         ),
         ProductPrice(
           name: 'Éponge vaisselle',
+          nameNormalized: 'eponge vaisselle',
           category: 'Nettoyage',
-          priceFcfa: 200,
-          priceEuro: 200 * _fcfaToEuroRate,
+          priceLocal: 200,
+          currencyCode: 'XAF',
           unit: 'piece',
           createdAt: now,
           updatedAt: now,
         ),
         ProductPrice(
           name: 'Balai',
+          nameNormalized: 'balai',
           category: 'Nettoyage',
-          priceFcfa: 2500,
-          priceEuro: 2500 * _fcfaToEuroRate,
+          priceLocal: 2500,
+          currencyCode: 'XAF',
           unit: 'piece',
           createdAt: now,
           updatedAt: now,
         ),
         ProductPrice(
           name: 'Serpillière',
+          nameNormalized: 'serpilliere',
           category: 'Nettoyage',
-          priceFcfa: 1500,
-          priceEuro: 1500 * _fcfaToEuroRate,
+          priceLocal: 1500,
+          currencyCode: 'XAF',
           unit: 'piece',
           createdAt: now,
           updatedAt: now,
         ),
         ProductPrice(
           name: 'Désinfectant sol',
+          nameNormalized: 'desinfectant sol',
           category: 'Nettoyage',
-          priceFcfa: 1800,
-          priceEuro: 1800 * _fcfaToEuroRate,
+          priceLocal: 1800,
+          currencyCode: 'XAF',
           unit: 'litre',
           createdAt: now,
           updatedAt: now,
         ),
         ProductPrice(
           name: 'Nettoyant vitres',
+          nameNormalized: 'nettoyant vitres',
           category: 'Nettoyage',
-          priceFcfa: 1400,
-          priceEuro: 1400 * _fcfaToEuroRate,
+          priceLocal: 1400,
+          currencyCode: 'XAF',
           unit: 'piece',
           description: 'Spray 500ml',
           createdAt: now,
@@ -257,9 +275,10 @@ class PriceService {
         ),
         ProductPrice(
           name: 'Sacs poubelle',
+          nameNormalized: 'sacs poubelle',
           category: 'Nettoyage',
-          priceFcfa: 1000,
-          priceEuro: 1000 * _fcfaToEuroRate,
+          priceLocal: 1000,
+          currencyCode: 'XAF',
           unit: 'paquet',
           description: 'Rouleau 20 sacs',
           createdAt: now,
@@ -269,63 +288,70 @@ class PriceService {
         // Cuisine et alimentation
         ProductPrice(
           name: 'Huile de palme',
+          nameNormalized: 'huile de palme',
           category: 'Cuisine',
-          priceFcfa: 2000,
-          priceEuro: 2000 * _fcfaToEuroRate,
+          priceLocal: 2000,
+          currencyCode: 'XAF',
           unit: 'litre',
           createdAt: now,
           updatedAt: now,
         ),
         ProductPrice(
           name: 'Riz',
+          nameNormalized: 'riz',
           category: 'Cuisine',
-          priceFcfa: 1500,
-          priceEuro: 1500 * _fcfaToEuroRate,
+          priceLocal: 1500,
+          currencyCode: 'XAF',
           unit: 'kg',
           createdAt: now,
           updatedAt: now,
         ),
         ProductPrice(
           name: 'Farine de blé',
+          nameNormalized: 'farine de ble',
           category: 'Cuisine',
-          priceFcfa: 800,
-          priceEuro: 800 * _fcfaToEuroRate,
+          priceLocal: 800,
+          currencyCode: 'XAF',
           unit: 'kg',
           createdAt: now,
           updatedAt: now,
         ),
         ProductPrice(
           name: 'Sucre',
+          nameNormalized: 'sucre',
           category: 'Cuisine',
-          priceFcfa: 700,
-          priceEuro: 700 * _fcfaToEuroRate,
+          priceLocal: 700,
+          currencyCode: 'XAF',
           unit: 'kg',
           createdAt: now,
           updatedAt: now,
         ),
         ProductPrice(
           name: 'Sel',
+          nameNormalized: 'sel',
           category: 'Cuisine',
-          priceFcfa: 300,
-          priceEuro: 300 * _fcfaToEuroRate,
+          priceLocal: 300,
+          currencyCode: 'XAF',
           unit: 'kg',
           createdAt: now,
           updatedAt: now,
         ),
         ProductPrice(
           name: 'Cube Maggi',
+          nameNormalized: 'cube maggi',
           category: 'Cuisine',
-          priceFcfa: 25,
-          priceEuro: 25 * _fcfaToEuroRate,
+          priceLocal: 25,
+          currencyCode: 'XAF',
           unit: 'piece',
           createdAt: now,
           updatedAt: now,
         ),
         ProductPrice(
           name: 'Tomate concentrée',
+          nameNormalized: 'tomate concentree',
           category: 'Cuisine',
-          priceFcfa: 400,
-          priceEuro: 400 * _fcfaToEuroRate,
+          priceLocal: 400,
+          currencyCode: 'XAF',
           unit: 'piece',
           description: 'Boîte 70g',
           createdAt: now,
@@ -333,9 +359,10 @@ class PriceService {
         ),
         ProductPrice(
           name: 'Pâtes alimentaires',
+          nameNormalized: 'pâtes alimentaires',
           category: 'Cuisine',
-          priceFcfa: 600,
-          priceEuro: 600 * _fcfaToEuroRate,
+          priceLocal: 600,
+          currencyCode: 'XAF',
           unit: 'paquet',
           description: '500g',
           createdAt: now,
@@ -343,9 +370,10 @@ class PriceService {
         ),
         ProductPrice(
           name: 'Sardines en boîte',
+          nameNormalized: 'sardines en boite',
           category: 'Cuisine',
-          priceFcfa: 800,
-          priceEuro: 800 * _fcfaToEuroRate,
+          priceLocal: 800,
+          currencyCode: 'XAF',
           unit: 'piece',
           description: 'Boîte 125g',
           createdAt: now,
@@ -353,9 +381,10 @@ class PriceService {
         ),
         ProductPrice(
           name: 'Lait en poudre',
+          nameNormalized: 'lait en poudre',
           category: 'Cuisine',
-          priceFcfa: 3500,
-          priceEuro: 3500 * _fcfaToEuroRate,
+          priceLocal: 3500,
+          currencyCode: 'XAF',
           unit: 'paquet',
           description: 'Boîte 400g',
           createdAt: now,
@@ -365,9 +394,10 @@ class PriceService {
         // Produits ménagers spécialisés
         ProductPrice(
           name: 'Insecticide',
+          nameNormalized: 'insecticide',
           category: 'Divers',
-          priceFcfa: 2500,
-          priceEuro: 2500 * _fcfaToEuroRate,
+          priceLocal: 2500,
+          currencyCode: 'XAF',
           unit: 'piece',
           description: 'Spray 400ml',
           createdAt: now,
@@ -375,27 +405,30 @@ class PriceService {
         ),
         ProductPrice(
           name: 'Allumettes',
+          nameNormalized: 'allumettes',
           category: 'Divers',
-          priceFcfa: 100,
-          priceEuro: 100 * _fcfaToEuroRate,
+          priceLocal: 100,
+          currencyCode: 'XAF',
           unit: 'paquet',
           createdAt: now,
           updatedAt: now,
         ),
         ProductPrice(
           name: 'Bougies',
+          nameNormalized: 'bougies',
           category: 'Divers',
-          priceFcfa: 200,
-          priceEuro: 200 * _fcfaToEuroRate,
+          priceLocal: 200,
+          currencyCode: 'XAF',
           unit: 'piece',
           createdAt: now,
           updatedAt: now,
         ),
         ProductPrice(
           name: 'Piles AA',
+          nameNormalized: 'piles aa',
           category: 'Divers',
-          priceFcfa: 500,
-          priceEuro: 500 * _fcfaToEuroRate,
+          priceLocal: 500,
+          currencyCode: 'XAF',
           unit: 'paquet',
           description: 'Paquet 4 piles',
           createdAt: now,
@@ -403,9 +436,10 @@ class PriceService {
         ),
         ProductPrice(
           name: 'Ampoule LED',
+          nameNormalized: 'ampoule led',
           category: 'Divers',
-          priceFcfa: 1500,
-          priceEuro: 1500 * _fcfaToEuroRate,
+          priceLocal: 1500,
+          currencyCode: 'XAF',
           unit: 'piece',
           description: '10W',
           createdAt: now,
@@ -415,9 +449,10 @@ class PriceService {
         // Produits bébé/enfant
         ProductPrice(
           name: 'Couches bébé',
+          nameNormalized: 'couches bebe',
           category: 'Hygiène',
-          priceFcfa: 4500,
-          priceEuro: 4500 * _fcfaToEuroRate,
+          priceLocal: 4500,
+          currencyCode: 'XAF',
           unit: 'paquet',
           description: 'Paquet 30 pièces',
           createdAt: now,
@@ -425,9 +460,10 @@ class PriceService {
         ),
         ProductPrice(
           name: 'Lingettes bébé',
+          nameNormalized: 'lingettes bebe',
           category: 'Hygiène',
-          priceFcfa: 1800,
-          priceEuro: 1800 * _fcfaToEuroRate,
+          priceLocal: 1800,
+          currencyCode: 'XAF',
           unit: 'paquet',
           description: 'Paquet 80 pièces',
           createdAt: now,
@@ -435,9 +471,10 @@ class PriceService {
         ),
         ProductPrice(
           name: 'Lait infantile',
+          nameNormalized: 'lait infantile',
           category: 'Cuisine',
-          priceFcfa: 8000,
-          priceEuro: 8000 * _fcfaToEuroRate,
+          priceLocal: 8000,
+          currencyCode: 'XAF',
           unit: 'piece',
           description: 'Boîte 900g',
           createdAt: now,
@@ -447,9 +484,10 @@ class PriceService {
         // Produits de première nécessité
         ProductPrice(
           name: 'Paracétamol',
+          nameNormalized: 'paracetamol',
           category: 'Divers',
-          priceFcfa: 500,
-          priceEuro: 500 * _fcfaToEuroRate,
+          priceLocal: 500,
+          currencyCode: 'XAF',
           unit: 'paquet',
           description: 'Boîte 20 comprimés',
           createdAt: now,
@@ -457,9 +495,10 @@ class PriceService {
         ),
         ProductPrice(
           name: 'Alcool à 70°',
+          nameNormalized: 'alcool a 70',
           category: 'Hygiène',
-          priceFcfa: 800,
-          priceEuro: 800 * _fcfaToEuroRate,
+          priceLocal: 800,
+          currencyCode: 'XAF',
           unit: 'piece',
           description: 'Flacon 250ml',
           createdAt: now,
@@ -467,9 +506,10 @@ class PriceService {
         ),
         ProductPrice(
           name: 'Coton hydrophile',
+          nameNormalized: 'coton hydrophile',
           category: 'Hygiène',
-          priceFcfa: 600,
-          priceEuro: 600 * _fcfaToEuroRate,
+          priceLocal: 600,
+          currencyCode: 'XAF',
           unit: 'paquet',
           description: '100g',
           createdAt: now,
@@ -479,18 +519,20 @@ class PriceService {
         // Produits d'entretien spécialisés
         ProductPrice(
           name: 'Cire pour sol',
+          nameNormalized: 'cire pour sol',
           category: 'Nettoyage',
-          priceFcfa: 2200,
-          priceEuro: 2200 * _fcfaToEuroRate,
+          priceLocal: 2200,
+          currencyCode: 'XAF',
           unit: 'litre',
           createdAt: now,
           updatedAt: now,
         ),
         ProductPrice(
           name: 'Détartrant WC',
+          nameNormalized: 'détartrant wc',
           category: 'Nettoyage',
-          priceFcfa: 1600,
-          priceEuro: 1600 * _fcfaToEuroRate,
+          priceLocal: 1600,
+          currencyCode: 'XAF',
           unit: 'piece',
           description: 'Flacon 750ml',
           createdAt: now,
@@ -498,9 +540,10 @@ class PriceService {
         ),
         ProductPrice(
           name: 'Nettoyant four',
+          nameNormalized: 'nettoyant four',
           category: 'Nettoyage',
-          priceFcfa: 2800,
-          priceEuro: 2800 * _fcfaToEuroRate,
+          priceLocal: 2800,
+          currencyCode: 'XAF',
           unit: 'piece',
           description: 'Spray 500ml',
           createdAt: now,
@@ -510,9 +553,10 @@ class PriceService {
         // Produits saisonniers/occasionnels
         ProductPrice(
           name: 'Antimoustique',
+          nameNormalized: 'antimoustique',
           category: 'Divers',
-          priceFcfa: 1200,
-          priceEuro: 1200 * _fcfaToEuroRate,
+          priceLocal: 1200,
+          currencyCode: 'XAF',
           unit: 'piece',
           description: 'Spray 100ml',
           createdAt: now,
@@ -520,9 +564,10 @@ class PriceService {
         ),
         ProductPrice(
           name: 'Crème solaire',
+          nameNormalized: 'crème solaire',
           category: 'Hygiène',
-          priceFcfa: 4000,
-          priceEuro: 4000 * _fcfaToEuroRate,
+          priceLocal: 4000,
+          currencyCode: 'XAF',
           unit: 'piece',
           description: 'Tube 200ml SPF30',
           createdAt: now,
@@ -532,9 +577,10 @@ class PriceService {
         // Produits d'hygiène féminine
         ProductPrice(
           name: 'Tampons',
+          nameNormalized: 'tampons',
           category: 'Hygiène',
-          priceFcfa: 2000,
-          priceEuro: 2000 * _fcfaToEuroRate,
+          priceLocal: 2000,
+          currencyCode: 'XAF',
           unit: 'paquet',
           description: 'Boîte 16 pièces',
           createdAt: now,
@@ -544,18 +590,20 @@ class PriceService {
         // Produits de base cuisine
         ProductPrice(
           name: 'Vinaigre blanc',
+          nameNormalized: 'vinaigre blanc',
           category: 'Cuisine',
-          priceFcfa: 400,
-          priceEuro: 400 * _fcfaToEuroRate,
+          priceLocal: 400,
+          currencyCode: 'XAF',
           unit: 'litre',
           createdAt: now,
           updatedAt: now,
         ),
         ProductPrice(
           name: 'Bicarbonate de soude',
+          nameNormalized: 'bicarbonate de soude',
           category: 'Nettoyage',
-          priceFcfa: 600,
-          priceEuro: 600 * _fcfaToEuroRate,
+          priceLocal: 600,
+          currencyCode: 'XAF',
           unit: 'paquet',
           description: '500g',
           createdAt: now,
@@ -563,9 +611,10 @@ class PriceService {
         ),
         ProductPrice(
           name: 'Papier aluminium',
+          nameNormalized: 'papier aluminium',
           category: 'Cuisine',
-          priceFcfa: 1500,
-          priceEuro: 1500 * _fcfaToEuroRate,
+          priceLocal: 1500,
+          currencyCode: 'XAF',
           unit: 'piece',
           description: 'Rouleau 30m',
           createdAt: now,
@@ -573,9 +622,10 @@ class PriceService {
         ),
         ProductPrice(
           name: 'Film plastique',
+          nameNormalized: 'film plastique',
           category: 'Cuisine',
-          priceFcfa: 1200,
-          priceEuro: 1200 * _fcfaToEuroRate,
+          priceLocal: 1200,
+          currencyCode: 'XAF',
           unit: 'piece',
           description: 'Rouleau 50m',
           createdAt: now,
@@ -659,7 +709,7 @@ class PriceService {
       var price = await getProductPrice(objectName);
 
       if (price != null) {
-        return price.priceEuro;
+        return localToEuro(price.priceLocal, price.currencyCode);
       }
 
       // Recherche par catégorie et similarité
@@ -667,7 +717,7 @@ class PriceService {
       if (categoryPrices.isNotEmpty) {
         // Retourner le prix moyen de la catégorie
         final avgPrice =
-            categoryPrices.map((p) => p.priceEuro).reduce((a, b) => a + b) /
+            categoryPrices.map((p) => localToEuro(p.priceLocal, p.currencyCode)).reduce((a, b) => a + b) /
             categoryPrices.length;
         return avgPrice;
       }
@@ -730,7 +780,7 @@ class PriceService {
   /// final euros = PriceService.fcfaToEuro(1000); // 1.52 EUR
   /// ```
   static double fcfaToEuro(double fcfa) {
-    return fcfa * _fcfaToEuroRate;
+    return fcfa * fcfaToEuroRate;
   }
 
   /// Convertir Euro vers FCFA
@@ -740,7 +790,7 @@ class PriceService {
   /// final fcfa = PriceService.euroToFcfa(10); // 6579.57 FCFA
   /// ```
   static double euroToFcfa(double euro) {
-    return euro / _fcfaToEuroRate;
+    return euro / fcfaToEuroRate;
   }
 
   /// Appliquer l'inflation annuelle à un prix
@@ -770,13 +820,40 @@ class PriceService {
     return applyInflation(basePrice, years: yearsDiff);
   }
 
+  /// Convertir le prix local en Euro
+  ///
+  /// Exemple:
+  /// ```dart
+  /// final product = ProductPrice(...);
+  /// final euros = PriceService.localToEuro(product.priceLocal, product.currencyCode);
+  /// ```
+  static double localToEuro(double localPrice, String currencyCode) {
+    switch (currencyCode.toUpperCase()) {
+      case 'XAF':
+      case 'XOF':
+      case 'FCFA':
+        return fcfaToEuro(localPrice);
+      case 'EUR':
+        return localPrice;
+      case 'USD':
+        // Assuming 1 USD = 0.93 EUR (approximate rate)
+        return localPrice * 0.93;
+      case 'CAD':
+        // Assuming 1 CAD = 0.68 EUR (approximate rate)
+        return localPrice * 0.68;
+      default:
+        // Default to FCFA conversion if unknown currency
+        return fcfaToEuro(localPrice);
+    }
+  }
+
   /// Obtenir le prix moyen d'une catégorie
   Future<double> getAverageCategoryPrice(String category) async {
     try {
       final prices = await getPricesByCategory(category);
       if (prices.isEmpty) return 0.0;
 
-      final total = prices.map((p) => p.priceEuro).reduce((a, b) => a + b);
+      final total = prices.map((p) => localToEuro(p.priceLocal, p.currencyCode)).reduce((a, b) => a + b);
       return total / prices.length;
     } catch (e, stackTrace) {
       await ErrorLoggerService.logError(
@@ -811,7 +888,7 @@ class PriceService {
         };
       }
 
-      final priceValues = prices.map((p) => p.priceEuro).toList();
+      final priceValues = prices.map((p) => localToEuro(p.priceLocal, p.currencyCode)).toList();
       final total = priceValues.reduce((a, b) => a + b);
       final average = total / priceValues.length;
       final min = priceValues.reduce((a, b) => a < b ? a : b);

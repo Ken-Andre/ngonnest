@@ -8,7 +8,7 @@ import 'package:sqflite/sqflite.dart';
 import 'services/analytics_service.dart';
 import 'services/error_logger_service.dart';
 
-const int _databaseVersion = 14; // Alert states persistence implemented
+const int _databaseVersion = 15; // Product prices database with multi-country support
 
 Future<Database> initDatabase() async {
   final databasesPath = await getDatabasesPath();
@@ -635,6 +635,150 @@ Future<void> _migrateToVersion14(Database db) async {
   }
 }
 
+Future<void> _migrateToVersion15(Database db) async {
+  debugPrint('[DB Migration V15] Creating product_prices table for multi-country price support');
+  
+  try {
+    // Check if table already exists
+    final tables = await db.rawQuery(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='product_prices'",
+    );
+    
+    if (tables.isEmpty) {
+      // Create product_prices table
+      await db.execute('''
+        CREATE TABLE product_prices (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          name_normalized TEXT NOT NULL,
+          category TEXT NOT NULL,
+          price_local REAL NOT NULL,
+          currency_code TEXT NOT NULL,
+          unit TEXT NOT NULL,
+          country_code TEXT NOT NULL DEFAULT 'CM',
+          region TEXT,
+          source TEXT DEFAULT 'static',
+          notes TEXT,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          UNIQUE(name_normalized, country_code)
+        )
+      ''');
+      
+      // Create indexes
+      await db.execute('CREATE INDEX idx_prices_name ON product_prices(name_normalized)');
+      await db.execute('CREATE INDEX idx_prices_country ON product_prices(country_code)');
+      await db.execute('CREATE INDEX idx_prices_category ON product_prices(category)');
+      
+      debugPrint('[DB Migration V15] ✅ product_prices table created with indexes');
+      
+      // Populate with initial prices from static database (with inflation adjustment)
+      await _populateInitialPrices(db);
+    } else {
+      debugPrint('[DB Migration V15] ✅ product_prices table already exists');
+    }
+  } catch (e, stackTrace) {
+    debugPrint('[DB Migration V15] ❌ Migration failed: $e');
+    await ErrorLoggerService.logError(
+      component: 'DatabaseService',
+      operation: '_migrateToVersion15',
+      error: e,
+      stackTrace: stackTrace,
+      severity: ErrorSeverity.critical,
+    );
+    rethrow;
+  }
+}
+
+Future<void> _populateInitialPrices(Database db) async {
+  debugPrint('[DB Migration V15] Populating initial prices from static database');
+  
+  // Import CameroonPrices
+  final products = [
+    // Alimentation
+    {'name': 'Riz', 'category': 'Alimentation', 'price': 686.0, 'unit': 'kg', 'region': 'Douala'},
+    {'name': 'Huile de palme', 'category': 'Alimentation', 'price': 1266.0, 'unit': 'litre', 'region': 'Douala'},
+    {'name': 'Plantain', 'category': 'Alimentation', 'price': 158.0, 'unit': 'unité', 'region': 'Douala'},
+    {'name': 'Haricot', 'category': 'Alimentation', 'price': 844.0, 'unit': 'kg', 'region': 'Douala'},
+    {'name': 'Manioc', 'category': 'Alimentation', 'price': 317.0, 'unit': 'kg', 'region': 'Douala'},
+    {'name': 'Poisson fumé', 'category': 'Alimentation', 'price': 2638.0, 'unit': 'kg', 'region': 'Douala'},
+    {'name': 'Tomate', 'category': 'Alimentation', 'price': 528.0, 'unit': 'kg', 'region': 'Douala'},
+    {'name': 'Oignon', 'category': 'Alimentation', 'price': 633.0, 'unit': 'kg', 'region': 'Douala'},
+    
+    // Hygiène
+    {'name': 'Savon de Marseille', 'category': 'Hygiène', 'price': 264.0, 'unit': 'unité', 'region': 'Douala'},
+    {'name': 'Dentifrice', 'category': 'Hygiène', 'price': 844.0, 'unit': 'tube', 'region': 'Douala'},
+    {'name': 'Shampoing', 'category': 'Hygiène', 'price': 1583.0, 'unit': 'bouteille', 'region': 'Douala'},
+    {'name': 'Papier toilette', 'category': 'Hygiène', 'price': 1266.0, 'unit': 'pack', 'region': 'Douala'},
+    
+    // Entretien
+    {'name': 'Eau de Javel', 'category': 'Entretien', 'price': 422.0, 'unit': 'litre', 'region': 'Douala'},
+    {'name': 'Liquide vaisselle', 'category': 'Entretien', 'price': 844.0, 'unit': 'bouteille', 'region': 'Douala'},
+    {'name': 'Éponge', 'category': 'Entretien', 'price': 158.0, 'unit': 'unité', 'region': 'Douala'},
+    
+    // Boissons
+    {'name': 'Eau minérale', 'category': 'Boissons', 'price': 317.0, 'unit': 'bouteille', 'region': 'Douala'},
+    {'name': 'Thé', 'category': 'Boissons', 'price': 1055.0, 'unit': 'boîte', 'region': 'Douala'},
+    {'name': 'Café', 'category': 'Boissons', 'price': 2638.0, 'unit': 'kg', 'region': 'Douala'},
+    
+    // Condiments
+    {'name': 'Sel', 'category': 'Condiments', 'price': 211.0, 'unit': 'kg', 'region': 'Douala'},
+    {'name': 'Cube Maggi', 'category': 'Condiments', 'price': 26.0, 'unit': 'cube', 'region': 'Douala'},
+    {'name': 'Piment', 'category': 'Condiments', 'price': 1055.0, 'unit': 'kg', 'region': 'Douala'},
+    
+    // Produits laitiers
+    {'name': 'Lait en poudre', 'category': 'Produits laitiers', 'price': 3693.0, 'unit': 'boîte', 'region': 'Douala'},
+    
+    // Céréales
+    {'name': 'Maïs', 'category': 'Céréales', 'price': 422.0, 'unit': 'kg', 'region': 'Douala'},
+    {'name': 'Farine de blé', 'category': 'Céréales', 'price': 633.0, 'unit': 'kg', 'region': 'Douala'},
+  ];
+  
+  final now = DateTime.now().toIso8601String();
+  int inserted = 0;
+  
+  for (final product in products) {
+    try {
+      final normalized = _normalizeText(product['name'] as String);
+      await db.insert('product_prices', {
+        'name': product['name'],
+        'name_normalized': normalized,
+        'category': product['category'],
+        'price_local': product['price'],
+        'currency_code': 'XAF',
+        'unit': product['unit'],
+        'country_code': 'CM',
+        'region': product['region'],
+        'source': 'static',
+        'notes': 'Prix ajusté pour inflation (Jan 2024 → Nov 2024, +5.5%)',
+        'created_at': now,
+        'updated_at': now,
+      });
+      inserted++;
+    } catch (e) {
+      debugPrint('[DB Migration V15] ⚠️ Failed to insert ${product['name']}: $e');
+    }
+  }
+  
+  debugPrint('[DB Migration V15] ✅ Inserted $inserted products');
+}
+
+String _normalizeText(String text) {
+  return text.toLowerCase()
+    .replaceAll('é', 'e')
+    .replaceAll('è', 'e')
+    .replaceAll('ê', 'e')
+    .replaceAll('à', 'a')
+    .replaceAll('â', 'a')
+    .replaceAll('ç', 'c')
+    .replaceAll('î', 'i')
+    .replaceAll('ô', 'o')
+    .replaceAll('û', 'u')
+    .replaceAll('ù', 'u')
+    .trim();
+}
+
+
 // --- UUID Migration Functions Removed ---
 // The UUID migration (V13) has been completed and the migration functions
 // have been removed to clean up the codebase. The database now uses UUID
@@ -655,6 +799,7 @@ final Map<int, Future<void> Function(Database)> _migrations = {
   12: _migrateToVersion12,
   // 13: _migrateToVersion13, // UUID migration - removed after completion
   14: _migrateToVersion14,
+  15: _migrateToVersion15, // Product prices with multi-country support
 };
 
 // --- Debug (Optional, can be removed or conditional) ---

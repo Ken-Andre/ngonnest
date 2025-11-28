@@ -1,24 +1,34 @@
 class ProductPrice {
   final int? id;
   final String name;
+  final String nameNormalized;
   final String category;
-  final double priceFcfa;
-  final double priceEuro;
-  final String unit; // 'piece', 'kg', 'litre', 'paquet'
+  final double priceLocal;
+  final String currencyCode;
+  final String unit;
+  final String countryCode;
+  final String? region;
   final String? brand;
   final String? description;
+  final String source;
+  final String? notes;
   final DateTime createdAt;
   final DateTime updatedAt;
 
   const ProductPrice({
     this.id,
     required this.name,
+    required this.nameNormalized,
     required this.category,
-    required this.priceFcfa,
-    required this.priceEuro,
+    required this.priceLocal,
+    required this.currencyCode,
     required this.unit,
+    this.countryCode = 'CM',
+    this.region,
     this.brand,
     this.description,
+    this.source = 'static',
+    this.notes,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -27,12 +37,17 @@ class ProductPrice {
     return {
       'id': id,
       'name': name,
+      'name_normalized': nameNormalized,
       'category': category,
-      'price_fcfa': priceFcfa,
-      'price_euro': priceEuro,
+      'price_local': priceLocal,
+      'currency_code': currencyCode,
       'unit': unit,
+      'country_code': countryCode,
+      'region': region,
       'brand': brand,
       'description': description,
+      'source': source,
+      'notes': notes,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
@@ -42,12 +57,17 @@ class ProductPrice {
     return ProductPrice(
       id: (map['id'] as num?)?.toInt(),
       name: map['name'] ?? '',
+      nameNormalized: map['name_normalized'] ?? '',
       category: map['category'] ?? '',
-      priceFcfa: map['price_fcfa']?.toDouble() ?? 0.0,
-      priceEuro: map['price_euro']?.toDouble() ?? 0.0,
+      priceLocal: (map['price_local'] as num?)?.toDouble() ?? 0.0,
+      currencyCode: map['currency_code'] ?? 'XAF',
       unit: map['unit'] ?? 'piece',
+      countryCode: map['country_code'] ?? 'CM',
+      region: map['region'],
       brand: map['brand'],
       description: map['description'],
+      source: map['source'] ?? 'static',
+      notes: map['notes'],
       createdAt: DateTime.parse(map['created_at']),
       updatedAt: DateTime.parse(map['updated_at']),
     );
@@ -56,24 +76,34 @@ class ProductPrice {
   ProductPrice copyWith({
     int? id,
     String? name,
+    String? nameNormalized,
     String? category,
-    double? priceFcfa,
-    double? priceEuro,
+    double? priceLocal,
+    String? currencyCode,
     String? unit,
+    String? countryCode,
+    String? region,
     String? brand,
     String? description,
+    String? source,
+    String? notes,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
     return ProductPrice(
       id: id ?? this.id,
       name: name ?? this.name,
+      nameNormalized: nameNormalized ?? this.nameNormalized,
       category: category ?? this.category,
-      priceFcfa: priceFcfa ?? this.priceFcfa,
-      priceEuro: priceEuro ?? this.priceEuro,
+      priceLocal: priceLocal ?? this.priceLocal,
+      currencyCode: currencyCode ?? this.currencyCode,
       unit: unit ?? this.unit,
+      countryCode: countryCode ?? this.countryCode,
+      region: region ?? this.region,
       brand: brand ?? this.brand,
       description: description ?? this.description,
+      source: source ?? this.source,
+      notes: notes ?? this.notes,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -81,7 +111,7 @@ class ProductPrice {
 
   @override
   String toString() {
-    return 'ProductPrice(id: $id, name: $name, category: $category, priceFcfa: $priceFcfa, priceEuro: $priceEuro, unit: $unit)';
+    return 'ProductPrice(id: $id, name: $name, category: $category, priceLocal: $priceLocal $currencyCode, unit: $unit, country: $countryCode)';
   }
 
   @override
@@ -90,10 +120,12 @@ class ProductPrice {
     return other is ProductPrice &&
         other.id == id &&
         other.name == name &&
+        other.nameNormalized == nameNormalized &&
         other.category == category &&
-        other.priceFcfa == priceFcfa &&
-        other.priceEuro == priceEuro &&
+        other.priceLocal == priceLocal &&
+        other.currencyCode == currencyCode &&
         other.unit == unit &&
+        other.countryCode == countryCode &&
         other.brand == brand &&
         other.description == description;
   }
@@ -102,10 +134,12 @@ class ProductPrice {
   int get hashCode {
     return id.hashCode ^
         name.hashCode ^
+        nameNormalized.hashCode ^
         category.hashCode ^
-        priceFcfa.hashCode ^
-        priceEuro.hashCode ^
+        priceLocal.hashCode ^
+        currencyCode.hashCode ^
         unit.hashCode ^
+        countryCode.hashCode ^
         brand.hashCode ^
         description.hashCode;
   }
