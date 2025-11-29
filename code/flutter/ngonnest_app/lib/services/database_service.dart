@@ -8,6 +8,7 @@ import '../db.dart';
 import '../models/alert.dart';
 import '../models/foyer.dart';
 import '../models/objet.dart';
+import '../models/product_price.dart';
 import 'error_logger_service.dart';
 
 /// Service centralisé pour la gestion de la base de données SQLite
@@ -317,8 +318,8 @@ class DatabaseService {
 
   Future<String> insertFoyer(Foyer foyer) async {
     return _executeDbOperation((db) async {
-      await db.insert('foyer', foyer.toMap());
-      return foyer.id.toString();
+      final id = await db.insert('foyer', foyer.toMap());
+      return id.toString();
     }, ErrorContext.insertFoyer);
   }
 
@@ -605,7 +606,11 @@ class DatabaseService {
   }
 
   /// Sauvegarde l'état d'une alerte
-  Future<void> saveAlertState(int alertId, {bool? isRead, bool? isResolved}) async {
+  Future<void> saveAlertState(
+    int alertId, {
+    bool? isRead,
+    bool? isResolved,
+  }) async {
     return _executeDbOperation((db) async {
       // Check if exists
       final List<Map<String, dynamic>> existing = await db.query(
@@ -820,6 +825,9 @@ class DatabaseService {
     }, ErrorContext.debugOperation);
   }
 
+  /// Normalize text for consistent searching
+  
+
   /// Configure for test environment
   static void configureForTests() {
     _isTestEnvironment = true;
@@ -838,7 +846,9 @@ class DatabaseService {
           }
         } catch (e) {
           if (kDebugMode) {
-            print('[DatabaseService] Error closing database during test reset: $e');
+            print(
+              '[DatabaseService] Error closing database during test reset: $e',
+            );
           }
         }
       }
@@ -866,7 +876,9 @@ class DatabaseService {
           }
         } catch (e) {
           if (kDebugMode) {
-            print('[DatabaseService] Error closing database during force reinitialize: $e');
+            print(
+              '[DatabaseService] Error closing database during force reinitialize: $e',
+            );
           }
         }
       }
@@ -882,6 +894,141 @@ class DatabaseService {
         print('[DatabaseService] Database force reinitialized');
       }
     });
+  }
+
+  /// Normalize text for consistent searching
+  String _normalizeText(String text) {
+    return text
+        .toLowerCase()
+        .replaceAll(RegExp(r'[àáâãäå]'), 'a')
+        .replaceAll(RegExp(r'[èéêë]'), 'e')
+        .replaceAll(RegExp(r'[ìíîï]'), 'i')
+        .replaceAll(RegExp(r'[òóôõö]'), 'o')
+        .replaceAll(RegExp(r'[ùúûü]'), 'u')
+        .replaceAll(RegExp(r'[ýÿ]'), 'y')
+        .replaceAll(RegExp(r'ñ'), 'n')
+        .replaceAll(RegExp(r'ç'), 'c')
+        .replaceAll(RegExp(r'[^a-z0-9\s]'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+  }
+
+  // ===== PRICE OPERATIONS =====
+
+  /// Search for a product price by name (fuzzy matching)
+  Future<ProductPrice?> searchPrice(
+    String productName, {
+    String? countryCode,
+  }) async {
+    return _executeDbOperation((db) async {
+      final country = countryCode ?? 'CM';
+      final normalized = _normalizeText(productName);
+
+      // 1. Exact match
+      final exact = await db.query(
+        'product_prices',
+        where: 'name_normalized = ? AND country_code = ?',
+        whereArgs: [normalized, country],
+        limit: 1,
+      );
+      if (exact.isNotEmpty) return ProductPrice.fromMap(exact.first);
+
+      // 2. Partial match (LIKE)
+      final partial = await db.query(
+        'product_prices',
+        where: 'name_normalized LIKE ? AND country_code = ?',
+        whereArgs: ['%$normalized%', country],
+        orderBy: 'LENGTH(name_normalized) ASC', // Shortest match first
+        limit: 1,
+      );
+      if (partial.isNotEmpty) return ProductPrice.fromMap(partial.first);
+
+      return null;
+    }, ErrorContext.searchPrice);
+  }
+
+  /// Get all prices for a country
+  Future<List<ProductPrice>> getAllPrices({String? countryCode}) async {
+    return _executeDbOperation((db) async {
+      final country = countryCode ?? 'CM';
+      final results = await db.query(
+        'product_prices',
+        where: 'country_code = ?',
+        whereArgs: [country],
+        orderBy: 'name ASC',
+      );
+      return results.map((m) => ProductPrice.fromMap(m)).toList();
+    }, ErrorContext.getAllPrices);
+  }
+
+  /// Insert or update a product price
+  Future<void> upsertPrice(ProductPrice price) async {
+    return _executeDbOperation((db) async {
+      final existing = await db.query(
+        'product_prices',
+        where: 'name_normalized = ? AND country_code = ?',
+        whereArgs: [price.nameNormalized, price.countryCode],
+        limit: 1,
+      );
+
+      final map = price.toMap();
+      map['updated_at'] = DateTime.now().toIso8601String();
+
+      if (existing.isEmpty) {
+        map['created_at'] = DateTime.now().toIso8601String();
+        await db.insert('product_prices', map);
+      } else {
+        await db.update(
+          'product_prices',
+          map,
+          where: 'id = ?',
+          whereArgs: [existing.first['id']],
+        );
+      }
+    }, ErrorContext.upsertPrice);
+  }
+
+  /// Import prices from CSV content
+  Future<int> importPricesFromCSV(String csvContent) async {
+    return _executeDbOperation((db) async {
+      final lines = csvContent.split('\n');
+      int imported = 0;
+
+      // Skip header
+      for (int i = 1; i < lines.length; i++) {
+        final line = lines[i].trim();
+        if (line.isEmpty) continue;
+
+        final parts = line.split(',');
+        if (parts.length < 5) continue;
+
+        try {
+          final price = ProductPrice(
+            name: parts[0].trim(),
+            nameNormalized: _normalizeText(parts[0].trim()),
+            category: parts[1].trim(),
+            priceLocal: double.parse(parts[2].trim()),
+            currencyCode: parts[3].trim(),
+            unit: parts[4].trim(),
+            countryCode: parts.length > 5 ? parts[5].trim() : 'CM',
+            region: parts.length > 6 ? parts[6].trim() : null,
+            source: 'import',
+            notes: parts.length > 7 ? parts[7].trim() : null,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          );
+
+          await upsertPrice(price);
+          imported++;
+        } catch (e) {
+          if (kDebugMode) {
+            print('[DatabaseService] Failed to import line $i: $e');
+          }
+        }
+      }
+
+      return imported;
+    }, ErrorContext.importPricesFromCSV);
   }
 }
 
@@ -914,7 +1061,12 @@ enum ErrorContext {
   debugOperation,
   inventory, // Added
   sync, // Added
-  getAlertStates, // Added
-  saveAlertState, // Added
+  getAlertStates,
+  saveAlertState,
+  // Price operations
+  searchPrice,
+  getAllPrices,
+  upsertPrice,
+  importPricesFromCSV,
   unknown,
 }

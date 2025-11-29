@@ -270,5 +270,17 @@
   "budgetLoadError": "Impossible de charger les données budgétaires. Vérifiez votre connexion.",
   "budgetRetry": "Réessayer",
   "budgetUpdateError": "Erreur lors de la mise à jour du budget",
-  "budgetDeleteError": "Erreur lors de la suppression de la catégorie"
+  "budgetDeleteError": "Erreur lors de la suppression de la catégorie",
+  "introTitle1": "Bienvenue sur NgoNest",
+  "introDesc1": "L'application qui simplifie la gestion de votre foyer.",
+  "introTitle2": "Gérez votre inventaire",
+  "introDesc2": "Suivez vos stocks et évitez le gaspillage facilement.",
+  "introTitle3": "Suivez votre budget",
+  "introDesc3": "Maîtrisez vos dépenses mensuelles et faites des économies.",
+  "introTitle4": "Alertes Intelligentes",
+  "introDesc4": "Soyez notifié avant la rupture de stock de vos produits.",
+  "introSkip": "Passer",
+  "introNext": "Suivant",
+  "introStart": "Commencer",
+  "dashboardAddProductHint": "Commencez ici !"
 }

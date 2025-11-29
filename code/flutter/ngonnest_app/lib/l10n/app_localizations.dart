@@ -1371,6 +1371,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Error deleting category'**
   String get budgetDeleteError;
+
+  /// No description provided for @introTitle1.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to NgoNest'**
+  String get introTitle1;
+
+  /// No description provided for @introDesc1.
+  ///
+  /// In en, this message translates to:
+  /// **'The app that simplifies your household management.'**
+  String get introDesc1;
+
+  /// No description provided for @introTitle2.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage your inventory'**
+  String get introTitle2;
+
+  /// No description provided for @introDesc2.
+  ///
+  /// In en, this message translates to:
+  /// **'Track your stock and avoid waste easily.'**
+  String get introDesc2;
+
+  /// No description provided for @introTitle3.
+  ///
+  /// In en, this message translates to:
+  /// **'Track your budget'**
+  String get introTitle3;
+
+  /// No description provided for @introDesc3.
+  ///
+  /// In en, this message translates to:
+  /// **'Master your monthly expenses and save money.'**
+  String get introDesc3;
+
+  /// No description provided for @introTitle4.
+  ///
+  /// In en, this message translates to:
+  /// **'Smart Alerts'**
+  String get introTitle4;
+
+  /// No description provided for @introDesc4.
+  ///
+  /// In en, this message translates to:
+  /// **'Get notified before your products run out of stock.'**
+  String get introDesc4;
+
+  /// No description provided for @introSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get introSkip;
+
+  /// No description provided for @introNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get introNext;
+
+  /// No description provided for @introStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get introStart;
+
+  /// No description provided for @dashboardAddProductHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Start here!'**
+  String get dashboardAddProductHint;
 }
 
 class _AppLocalizationsDelegate

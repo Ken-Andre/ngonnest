@@ -40,6 +40,7 @@ import 'screens/dashboard_screen.dart';
 import 'screens/developer_console_screen.dart';
 import 'screens/edit_product_screen.dart';
 import 'screens/inventory_screen.dart';
+import 'screens/intro_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/preferences_screen.dart';
 import 'screens/settings_screen.dart';
@@ -414,6 +415,7 @@ void main() async {
             locale: localeProvider.locale,
             home: const SplashScreen(),
             routes: {
+              '/intro': (context) => const IntroScreen(),
               '/dashboard': (context) => const DashboardScreen(),
               '/inventory': (context) => const InventoryScreen(),
               '/add-product': (context) {
@@ -504,6 +506,8 @@ class MyApp extends StatelessWidget {
       supportedLocales: LocaleProvider.supportedLocales,
       home: const AppWithConnectivityOverlay(child: SplashScreen()),
       routes: {
+        '/intro': (context) =>
+            const AppWithConnectivityOverlay(child: IntroScreen()),
         '/onboarding': (context) =>
             const AppWithConnectivityOverlay(child: OnboardingScreen()),
         '/preferences': (context) =>
@@ -650,9 +654,12 @@ class _SplashScreenState extends State<SplashScreen>
       await _initializePhase2Components();
 
       final hasProfile = await HouseholdService.hasHouseholdProfile();
+      final hasSeenIntro = await SettingsService.getHasSeenIntro();
 
       if (mounted) {
-        if (hasProfile) {
+        if (!hasSeenIntro) {
+          Navigator.of(context).pushReplacementNamed('/intro');
+        } else if (hasProfile) {
           Navigator.of(context).pushReplacementNamed('/dashboard');
         } else {
           Navigator.of(context).pushReplacementNamed('/onboarding');

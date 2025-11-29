@@ -10,6 +10,7 @@ class SettingsService {
   static const String _themeModeKey = 'theme_mode';
   static const String _lastSyncKey = 'last_sync';
   static const String _cloudSyncAcceptedKey = 'cloud_sync_accepted';
+  static const String _hasSeenIntroKey = 'has_seen_intro';
 
   static SharedPreferences? _prefs;
 
@@ -65,6 +66,18 @@ class SettingsService {
   static Future<bool> setCloudSyncAccepted(bool accepted) async {
     await initialize();
     return _prefs!.setBool(_cloudSyncAcceptedKey, accepted);
+  }
+
+  /// Get if user has seen the intro slides
+  static Future<bool> getHasSeenIntro() async {
+    await initialize();
+    return _prefs!.getBool(_hasSeenIntroKey) ?? false;
+  }
+
+  /// Set if user has seen the intro slides
+  static Future<bool> setHasSeenIntro(bool seen) async {
+    await initialize();
+    return _prefs!.setBool(_hasSeenIntroKey, seen);
   }
 
   /// Get notification frequency setting

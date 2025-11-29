@@ -328,10 +328,217 @@
   "budgetUpdatedSuccessfully": "Budget updated successfully",
   "errorUpdatingBudget": "Error updating budget",
   "errorLoadingHouseholdData": "Error loading household data",
+  "@entitiesImported": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "householdsImported": "{count} households",
+  "@householdsImported": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "productsImported": "{count} products",
+  "@productsImported": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "budgetsImported": "{count} budgets",
+  "@budgetsImported": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "purchasesImported": "{count} purchases",
+  "@purchasesImported": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "deleteAllData": "Delete all data",
+  "completeResetIrreversible": "Complete reset - Irreversible action",
+  "delete": "Delete",
+  "languageChangedSuccessfully": "Language changed successfully",
+  "errorActivatingNotifications": "Error activating notifications",
+  "cloudSynchronization": "Cloud Synchronization",
+  "cloudSyncAllowsOnlineBackup": "Cloud synchronization allows backing up your data online. Do you accept this functionality?",
+  "acceptCloudSync": "I accept cloud synchronization",
+  "accept": "Accept",
+  "syncEnabled": "Synchronization enabled",
+  "cloudSyncActivated": "Cloud synchronization has been activated. Your data will be automatically backed up.",
+  "sendFeedbackTitle": "Send feedback",
+  "feedbackMessage": "We would like to know your opinion about the application.",
+  "typeMessageHere": "Type your message here...",
+  "reportBugTitle": "Report bug",
+  "bugReportWillBeSent": "Your report will be sent to our development team.",
+  "continueContactTelegram": "To continue contacting us, join our Telegram bot:",
+  "telegramLinkCopied": "Telegram link copied!",
+  "feedbackSent": "Feedback sent",
+  "feedbackSentSuccessfully": "Your feedback has been sent successfully.",
+  "bugReportSent": "Bug report sent",
+  "bugReportSentSuccessfully": "Your bug report has been sent successfully.",
+  "deleteAllDataConfirmation": "Delete all data?",
+  "deleteAllDataWarning": "This action will permanently delete all your inventory, budget and settings data. This action cannot be undone.",
+  "dataDeleted": "Data deleted",
+  "allDataDeletedRestart": "All your data has been deleted.\\nThe application will restart.",
+  "exportDataConfirm": "Export all your data to a JSON file?",
+  "exportSuccess": "Data exported successfully",
+  "importDataConfirm": "This operation will replace your current data. Continue?",
+  "storagePermissionRequired": "Storage permission is required to export data",
+  "storagePermissionDenied": "Storage permission denied. Please grant access in system settings",
+  "storagePermissionPermanentlyDenied": "Storage permission permanently denied. Please enable it in app settings",
+  "grantStoragePermission": "Grant Storage Permission",
+  "requestTimedOut": "Request timed out",
+  "networkError": "Network error. Please verify your internet connection.",
+  "welcome": "Welcome!",
+  "email": "Email",
+  "password": "Password",
+  "confirmPassword": "Confirm password",
+  "fullName": "Full name",
+  "signIn": "Sign in",
+  "signUp": "Create account",
+  "continueWithGoogle": "Continue with Google",
+  "continueWithApple": "Continue with Apple",
+  "useYourEmail": "Use your email",
+  "alreadyHaveAccount": "Already have an account? Sign in",
+  "noAccount": "No account? Create account",
+  "invalidEmail": "Invalid email",
+  "passwordTooShort": "Password too short (min 8 characters)",
+  "passwordsDoNotMatch": "Passwords do not match",
+  "pleaseEnterFullName": "Please enter your full name",
+  "pleaseEnterFirstAndLastName": "Please enter your first and last name",
+  "pleaseEnterEmail": "Please enter your email",
+  "pleaseEnterPassword": "Please enter your password",
+  "pleaseConfirmPassword": "Please confirm your password",
+  "accountCreatedSuccessfully": "Account created successfully!",
+  "pleaseCheckEmailToConfirmAccount": "Please check your email to confirm your account.",
+  "signInSuccessful": "Sign in successful!",
+  "googleSignInSuccessful": "Google sign in successful!",
+  "appleSignInSuccessful": "Apple sign in successful!",
+  "checkYourEmailToConfirm": "Check your email to confirm your account.",
+  "emailConfirmedYouCanSignIn": "Email confirmed. You can now sign in.",
+  "resendConfirmationEmail": "Resend confirmation email",
+  "confirmationEmailResent": "Confirmation email resent.",
+  "resendInSeconds": "Resend in {seconds}s",
+  "@resendInSeconds": { "placeholders": { "seconds": { "type": "int" } } },
+  "connectQuicklyWithExistingAccount": "Connect quickly with your existing account",
+  "or": "or",
+  "socialNetworks": "Social networks",
+  "syncDataQuestion": "Do you want to synchronize your data?",
+  "syncDataExplanation": "Cloud synchronization allows you to backup your data online and access it from all your devices.",
+  "yes": "Yes",
+  "noLater": "No, later",
+  "syncLaterMessage": "You can enable synchronization later in settings",
+  
+  "synchronization": "Synchronization",
+  "syncStatus": "Sync status",
+  "syncDisabled": "Disabled",
+  "syncEnabledStatus": "Enabled",
+  "syncUpToDate": "✓ Synchronized",
+  "syncPending": "⏳ Pending ({count} operations)",
+  "@syncPending": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "syncInProgress": "🔄 Synchronizing...",
+  "syncError": "⚠️ Sync error",
+  "lastSyncTime": "Last sync: {time}",
+  "@lastSyncTime": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "neverSynced": "Never synchronized",
+  "tapForDetails": "Tap for details",
+  "connectToEnableSync": "Connect to enable synchronization",
+  "syncStatusDetails": "Synchronization details",
+  "pendingOperations": "Pending operations",
+  "failedOperations": "Failed operations",
+  "syncHistory": "Sync history",
+  "enableCloudSync": "Enable cloud sync",
+  "disableCloudSync": "Disable cloud sync",
+  "keepLocal": "Keep local",
+  "keepLocalDescription": "Upload local data to cloud",
+  "importFromCloud": "Import from cloud",
+  "importFromCloudDescription": "Download data from cloud",
+  "mergeData": "Merge",
+  "mergeDataDescription": "Combine local and cloud data",
+  "syncSuccessMessage": "Synchronization enabled successfully",
+  "importOptionsTitle": "Import options",
+  "chooseImportOption": "Choose how to handle your existing data",
+  
+  "budget": "Budget",
+  "monthlyBudget": "Monthly budget",
+  "editMonthlyBudget": "Edit monthly budget",
+  "enterBudgetAmount": "Enter your monthly budget amount",
+  "notSet": "Not set",
+  "edit": "Edit",
+  "invalidAmount": "Invalid amount",
+  "budgetOutOfRange": "Budget must be between €50 and €2000",
+  "budgetUpdatedSuccessfully": "Budget updated successfully",
+  "errorUpdatingBudget": "Error updating budget",
+  "errorDatabaseConnection": "Unable to connect to database. Please try again.",
+  "errorBudgetCalculation": "Error calculating budget. Using default values.",
+  "errorSyncFailed": "Synchronization failed. Your data is saved locally.",
+  "errorNotificationPermission": "Notification permission denied. Enable it in settings.",
+  "errorMigrationFailed": "Database update failed. App continues with old version.",
+  "errorValidationBudgetAmount": "Budget amount must be a positive number.",
+  "errorNetworkUnavailable": "No internet connection. Operating in offline mode.",
+  "errorLoadingBudgetCategories": "Unable to load budget categories.",
+  "errorSavingBudgetCategory": "Error saving category.",
+  "errorDeletingBudgetCategory": "Error deleting category.",
+  "errorRecalculatingBudgets": "Error recalculating budgets.",
+  "errorInvalidMonthFormat": "Invalid month format. Use YYYY-MM.",
+  "errorMissingFoyerData": "Missing household data. Please complete your profile.",
+  "errorBudgetNotificationFailed": "Unable to display budget notification.",
+  "errorSyncRetryExhausted": "Synchronization failed after multiple attempts.",
+  "warningBudgetCalculationFallback": "Budget calculation failed. Using default values.",
+  "warningInvalidPercentage": "Invalid percentage detected. Using default value."
+,
+  "budgetNotSet": "Monthly budget not set",
+  "budgetNotSetMessage": "Please set your monthly budget in settings to start tracking your expenses.",
+  "goToSettings": "Go to settings",
+  "monthlyBudget": "Monthly budget",
+  "updateMonthlyBudget": "Update monthly budget",
+  "budgetWillBeRecalculated": "Your budget category limits will be recalculated proportionally.",
+  "enterAmount": "Enter amount",
+  "pleaseEnterValidAmount": "Please enter a valid amount",
+  "budgetUpdatedSuccessfully": "Budget updated successfully",
+  "errorUpdatingBudget": "Error updating budget",
+  "errorLoadingHouseholdData": "Error loading household data",
   "setBudgetInSettings": "Set your monthly budget",
   "modify": "Modify",
   "budgetLoadError": "Unable to load budget data. Check your connection.",
   "budgetRetry": "Retry",
   "budgetUpdateError": "Error updating budget",
-  "budgetDeleteError": "Error deleting category"
+  "budgetDeleteError": "Error deleting category",
+  "introTitle1": "Welcome to NgoNest",
+  "introDesc1": "The app that simplifies your household management.",
+  "introTitle2": "Manage your inventory",
+  "introDesc2": "Track your stock and avoid waste easily.",
+  "introTitle3": "Track your budget",
+  "introDesc3": "Master your monthly expenses and save money.",
+  "introTitle4": "Smart Alerts",
+  "introDesc4": "Get notified before your products run out of stock.",
+  "introSkip": "Skip",
+  "introNext": "Next",
+  "introStart": "Start",
+  "dashboardAddProductHint": "Start here!"
 }

@@ -714,4 +714,44 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get budgetDeleteError =>
       'Erreur lors de la suppression de la catégorie';
+
+  @override
+  String get introTitle1 => 'Bienvenue sur NgoNest';
+
+  @override
+  String get introDesc1 =>
+      'L\'application qui simplifie la gestion de votre foyer.';
+
+  @override
+  String get introTitle2 => 'Gérez votre inventaire';
+
+  @override
+  String get introDesc2 =>
+      'Suivez vos stocks et évitez le gaspillage facilement.';
+
+  @override
+  String get introTitle3 => 'Suivez votre budget';
+
+  @override
+  String get introDesc3 =>
+      'Maîtrisez vos dépenses mensuelles et faites des économies.';
+
+  @override
+  String get introTitle4 => 'Alertes Intelligentes';
+
+  @override
+  String get introDesc4 =>
+      'Soyez notifié avant la rupture de stock de vos produits.';
+
+  @override
+  String get introSkip => 'Passer';
+
+  @override
+  String get introNext => 'Suivant';
+
+  @override
+  String get introStart => 'Commencer';
+
+  @override
+  String get dashboardAddProductHint => 'Commencez ici !';
 }

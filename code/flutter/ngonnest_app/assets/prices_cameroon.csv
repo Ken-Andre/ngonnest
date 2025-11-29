@@ -1,0 +1,25 @@
+name,category,price_fcfa,currency,unit,country,region,notes
+Riz,Alimentation,686,XAF,kg,CM,Douala,Riz local qualité standard (prix ajusté +5.5%)
+Huile de palme,Alimentation,1266,XAF,litre,CM,Douala,Huile rouge traditionnelle
+Plantain,Alimentation,158,XAF,unité,CM,Douala,Plantain mûr taille moyenne
+Haricot,Alimentation,844,XAF,kg,CM,Douala,Haricot rouge sec
+Manioc,Alimentation,317,XAF,kg,CM,Douala,Manioc frais
+Poisson fumé,Alimentation,2638,XAF,kg,CM,Douala,Poisson fumé local
+Tomate,Alimentation,528,XAF,kg,CM,Douala,Tomate fraîche (selon saison)
+Oignon,Alimentation,633,XAF,kg,CM,Douala,Oignon jaune
+Savon de Marseille,Hygiène,264,XAF,unité,CM,Douala,Savon 100g standard
+Dentifrice,Hygiène,844,XAF,tube,CM,Douala,Tube 75ml marque locale
+Shampoing,Hygiène,1583,XAF,bouteille,CM,Douala,Bouteille 400ml
+Papier toilette,Hygiène,1266,XAF,pack,CM,Douala,Pack de 4 rouleaux
+Eau de Javel,Entretien,422,XAF,litre,CM,Douala,Eau de Javel concentrée
+Liquide vaisselle,Entretien,844,XAF,bouteille,CM,Douala,Bouteille 500ml
+Éponge,Entretien,158,XAF,unité,CM,Douala,Éponge grattante standard
+Eau minérale,Boissons,317,XAF,bouteille,CM,Douala,Bouteille 1.5L marque locale
+Thé,Boissons,1055,XAF,boîte,CM,Douala,Boîte de 25 sachets
+Café,Boissons,2638,XAF,kg,CM,Douala,Café moulu local
+Sel,Condiments,211,XAF,kg,CM,Douala,Sel de cuisine raffiné
+Cube Maggi,Condiments,26,XAF,cube,CM,Douala,Cube d'assaisonnement
+Piment,Condiments,1055,XAF,kg,CM,Douala,Piment rouge séché
+Lait en poudre,Produits laitiers,3693,XAF,boîte,CM,Douala,Boîte 400g marque internationale
+Maïs,Céréales,422,XAF,kg,CM,Douala,Maïs sec en grains
+Farine de blé,Céréales,633,XAF,kg,CM,Douala,Farine de blé standard

@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/app_localizations.dart';
 
 import '../models/alert.dart';
 import '../models/foyer.dart';
@@ -18,7 +19,7 @@ import '../theme/app_theme.dart';
 import '../theme/theme_mode_notifier.dart';
 import '../widgets/connectivity_banner.dart';
 import '../widgets/main_navigation_wrapper.dart';
-import '../widgets/premium_banner.dart';
+// import '../widgets/premium_banner.dart';
 import '../widgets/sync_banner.dart';
 import 'add_product_screen.dart';
 
@@ -357,8 +358,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     const SizedBox(height: 24),
                   ],
 
-                  // Premium Banner (Remote Config controlled)
-                  const RepaintBoundary(child: PremiumBanner()),
+                  // Premium Banner removed for Phase 1.5
+                  // const RepaintBoundary(child: PremiumBanner()),
 
                   // Quick actions
                   _buildQuickActionsSection(),
@@ -653,10 +654,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
       },
       {
         'title': 'Ajouter',
-        'subtitle': 'Nouveau produit',
+        'subtitle': _totalItems == 0 
+            ? AppLocalizations.of(context)!.dashboardAddProductHint 
+            : 'Nouveau produit',
         'icon': CupertinoIcons.add_circled,
-        'color': Theme.of(context).colorScheme.secondary,
+        'color': _totalItems == 0 
+            ? Theme.of(context).colorScheme.primary 
+            : Theme.of(context).colorScheme.secondary,
         'onTap': () => _navigateToAddProduct(),
+        'isHighlighted': _totalItems == 0,
       },
     ];
 
@@ -708,11 +714,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: Icon(
-                            action['icon'] as IconData,
-                            size: 20,
-                            color: action['color'] as Color,
-                          ),
+                          child: (action['isHighlighted'] as bool? ?? false)
+                              ? _PulseIcon(
+                                  icon: action['icon'] as IconData,
+                                  color: action['color'] as Color,
+                                  size: 20,
+                                )
+                              : Icon(
+                                  action['icon'] as IconData,
+                                  size: 20,
+                                  color: action['color'] as Color,
+                                ),
                         ),
                         const SizedBox(height: 8),
                         Flexible(
@@ -1191,5 +1203,57 @@ class _DashboardScreenState extends State<DashboardScreen> {
       default:
         return CupertinoIcons.info_circle;
     }
+  }
+}
+
+class _PulseIcon extends StatefulWidget {
+  final IconData icon;
+  final Color color;
+  final double size;
+
+  const _PulseIcon({
+    required this.icon,
+    required this.color,
+    required this.size,
+  });
+
+  @override
+  State<_PulseIcon> createState() => _PulseIconState();
+}
+
+class _PulseIconState extends State<_PulseIcon>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
+
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.3).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ScaleTransition(
+      scale: _scaleAnimation,
+      child: Icon(
+        widget.icon,
+        size: widget.size,
+        color: widget.color,
+      ),
+    );
   }
 }

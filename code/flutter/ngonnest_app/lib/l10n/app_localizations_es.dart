@@ -594,7 +594,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get budgetOutOfRange => 'El presupuesto debe estar entre €50 y €2000';
 
   @override
-  String get budgetUpdatedSuccessfully => 'Presupuesto actualizado con éxito';
+  String get budgetUpdatedSuccessfully =>
+      'Presupuesto actualizado exitosamente';
 
   @override
   String get errorUpdatingBudget => 'Error al actualizar el presupuesto';
@@ -708,4 +709,43 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get budgetDeleteError => 'Error al eliminar la categoría';
+
+  @override
+  String get introTitle1 => 'Bienvenido a NgoNest';
+
+  @override
+  String get introDesc1 =>
+      'La aplicación que simplifica la gestión de tu hogar.';
+
+  @override
+  String get introTitle2 => 'Gestiona tu inventario';
+
+  @override
+  String get introDesc2 =>
+      'Rastrea tu stock y evita el desperdicio fácilmente.';
+
+  @override
+  String get introTitle3 => 'Rastrea tu presupuesto';
+
+  @override
+  String get introDesc3 => 'Domina tus gastos mensuales y ahorra dinero.';
+
+  @override
+  String get introTitle4 => 'Alertas Inteligentes';
+
+  @override
+  String get introDesc4 =>
+      'Recibe notificaciones antes de que se agoten tus productos.';
+
+  @override
+  String get introSkip => 'Omitir';
+
+  @override
+  String get introNext => 'Siguiente';
+
+  @override
+  String get introStart => 'Comenzar';
+
+  @override
+  String get dashboardAddProductHint => '¡Empieza aquí!';
 }
