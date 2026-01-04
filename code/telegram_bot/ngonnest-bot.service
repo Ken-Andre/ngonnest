@@ -1,0 +1,17 @@
+[Unit]
+Description=NgonNest Telegram Bot
+After=network.target
+
+[Service]
+Type=simple
+User=YOUR_USERNAME
+WorkingDirectory=/path/to/ngonnest/code/telegram_bot
+Environment="TELEGRAM_TOKEN=your_telegram_token_here"
+Environment="GITHUB_TOKEN=your_github_token_here"
+Environment="GITHUB_REPO=Ken-Andre/ngonnest"
+ExecStart=/usr/bin/python3 main.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

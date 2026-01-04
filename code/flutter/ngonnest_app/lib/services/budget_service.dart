@@ -252,6 +252,7 @@ class BudgetService extends ChangeNotifier {
 
   /// Calculate spending for a specific category in a given month
   ///
+  /// Now uses reachat_log for actual repurchases AND objet for initial purchases
   /// Returns 0.0 on error to prevent calculation failures
   /// Handles division by zero and null/missing data gracefully
   /// Requirements: 10.2, 10.3
@@ -280,27 +281,59 @@ class BudgetService extends ChangeNotifier {
 
       final startDate = DateTime(year, monthNum, 1);
       final endDate = DateTime(year, monthNum + 1, 0); // Last day of month
+      
+      final startDateStr = startDate.toIso8601String().split('T')[0];
+      final endDateStr = endDate.toIso8601String().split('T')[0];
 
-      // Calculate spending based on objects purchased in this month
-      final result = await db.rawQuery(
+      // Query 1: Get spending from reachat_log (repurchases)
+      final repurchaseResult = await db.rawQuery(
         '''
-        SELECT SUM(prix_unitaire) as total_spending
-        FROM objet 
-        WHERE id_foyer = ? 
-        AND categorie = ?
-        AND date_achat >= ? 
-        AND date_achat <= ?
-        AND prix_unitaire IS NOT NULL
-      ''',
+        SELECT COALESCE(SUM(r.prix_total), 0.0) as total_spending
+        FROM reachat_log r
+        INNER JOIN objet o ON r.id_objet = o.id
+        WHERE o.id_foyer = ? 
+        AND o.categorie = ?
+        AND date(r.date) >= date(?)
+        AND date(r.date) <= date(?)
+        AND r.prix_total IS NOT NULL
+        ''',
         [
           idFoyer,
           categoryName,
-          startDate.toIso8601String(),
-          endDate.toIso8601String(),
+          startDateStr,
+          endDateStr,
         ],
       );
+      
+      final repurchaseSpending = (repurchaseResult.first['total_spending'] as num?)?.toDouble() ?? 0.0;
 
-      return (result.first['total_spending'] as double?) ?? 0.0;
+      // Query 2: Get spending from initial purchases (objet.date_achat this month)
+      final initialPurchaseResult = await db.rawQuery(
+        '''
+        SELECT COALESCE(SUM(prix_unitaire * quantite_initiale), 0.0) as total_spending
+        FROM objet 
+        WHERE id_foyer = ? 
+        AND categorie = ?
+        AND date(date_achat) >= date(?)
+        AND date(date_achat) <= date(?)
+        AND prix_unitaire IS NOT NULL
+        ''',
+        [
+          idFoyer,
+          categoryName,
+          startDateStr,
+          endDateStr,
+        ],
+      );
+      
+      final initialSpending = (initialPurchaseResult.first['total_spending'] as num?)?.toDouble() ?? 0.0;
+
+      // Total spending = repurchases + initial purchases this month
+      final totalSpending = repurchaseSpending + initialSpending;
+      
+      debugPrint('[BudgetService] Category $categoryName spending: repurchases=$repurchaseSpending, initial=$initialSpending, total=$totalSpending');
+
+      return totalSpending;
     } catch (e, stackTrace) {
       await ErrorLoggerService.logError(
         component: 'BudgetService',
@@ -319,6 +352,7 @@ class BudgetService extends ChangeNotifier {
       return 0.0;
     }
   }
+
 
   /// Trigger budget alert when spending exceeds limit
   ///

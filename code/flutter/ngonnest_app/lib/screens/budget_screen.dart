@@ -230,75 +230,26 @@ class _BudgetScreenState extends State<BudgetScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Check if budget is not set (null or zero)
+    // Get foyer budget - now with fallback instead of blocking
     final foyerBudget = context
         .watch<FoyerProvider>()
         .foyer
         ?.budgetMensuelEstime;
-    if (foyerBudget == null || foyerBudget <= 0) {
-      final l10n = AppLocalizations.of(context)!;
-      return Scaffold(
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  CupertinoIcons.money_dollar_circle,
-                  size: 64,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  l10n.budgetNotSet,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  l10n.budgetNotSetMessage,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.7),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    // Navigate to settings screen
-                    NavigationService.navigateToTab(
-                      context,
-                      4,
-                    ); // Settings is index 4
-                  },
-                  icon: const Icon(CupertinoIcons.settings),
-                  label: Text(l10n.goToSettings),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
+    
+    // Calculate fallback budget from sum of category limits if foyer budget not set
+    final effectiveBudget = (foyerBudget != null && foyerBudget > 0)
+        ? foyerBudget
+        : _categories.fold(0.0, (sum, cat) => sum + cat.limit);
+    
+    // Update summary with effective budget if we have categories but no foyer budget
+    if ((foyerBudget == null || foyerBudget <= 0) && _categories.isNotEmpty) {
+      _budgetSummary['totalBudget'] = effectiveBudget;
+      _budgetSummary['remaining'] = effectiveBudget - (_budgetSummary['totalSpent'] ?? 0.0);
     }
 
     // Show error state with retry button only if there's an error and no data
     if (_errorMessage != null && _categories.isEmpty) {
+
       final l10n = AppLocalizations.of(context)!;
       return Scaffold(
         body: Center(

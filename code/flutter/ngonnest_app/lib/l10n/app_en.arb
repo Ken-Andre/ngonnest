@@ -540,5 +540,50 @@
   "introSkip": "Skip",
   "introNext": "Next",
   "introStart": "Start",
-  "dashboardAddProductHint": "Start here!"
+  "dashboardAddProductHint": "Start here!",
+
+  "packagingTitle": "Packaging",
+  "packagingTypeLabel": "Packaging type",
+  "packagingValueHint": "Ex: 1.0",
+  "packagingTypeUnit": "Piece/Unit",
+  "packagingTypePiece": "Piece",
+  "packagingTypeKg": "Kg",
+  "packagingTypeLiter": "Liter",
+  "packagingTypeBottle": "Bottle",
+  "packagingTypeBag": "Bag",
+  "packagingTypeBox": "Box",
+  "packagingTypeOther": "Other",
+
+  "unitPriceLabel": "Unit price",
+  "totalPriceLabel": "Total price",
+  "priceEstimatedApplied": "Estimated price applied",
+
+  "categoryLabel": "Category",
+  "productNameLabel": "Product name",
+  "productTypeLabel": "Product type",
+  "consumableLabel": "Consumable",
+  "durableLabel": "Durable",
+  "quantityDurableLabel": "Durable quantity",
+  "frequencyLabel": "Purchase frequency (days)",
+  "expiryDateLabel": "Expiry date (optional)",
+  "purchaseDateLabel": "Purchase date (optional)",
+  "selectDateHint": "Select a date",
+  "saveProductCta": "Save product",
+  "chooseCategoryHint": "Choose a category",
+  "infoComplementairesLabel": "Additional information",
+  "infoComplementairesHint": "Ex: iCloud code, serial number, warranty date...",
+  "familyRecommendationApply": "Apply",
+
+  "addSummaryWithPrice": "Adding {quantity} {unit} of {product} — {totalPrice}",
+  "@addSummaryWithPrice": {
+    "placeholders": {
+      "quantity": {"type": "String"},
+      "unit": {"type": "String"},
+      "product": {"type": "String"},
+      "totalPrice": {"type": "String"}
+    }
+  },
+  "genericProduct": "product",
+  "unitGeneric": "units",
+  "priceUnknown": "—"
 }

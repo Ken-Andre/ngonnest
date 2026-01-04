@@ -8,6 +8,7 @@ import 'dart:async' as _i3;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:mockito/src/dummies.dart' as _i4;
 import 'package:ngonnest_app/models/alert.dart' as _i11;
+import 'package:ngonnest_app/models/alert_state.dart' as _i12;
 import 'package:ngonnest_app/models/foyer.dart' as _i9;
 import 'package:ngonnest_app/models/objet.dart' as _i10;
 import 'package:ngonnest_app/models/product_price.dart' as _i7;
@@ -616,6 +617,22 @@ class MockDatabaseService extends _i1.Mock implements _i8.DatabaseService {
           as _i3.Future<List<_i10.Objet>>);
 
   @override
+  _i3.Future<List<_i10.Objet>> searchObjets({
+    required String? query,
+    int? idFoyer,
+    int? limit = 100,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#searchObjets, [], {
+              #query: query,
+              #idFoyer: idFoyer,
+              #limit: limit,
+            }),
+            returnValue: _i3.Future<List<_i10.Objet>>.value(<_i10.Objet>[]),
+          )
+          as _i3.Future<List<_i10.Objet>>);
+
+  @override
   _i3.Future<Map<String, double>> getBudgetMensuel(int? idFoyer) =>
       (super.noSuchMethod(
             Invocation.method(#getBudgetMensuel, [idFoyer]),
@@ -693,6 +710,16 @@ class MockDatabaseService extends _i1.Mock implements _i8.DatabaseService {
           as _i3.Future<int>);
 
   @override
+  _i3.Future<Map<int, Map<String, bool>>> getAlertStates() =>
+      (super.noSuchMethod(
+            Invocation.method(#getAlertStates, []),
+            returnValue: _i3.Future<Map<int, Map<String, bool>>>.value(
+              <int, Map<String, bool>>{},
+            ),
+          )
+          as _i3.Future<Map<int, Map<String, bool>>>);
+
+  @override
   _i3.Future<void> generateAlerts(int? idFoyer) =>
       (super.noSuchMethod(
             Invocation.method(#generateAlerts, [idFoyer]),
@@ -752,4 +779,73 @@ class MockDatabaseService extends _i1.Mock implements _i8.DatabaseService {
             returnValueForMissingStub: _i3.Future<void>.value(),
           )
           as _i3.Future<void>);
+
+  @override
+  _i3.Future<_i7.ProductPrice?> searchPrice(
+    String? productName, {
+    String? countryCode,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(
+              #searchPrice,
+              [productName],
+              {#countryCode: countryCode},
+            ),
+            returnValue: _i3.Future<_i7.ProductPrice?>.value(),
+          )
+          as _i3.Future<_i7.ProductPrice?>);
+
+  @override
+  _i3.Future<List<_i7.ProductPrice>> getAllPrices({String? countryCode}) =>
+      (super.noSuchMethod(
+            Invocation.method(#getAllPrices, [], {#countryCode: countryCode}),
+            returnValue: _i3.Future<List<_i7.ProductPrice>>.value(
+              <_i7.ProductPrice>[],
+            ),
+          )
+          as _i3.Future<List<_i7.ProductPrice>>);
+
+  @override
+  _i3.Future<void> upsertPrice(_i7.ProductPrice? price) =>
+      (super.noSuchMethod(
+            Invocation.method(#upsertPrice, [price]),
+            returnValue: _i3.Future<void>.value(),
+            returnValueForMissingStub: _i3.Future<void>.value(),
+          )
+          as _i3.Future<void>);
+
+  @override
+  _i3.Future<int> importPricesFromCSV(String? csvContent) =>
+      (super.noSuchMethod(
+            Invocation.method(#importPricesFromCSV, [csvContent]),
+            returnValue: _i3.Future<int>.value(0),
+          )
+          as _i3.Future<int>);
+
+  @override
+  _i3.Future<void> saveAlertState(_i12.AlertState? state) =>
+      (super.noSuchMethod(
+            Invocation.method(#saveAlertState, [state]),
+            returnValue: _i3.Future<void>.value(),
+            returnValueForMissingStub: _i3.Future<void>.value(),
+          )
+          as _i3.Future<void>);
+
+  @override
+  _i3.Future<_i12.AlertState?> getAlertState(int? alertId) =>
+      (super.noSuchMethod(
+            Invocation.method(#getAlertState, [alertId]),
+            returnValue: _i3.Future<_i12.AlertState?>.value(),
+          )
+          as _i3.Future<_i12.AlertState?>);
+
+  @override
+  _i3.Future<Map<int, _i12.AlertState>> getAllAlertStates() =>
+      (super.noSuchMethod(
+            Invocation.method(#getAllAlertStates, []),
+            returnValue: _i3.Future<Map<int, _i12.AlertState>>.value(
+              <int, _i12.AlertState>{},
+            ),
+          )
+          as _i3.Future<Map<int, _i12.AlertState>>);
 }

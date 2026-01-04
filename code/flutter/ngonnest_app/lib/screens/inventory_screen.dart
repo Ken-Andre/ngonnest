@@ -61,6 +61,7 @@ class _InventoryScreenState extends State<InventoryScreen>
         setState(() {
           _filterState = const InventoryFilterState();
         });
+        // Fire-and-forget: async call without await in listener
         _applySearchAndFilters();
       }
     });
@@ -106,6 +107,7 @@ class _InventoryScreenState extends State<InventoryScreen>
           _durables = durables;
           _isLoading = false;
         });
+        // Fire-and-forget: async call without await
         _applySearchAndFilters();
       } else {
         setState(() => _isLoading = false);
@@ -171,25 +173,54 @@ class _InventoryScreenState extends State<InventoryScreen>
     }
   }
 
-  void _applySearchAndFilters() {
-    // Optimize: Use where() lazily and materialize only once
-    Iterable<Objet> filteredConsommables = _consommables;
-    Iterable<Objet> filteredDurables = _durables;
+  Future<void> _applySearchAndFilters() async {
+    Iterable<Objet> filteredConsommables;
+    Iterable<Objet> filteredDurables;
 
-    // Apply search filter
-    if (_searchQuery.isNotEmpty) {
-      final query = _searchQuery.toLowerCase();
-      filteredConsommables = filteredConsommables.where((objet) {
-        return objet.nom.toLowerCase().contains(query) ||
-            objet.categorie.toLowerCase().contains(query) ||
-            (objet.room?.toLowerCase().contains(query) ?? false);
-      });
-
-      filteredDurables = filteredDurables.where((objet) {
-        return objet.nom.toLowerCase().contains(query) ||
-            objet.categorie.toLowerCase().contains(query) ||
-            (objet.room?.toLowerCase().contains(query) ?? false);
-      });
+    // If search query is present, use SQLite search for better performance
+    if (_searchQuery.trim().isNotEmpty) {
+      try {
+        final foyer = await _databaseService.getFoyer();
+        if (foyer != null && foyer.id != null) {
+          final idFoyer = int.tryParse(foyer.id!) ?? 0;
+          
+          // Use SQLite search for optimal performance with large inventories
+          final searchResults = await _inventoryRepository.searchProducts(
+            _searchQuery,
+            idFoyer: idFoyer,
+          );
+          
+          // Separate results by type
+          filteredConsommables = searchResults.where(
+            (objet) => objet.type == TypeObjet.consommable,
+          );
+          filteredDurables = searchResults.where(
+            (objet) => objet.type == TypeObjet.durable,
+          );
+        } else {
+          // Fallback to empty lists if no foyer
+          filteredConsommables = [];
+          filteredDurables = [];
+        }
+      } catch (e) {
+        // On error, fallback to in-memory filtering
+        print('[InventoryScreen] SQLite search failed, using in-memory filter: $e');
+        final query = _searchQuery.toLowerCase();
+        filteredConsommables = _consommables.where((objet) {
+          return objet.nom.toLowerCase().contains(query) ||
+              objet.categorie.toLowerCase().contains(query) ||
+              (objet.room?.toLowerCase().contains(query) ?? false);
+        });
+        filteredDurables = _durables.where((objet) {
+          return objet.nom.toLowerCase().contains(query) ||
+              objet.categorie.toLowerCase().contains(query) ||
+              (objet.room?.toLowerCase().contains(query) ?? false);
+        });
+      }
+    } else {
+      // No search query: use full lists
+      filteredConsommables = _consommables;
+      filteredDurables = _durables;
     }
 
     // Apply category filter
@@ -285,6 +316,7 @@ class _InventoryScreenState extends State<InventoryScreen>
     });
     // Debounce search to avoid excessive filtering
     _debounce = Timer(const Duration(milliseconds: 300), () {
+      // Fire-and-forget: async call in timer callback
       _applySearchAndFilters();
     });
   }
@@ -293,6 +325,7 @@ class _InventoryScreenState extends State<InventoryScreen>
     setState(() {
       _filterState = newFilterState;
     });
+    // Fire-and-forget: async call without await
     _applySearchAndFilters();
   }
 
@@ -317,6 +350,7 @@ class _InventoryScreenState extends State<InventoryScreen>
         setState(() {
           _consommables[index] = updatedObjet;
         });
+        // Fire-and-forget: async call without await
         _applySearchAndFilters();
       }
     } catch (e) {

@@ -34,7 +34,27 @@ class InventoryRepository {
   /// Create a new inventory item with automatic recovery
   /// Automatically calculates rupture date for consumables using PredictionService
   /// Returns the ID of the newly created item
+  /// 
+  /// Validates:
+  /// - nom must not be empty
+  /// - quantiteInitiale must be > 0
+  /// - quantiteRestante must be >= 0
   Future<int> create(Objet objet) async {
+    // Validation: nom must not be empty
+    if (objet.nom.trim().isEmpty) {
+      throw ArgumentError('Product name cannot be empty');
+    }
+    
+    // Validation: quantiteInitiale must be > 0
+    if (objet.quantiteInitiale <= 0) {
+      throw ArgumentError('Initial quantity must be greater than 0');
+    }
+    
+    // Validation: quantiteRestante must be >= 0
+    if (objet.quantiteRestante < 0) {
+      throw ArgumentError('Remaining quantity cannot be negative');
+    }
+    
     try {
       final objetWithRuptureDate = PredictionService.updateRuptureDate(objet);
       final id = await _databaseService.insertObjet(objetWithRuptureDate);
@@ -261,9 +281,138 @@ class InventoryRepository {
   }
 
   /// Delete an inventory item
-  /// Returns the number of affected rows
+  /// Uses hard delete strategy: permanently removes the item from database
+  /// Alertes linked to this item are automatically deleted via CASCADE (see db.dart schema)
+  /// Returns the number of affected rows (0 if item not found, 1 if deleted)
+  /// 
+  /// Note: This is a hard delete. If soft delete is needed in the future,
+  /// add an 'is_deleted' column and filter in all queries.
   Future<int> delete(int id) async {
-    return await _databaseService.deleteObjet(id);
+    try {
+      // Verify item exists before deletion
+      final existingObjet = await _databaseService.getObjet(id);
+      if (existingObjet == null) {
+        // Item doesn't exist, return 0 (no rows affected)
+        return 0;
+      }
+      
+      // Perform hard delete
+      // Note: Alertes are automatically deleted via ON DELETE CASCADE in schema
+      // Budget calculations will exclude deleted items automatically (they won't be in queries)
+      final deletedRows = await _databaseService.deleteObjet(id);
+      
+      return deletedRows;
+    } catch (e, stackTrace) {
+      await ErrorLoggerService.logError(
+        component: 'InventoryRepository',
+        operation: 'delete',
+        error: e,
+        stackTrace: stackTrace,
+        severity: ErrorSeverity.high,
+        metadata: {'objectId': id},
+      );
+      rethrow;
+    }
+  }
+  
+  /// Alias for create() to match Task 1.4 naming convention
+  /// Adds a new product to the inventory
+  /// Returns the ID of the newly created product
+  Future<int> addProduct(Objet product) async {
+    return create(product);
+  }
+  
+  /// Updates an existing product
+  /// Returns true if update succeeded (at least 1 row affected), false otherwise
+  /// 
+  /// Validates:
+  /// - Product ID must exist
+  /// - nom must not be empty if provided
+  /// - quantiteInitiale must be > 0 if provided
+  /// - quantiteRestante must be >= 0 if provided
+  Future<bool> updateProduct(Objet product) async {
+    try {
+      // Validation: ID must be provided
+      if (product.id == null) {
+        throw ArgumentError('Product ID is required for update');
+      }
+      
+      // Validation: nom must not be empty
+      if (product.nom.trim().isEmpty) {
+        throw ArgumentError('Product name cannot be empty');
+      }
+      
+      // Validation: quantiteInitiale must be > 0
+      if (product.quantiteInitiale <= 0) {
+        throw ArgumentError('Initial quantity must be greater than 0');
+      }
+      
+      // Validation: quantiteRestante must be >= 0
+      if (product.quantiteRestante < 0) {
+        throw ArgumentError('Remaining quantity cannot be negative');
+      }
+      
+      // Verify product exists before update
+      final existingObjet = await _databaseService.getObjet(product.id!);
+      if (existingObjet == null) {
+        // Product doesn't exist, return false
+        return false;
+      }
+      
+      // Update with recalculated rupture date
+      final objetWithUpdatedRuptureDate =
+          PredictionService.updateRuptureDate(product);
+      final rowsAffected = await _databaseService.updateObjet(
+        objetWithUpdatedRuptureDate,
+      );
+      
+      // Check if prix_unitaire changed
+      final priceChanged = product.prixUnitaire != existingObjet.prixUnitaire;
+      final spendingChanged = priceChanged ||
+          product.categorie != existingObjet.categorie ||
+          product.quantiteInitiale != existingObjet.quantiteInitiale ||
+          product.dateAchat != existingObjet.dateAchat;
+      
+      // Trigger budget alerts if spending changed and price is set
+      if (spendingChanged &&
+          objetWithUpdatedRuptureDate.prixUnitaire != null &&
+          objetWithUpdatedRuptureDate.prixUnitaire! > 0) {
+        try {
+          await _budgetService.checkBudgetAlertsAfterPurchase(
+            objetWithUpdatedRuptureDate.idFoyer.toString(),
+            objetWithUpdatedRuptureDate.categorie,
+          );
+        } catch (e, stackTrace) {
+          await ErrorLoggerService.logError(
+            component: 'InventoryRepository',
+            operation: 'updateProduct.checkBudgetAlertsAfterPurchase',
+            error: e,
+            stackTrace: stackTrace,
+            severity: ErrorSeverity.low,
+          );
+        }
+      }
+      
+      // Return true if at least 1 row was affected, false otherwise
+      return rowsAffected > 0;
+    } catch (e, stackTrace) {
+      await ErrorLoggerService.logError(
+        component: 'InventoryRepository',
+        operation: 'updateProduct',
+        error: e,
+        stackTrace: stackTrace,
+        severity: ErrorSeverity.high,
+        metadata: {'productId': product.id},
+      );
+      rethrow;
+    }
+  }
+  
+  /// Alias for delete() to match Task 1.4 naming convention
+  /// Deletes a product from the inventory
+  /// Returns the number of affected rows (0 if not found, 1 if deleted)
+  Future<int> deleteProduct(int id) async {
+    return delete(id);
   }
 
   /// Get all inventory items for a foyer
@@ -329,6 +478,40 @@ class InventoryRepository {
   Future<String> getExpiringSoonCount(int idFoyer) async {
     final count = await _databaseService.getExpiringSoonObjetCount(idFoyer);
     return count.toString();
+  }
+
+  /// Search products using SQLite LIKE queries
+  /// Searches in: nom, categorie, and room fields
+  /// Returns up to 100 results (performance limit)
+  /// 
+  /// This method uses SQLite directly for optimal performance with large inventories.
+  /// For better performance, ensure indexes exist on nom, categorie, and room columns.
+  Future<List<Objet>> searchProducts(String query, {int? idFoyer}) async {
+    if (query.trim().isEmpty) {
+      // Empty query returns empty list
+      return [];
+    }
+    
+    try {
+      return await _databaseService.searchObjets(
+        query: query,
+        idFoyer: idFoyer,
+        limit: 100,
+      );
+    } catch (e, stackTrace) {
+      await ErrorLoggerService.logError(
+        component: 'InventoryRepository',
+        operation: 'searchProducts',
+        error: e,
+        stackTrace: stackTrace,
+        severity: ErrorSeverity.medium,
+        metadata: {
+          'query': query,
+          'idFoyer': idFoyer,
+        },
+      );
+      rethrow;
+    }
   }
 
   /// Helper method to detect database connection errors

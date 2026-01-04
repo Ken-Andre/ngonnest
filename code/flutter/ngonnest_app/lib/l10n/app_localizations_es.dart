@@ -748,4 +748,111 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get dashboardAddProductHint => '¡Empieza aquí!';
+
+  @override
+  String get packagingTitle => 'Empaque';
+
+  @override
+  String get packagingTypeLabel => 'Tipo de empaque';
+
+  @override
+  String get packagingValueHint => 'Ej: 1.0';
+
+  @override
+  String get packagingTypeUnit => 'Pieza/Unidad';
+
+  @override
+  String get packagingTypePiece => 'Pieza';
+
+  @override
+  String get packagingTypeKg => 'Kg';
+
+  @override
+  String get packagingTypeLiter => 'Litro';
+
+  @override
+  String get packagingTypeBottle => 'Botella';
+
+  @override
+  String get packagingTypeBag => 'Bolsa';
+
+  @override
+  String get packagingTypeBox => 'Caja';
+
+  @override
+  String get packagingTypeOther => 'Otro';
+
+  @override
+  String get unitPriceLabel => 'Precio unitario';
+
+  @override
+  String get totalPriceLabel => 'Precio total';
+
+  @override
+  String get priceEstimatedApplied => 'Precio estimado aplicado';
+
+  @override
+  String get categoryLabel => 'Categoría';
+
+  @override
+  String get productNameLabel => 'Nombre del producto';
+
+  @override
+  String get productTypeLabel => 'Tipo de producto';
+
+  @override
+  String get consumableLabel => 'Consumible';
+
+  @override
+  String get durableLabel => 'Duradero';
+
+  @override
+  String get quantityDurableLabel => 'Cantidad duradera';
+
+  @override
+  String get frequencyLabel => 'Frecuencia de compra (días)';
+
+  @override
+  String get expiryDateLabel => 'Fecha de caducidad (opcional)';
+
+  @override
+  String get purchaseDateLabel => 'Fecha de compra (opcional)';
+
+  @override
+  String get selectDateHint => 'Seleccionar una fecha';
+
+  @override
+  String get saveProductCta => 'Guardar producto';
+
+  @override
+  String get chooseCategoryHint => 'Elegir una categoría';
+
+  @override
+  String get infoComplementairesLabel => 'Información adicional';
+
+  @override
+  String get infoComplementairesHint =>
+      'Ej: código iCloud, número de serie, fecha de garantía...';
+
+  @override
+  String get familyRecommendationApply => 'Aplicar';
+
+  @override
+  String addSummaryWithPrice(
+    String quantity,
+    String unit,
+    String product,
+    String totalPrice,
+  ) {
+    return 'Añadiendo $quantity $unit de $product — $totalPrice';
+  }
+
+  @override
+  String get genericProduct => 'producto';
+
+  @override
+  String get unitGeneric => 'unidades';
+
+  @override
+  String get priceUnknown => '—';
 }

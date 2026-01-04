@@ -15,6 +15,7 @@ import '../models/foyer.dart';
 import '../providers/foyer_provider.dart';
 import '../providers/locale_provider.dart';
 import '../repository/foyer_repository.dart';
+import '../services/app_feature_flags.dart';
 import '../services/auth_service.dart';
 import '../services/budget_service.dart';
 import '../services/cloud_import_service.dart';
@@ -30,7 +31,6 @@ import '../widgets/main_navigation_wrapper.dart';
 import '../widgets/settings_import_dialog.dart';
 import '../widgets/sync_status_dialog.dart';
 import '../widgets/sync_status_indicator.dart';
-import '../services/app_feature_flags.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -51,7 +51,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _isImporting = false;
   double _exportProgress = 0.0;
   double _importProgress = 0.0;
-  
+
   // Budget management state
   Foyer? _foyer;
   double? _currentBudget;
@@ -95,13 +95,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       debugPrint('Error loading settings: $e');
     }
   }
-  
+
   /// Load foyer data for budget management
   Future<void> _loadFoyerData() async {
     try {
       final foyerRepository = FoyerRepository(DatabaseService());
       final foyer = await foyerRepository.get();
-      
+
       if (mounted) {
         setState(() {
           _foyer = foyer;
@@ -878,22 +878,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _buildSettingCard(
               title: isCloudSyncEnabled
                   ? (syncService.syncEnabled
-                      ? (AppLocalizations.of(context)?.enableCloudSync ??
-                          'Cloud sync enabled')
-                      : (AppLocalizations.of(context)?.disableCloudSync ??
-                          'Cloud sync disabled'))
+                        ? (AppLocalizations.of(context)?.enableCloudSync ??
+                              'Cloud sync enabled')
+                        : (AppLocalizations.of(context)?.disableCloudSync ??
+                              'Cloud sync disabled'))
                   : 'Synchronisation Cloud',
               subtitle: isCloudSyncEnabled
                   ? (authService.isAuthenticated
-                      ? (syncService.syncEnabled
-                          ? 'Vos données sont sauvegardées dans le cloud'
-                          : 'Activez pour sauvegarder vos données')
-                      : (AppLocalizations.of(context)?.connectToEnableSync ??
-                          'Connect to enable sync'))
+                        ? (syncService.syncEnabled
+                              ? 'Vos données sont sauvegardées dans le cloud'
+                              : 'Activez pour sauvegarder vos données')
+                        : (AppLocalizations.of(context)?.connectToEnableSync ??
+                              'Connect to enable sync'))
                   : 'Fonctionnalité bientôt disponible',
               child: isCloudSyncEnabled
                   ? CupertinoSwitch(
-                      value: syncService.syncEnabled && authService.isAuthenticated,
+                      value:
+                          syncService.syncEnabled &&
+                          authService.isAuthenticated,
                       onChanged: (value) =>
                           _handleSyncToggle(value, syncService, authService),
                       activeTrackColor: Theme.of(context).colorScheme.primary,
@@ -903,7 +905,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         CupertinoIcons.info,
                         color: Theme.of(context).disabledColor,
                       ),
-                      onPressed: () => _showFeatureComingSoonDialog('Synchronisation Cloud'),
+                      onPressed: () =>
+                          _showFeatureComingSoonDialog('Synchronisation Cloud'),
                     ),
             ),
           ],
@@ -952,8 +955,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     );
   }
-
-
 
   /// Handle sync toggle with authentication check
   Future<void> _handleSyncToggle(
@@ -2079,13 +2080,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     );
   }
-  
+
   /// Build budget management section
   Widget _buildBudgetSection() {
     final budgetText = _currentBudget != null
         ? '${_currentBudget!.toStringAsFixed(0)} €'
         : (AppLocalizations.of(context)?.notSet ?? 'Non défini');
-    
+
     return _buildSettingCard(
       title: AppLocalizations.of(context)?.monthlyBudget ?? 'Budget mensuel',
       subtitle: budgetText,
@@ -2100,14 +2101,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     );
   }
-  
+
   /// Show budget edit dialog
   void _showBudgetEditDialog() {
     showCupertinoModalPopup<String?>(
       context: context,
-      builder: (BuildContext dialogContext) => _BudgetEditDialog(
-        currentBudget: _currentBudget,
-      ),
+      builder: (BuildContext dialogContext) =>
+          _BudgetEditDialog(currentBudget: _currentBudget),
     ).then((result) {
       if (result != null && result.isNotEmpty) {
         final amount = double.tryParse(result);
@@ -2121,66 +2121,66 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }
     });
   }
-  
+
   /// Update budget with validation and recalculation
   Future<void> _updateBudget(double newBudget) async {
     // Validate budget range (50€ - 2000€)
     if (newBudget < 50 || newBudget > 2000) {
       _showErrorMessage(
-        AppLocalizations.of(context)?.budgetOutOfRange ?? 
-        'Le budget doit être entre 50€ et 2000€',
+        AppLocalizations.of(context)?.budgetOutOfRange ??
+            'Le budget doit être entre 50€ et 2000€',
       );
       return;
     }
-    
+
     try {
       setState(() => _isLoading = true);
-      
+
       if (_foyer == null) {
         throw Exception('Foyer data not loaded');
       }
-      
+
       // Update foyer.budgetMensuelEstime in database
       final foyerRepository = FoyerRepository(DatabaseService());
       final updatedFoyer = _foyer!.copyWith(budgetMensuelEstime: newBudget);
       await foyerRepository.update(updatedFoyer);
-      
+
       // Call BudgetService.recalculateCategoryBudgets()
       final budgetService = BudgetService();
-      await budgetService.recalculateCategoryBudgets(
-        _foyer!.id!,
-        newBudget,
-      );
-      
+      await budgetService.recalculateCategoryBudgets(_foyer!.id!, newBudget);
+
       // Update FoyerProvider to notify all screens
       if (mounted) {
         try {
-          final foyerProvider = Provider.of<FoyerProvider>(context, listen: false);
+          final foyerProvider = Provider.of<FoyerProvider>(
+            context,
+            listen: false,
+          );
           foyerProvider.setFoyer(updatedFoyer);
         } catch (e) {
           debugPrint('FoyerProvider not available: $e');
         }
       }
-      
+
       // Enqueue foyer update for sync
       // TODO: Add sync service integration when available
-      
+
       // Update local state
       setState(() {
         _foyer = updatedFoyer;
         _currentBudget = newBudget;
       });
-      
+
       // Show success message
       _showSuccessMessage(
-        AppLocalizations.of(context)?.budgetUpdatedSuccessfully ?? 
-        'Budget mis à jour avec succès',
+        AppLocalizations.of(context)?.budgetUpdatedSuccessfully ??
+            'Budget mis à jour avec succès',
       );
     } catch (e) {
       debugPrint('Error updating budget: $e');
       _showErrorMessage(
-        AppLocalizations.of(context)?.errorUpdatingBudget ?? 
-        'Erreur lors de la mise à jour du budget',
+        AppLocalizations.of(context)?.errorUpdatingBudget ??
+            'Erreur lors de la mise à jour du budget',
       );
     } finally {
       if (mounted) {
@@ -2240,25 +2240,24 @@ class _BudgetEditDialogState extends State<_BudgetEditDialog> {
                 color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.3),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.3),
                 ),
               ),
               child: TextField(
                 controller: _controller,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 decoration: InputDecoration(
                   hintText: '360',
                   suffixText: '€',
                   border: InputBorder.none,
                   hintStyle: TextStyle(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.5),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.5),
                   ),
                 ),
                 style: TextStyle(

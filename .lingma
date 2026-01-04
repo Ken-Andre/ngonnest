@@ -1,0 +1,75 @@
+# .lingma - Configuration Lingma pour NgonNest
+
+project:
+  name: "NgonNest"
+  type: "flutter"
+  phase: "V1-MVP"
+
+context_files:
+  # Fichiers à lire AVANT toute action
+  primary:
+    - "AI_RULES.md"
+    - "AGENT_PROMPT.md"
+
+  requirements:
+    - "requirements.md"
+
+  tasks:
+    - "tasks_v1.md"
+    - "tasks_v2.md"
+    - "tasks_v3_future.md"
+
+  architecture:
+    - "design.md"
+    - "AGENTS.md"
+
+rules:
+  # Règles strictes
+  - "Travailler UNIQUEMENT sur V1 sauf instruction contraire explicite"
+  - "Respecter format exact de tasks_v1.md pour chaque tâche"
+  - "Chaque tâche doit passer F2P + P2F avant DONE"
+  - "Pas de nouveaux fichiers si existant approprié"
+  - "Messages commit: type(scope): description"
+
+  # Workflow par défaut
+  workflow:
+    - "LIRE: AI_RULES.md + requirement + task"
+    - "IMPLÉMENTER: suivre étapes task"
+    - "TESTER: écrire tous tests listés"
+    - "VALIDER: F2P (manuel) + P2F (flutter test)"
+    - "DOCUMENTER: marquer task DONE + update docs"
+    - "COMMIT: message clair"
+
+validation:
+  pre_commit:
+    - "flutter format --set-exit-if-changed lib test"
+    - "flutter analyze"
+    - "flutter test"
+
+  criteria:
+    f2p: "Code fait VRAIMENT ce qui est décrit (test manuel)"
+    p2f: "flutter test passe à 100% (no regression)"
+
+auto_update:
+  # Style Kiro - auto-update docs
+  enabled: true
+  files:
+    - path: "tasks_v1.md"
+      action: "mark_done"
+      format: "- [x] **X.Y.Z** Description <!-- Completed: {date} -->"
+
+    - path: "design.md"
+      action: "update_if_architecture_changed"
+
+    - path: "requirements.md"
+      action: "propose_additions_if_edge_cases"
+
+commit_style:
+  pattern: "type(scope): description"
+  types:
+    - "feat"
+    - "fix"
+    - "docs"
+    - "test"
+    - "refactor"
+    - "chore"

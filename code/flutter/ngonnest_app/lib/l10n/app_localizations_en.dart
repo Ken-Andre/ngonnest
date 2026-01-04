@@ -737,4 +737,111 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dashboardAddProductHint => 'Start here!';
+
+  @override
+  String get packagingTitle => 'Packaging';
+
+  @override
+  String get packagingTypeLabel => 'Packaging type';
+
+  @override
+  String get packagingValueHint => 'Ex: 1.0';
+
+  @override
+  String get packagingTypeUnit => 'Piece/Unit';
+
+  @override
+  String get packagingTypePiece => 'Piece';
+
+  @override
+  String get packagingTypeKg => 'Kg';
+
+  @override
+  String get packagingTypeLiter => 'Liter';
+
+  @override
+  String get packagingTypeBottle => 'Bottle';
+
+  @override
+  String get packagingTypeBag => 'Bag';
+
+  @override
+  String get packagingTypeBox => 'Box';
+
+  @override
+  String get packagingTypeOther => 'Other';
+
+  @override
+  String get unitPriceLabel => 'Unit price';
+
+  @override
+  String get totalPriceLabel => 'Total price';
+
+  @override
+  String get priceEstimatedApplied => 'Estimated price applied';
+
+  @override
+  String get categoryLabel => 'Category';
+
+  @override
+  String get productNameLabel => 'Product name';
+
+  @override
+  String get productTypeLabel => 'Product type';
+
+  @override
+  String get consumableLabel => 'Consumable';
+
+  @override
+  String get durableLabel => 'Durable';
+
+  @override
+  String get quantityDurableLabel => 'Durable quantity';
+
+  @override
+  String get frequencyLabel => 'Purchase frequency (days)';
+
+  @override
+  String get expiryDateLabel => 'Expiry date (optional)';
+
+  @override
+  String get purchaseDateLabel => 'Purchase date (optional)';
+
+  @override
+  String get selectDateHint => 'Select a date';
+
+  @override
+  String get saveProductCta => 'Save product';
+
+  @override
+  String get chooseCategoryHint => 'Choose a category';
+
+  @override
+  String get infoComplementairesLabel => 'Additional information';
+
+  @override
+  String get infoComplementairesHint =>
+      'Ex: iCloud code, serial number, warranty date...';
+
+  @override
+  String get familyRecommendationApply => 'Apply';
+
+  @override
+  String addSummaryWithPrice(
+    String quantity,
+    String unit,
+    String product,
+    String totalPrice,
+  ) {
+    return 'Adding $quantity $unit of $product — $totalPrice';
+  }
+
+  @override
+  String get genericProduct => 'product';
+
+  @override
+  String get unitGeneric => 'units';
+
+  @override
+  String get priceUnknown => '—';
 }

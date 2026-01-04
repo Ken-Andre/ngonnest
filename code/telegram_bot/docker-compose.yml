@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  ngonnest-bot:
+    build: .
+    container_name: ngonnest-telegram-bot
+    restart: unless-stopped
+    environment:
+      - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - GITHUB_REPO=${GITHUB_REPO:-Ken-Andre/ngonnest}
+    env_file:
+      - .env
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

@@ -4,6 +4,7 @@ import '../config/cameroon_prices.dart';
 import '../models/alert.dart';
 import '../models/foyer.dart';
 import '../models/objet.dart';
+import '../repository/alert_state_repository.dart';
 import '../repository/foyer_repository.dart';
 import '../repository/inventory_repository.dart';
 import '../services/database_service.dart';
@@ -12,18 +13,6 @@ import 'prediction_service.dart';
 
 /// Service for generating and managing alerts based on inventory and budget data
 /// Provides comprehensive alert system for stock, budget, recommendations, expiration, and maintenance
-///
-/// ⚠️ CRITICAL TODOs FOR CLIENT DELIVERY:
-/// TODO: ALERT_PERSISTENCE - Alert read/resolved states are NOT persisted (lines 520-548)
-///       - markAlertAsRead() and markAlertAsResolved() are placeholder methods
-///       - No database table exists for alert states
-///       - Users cannot track which alerts they've seen
-/// TODO: ALERT_INTEGRATION - Service is not properly integrated with UI
-///       - Dashboard may not display alerts correctly
-///       - No real-time alert updates
-/// TODO: ALERT_TESTING - Alert generation logic needs validation
-///       - Budget alert thresholds may not work as expected
-///       - Expiration date calculations need verification
 class AlertGenerationService {
   static final AlertGenerationService _instance =
       AlertGenerationService._internal();
@@ -33,12 +22,14 @@ class AlertGenerationService {
   late final DatabaseService _databaseService;
   late final InventoryRepository _inventoryRepository;
   late final FoyerRepository _foyerRepository;
+  late final AlertStateRepository _alertStateRepository;
 
   /// Initialize the service with database service
   Future<void> initialize(DatabaseService databaseService) async {
     _databaseService = databaseService;
     _inventoryRepository = InventoryRepository(_databaseService);
     _foyerRepository = FoyerRepository(_databaseService);
+    _alertStateRepository = AlertStateRepository(_databaseService);
   }
 
   /// Génère toutes les alertes pour un foyer
@@ -55,7 +46,7 @@ class AlertGenerationService {
       }
 
       // Récupérer les états persistants des alertes
-      final alertStates = await _databaseService.getAlertStates();
+      final alertStates = await _alertStateRepository.getAllAlertStates();
 
       // 1. Alertes de rupture de stock
       alerts.addAll(await _generateStockAlerts(inventory));
@@ -78,8 +69,8 @@ class AlertGenerationService {
         if (alertStates.containsKey(alert.id)) {
           final state = alertStates[alert.id]!;
           alerts[i] = alert.copyWith(
-            isRead: state['isRead'],
-            isResolved: state['isResolved'],
+            isRead: state.isRead,
+            isResolved: state.isResolved,
           );
         }
       }
@@ -102,6 +93,40 @@ class AlertGenerationService {
         metadata: {'foyerId': foyerId},
       );
       return [];
+    }
+  }
+
+  /// Mark an alert as read
+  Future<void> markAlertAsRead(int alertId) async {
+    try {
+      await _alertStateRepository.markAlertAsRead(alertId);
+    } catch (e, stackTrace) {
+      await ErrorLoggerService.logError(
+        component: 'AlertGenerationService',
+        operation: 'markAlertAsRead',
+        error: e,
+        stackTrace: stackTrace,
+        severity: ErrorSeverity.medium,
+        metadata: {'alertId': alertId},
+      );
+      rethrow;
+    }
+  }
+
+  /// Mark an alert as resolved
+  Future<void> markAlertAsResolved(int alertId) async {
+    try {
+      await _alertStateRepository.markAlertAsResolved(alertId);
+    } catch (e, stackTrace) {
+      await ErrorLoggerService.logError(
+        component: 'AlertGenerationService',
+        operation: 'markAlertAsResolved',
+        error: e,
+        stackTrace: stackTrace,
+        severity: ErrorSeverity.medium,
+        metadata: {'alertId': alertId},
+      );
+      rethrow;
     }
   }
 
@@ -502,27 +527,23 @@ class AlertGenerationService {
     }).toList();
   }
 
-  /// Marque une alerte comme lue
-  Future<void> markAlertAsRead(int alertId) async {
-    try {
-      await _databaseService.saveAlertState(alertId, isRead: true);
-      if (kDebugMode) {
-        print('Alert marked as read: $alertId');
-      }
-    } catch (e) {
-      print('Error marking alert as read: $e');
-    }
-  }
-
-  /// Marque une alerte comme résolue
+  /// Marque une alerte comme résolue (alias pour compatibilité)
+  /// Utilise AlertStateRepository pour la persistance
   Future<void> resolveAlert(int alertId) async {
     try {
-      await _databaseService.saveAlertState(alertId, isResolved: true);
+      await _alertStateRepository.markAlertAsResolved(alertId);
       if (kDebugMode) {
         print('Alert resolved: $alertId');
       }
-    } catch (e) {
-      print('Error resolving alert: $e');
+    } catch (e, stackTrace) {
+      await ErrorLoggerService.logError(
+        component: 'AlertGenerationService',
+        operation: 'resolveAlert',
+        error: e,
+        stackTrace: stackTrace,
+        severity: ErrorSeverity.medium,
+        metadata: {'alertId': alertId},
+      );
     }
   }
 }

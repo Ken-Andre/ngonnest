@@ -6,6 +6,7 @@ import 'package:synchronized/synchronized.dart';
 
 import '../db.dart';
 import '../models/alert.dart';
+import '../models/alert_state.dart';
 import '../models/foyer.dart';
 import '../models/objet.dart';
 import '../models/product_price.dart';
@@ -468,6 +469,51 @@ class DatabaseService {
     }, ErrorContext.getObjetsWithAlerts);
   }
 
+  /// Search objets using SQLite LIKE queries
+  /// Searches in: nom, categorie, and room fields
+  /// Optimized for performance with indexes on these columns
+  /// 
+  /// Parameters:
+  /// - query: Search term (will be used with LIKE '%query%')
+  /// - idFoyer: Optional filter by household ID
+  /// - limit: Maximum number of results (default: 100)
+  Future<List<Objet>> searchObjets({
+    required String query,
+    int? idFoyer,
+    int limit = 100,
+  }) async {
+    return _executeDbOperation((db) async {
+      // Build WHERE clause
+      final searchPattern = '%$query%';
+      final whereParts = <String>[];
+      final whereArgs = <dynamic>[];
+      
+      // Search in nom, categorie, and room
+      whereParts.add(
+        '(nom LIKE ? OR categorie LIKE ? OR room LIKE ?)',
+      );
+      whereArgs.addAll([searchPattern, searchPattern, searchPattern]);
+      
+      // Optional filter by idFoyer
+      if (idFoyer != null) {
+        whereParts.add('id_foyer = ?');
+        whereArgs.add(idFoyer);
+      }
+      
+      final whereClause = whereParts.join(' AND ');
+      
+      final List<Map<String, dynamic>> maps = await db.query(
+        'objet',
+        where: whereClause,
+        whereArgs: whereArgs,
+        orderBy: 'categorie ASC, nom ASC',
+        limit: limit,
+      );
+      
+      return List.generate(maps.length, (i) => Objet.fromMap(maps[i]));
+    }, ErrorContext.searchObjets);
+  }
+
   Future<Map<String, double>> getBudgetMensuel(int idFoyer) async {
     return _executeDbOperation((db) async {
       final List<Map<String, dynamic>> maps = await db.rawQuery(
@@ -605,43 +651,6 @@ class DatabaseService {
     }, ErrorContext.getAlertStates);
   }
 
-  /// Sauvegarde l'état d'une alerte
-  Future<void> saveAlertState(
-    int alertId, {
-    bool? isRead,
-    bool? isResolved,
-  }) async {
-    return _executeDbOperation((db) async {
-      // Check if exists
-      final List<Map<String, dynamic>> existing = await db.query(
-        'alert_states',
-        where: 'alert_id = ?',
-        whereArgs: [alertId],
-      );
-
-      if (existing.isEmpty) {
-        await db.insert('alert_states', {
-          'alert_id': alertId,
-          'is_read': isRead == true ? 1 : 0,
-          'is_resolved': isResolved == true ? 1 : 0,
-          'last_updated': DateTime.now().toIso8601String(),
-        });
-      } else {
-        final Map<String, dynamic> update = {
-          'last_updated': DateTime.now().toIso8601String(),
-        };
-        if (isRead != null) update['is_read'] = isRead ? 1 : 0;
-        if (isResolved != null) update['is_resolved'] = isResolved ? 1 : 0;
-
-        await db.update(
-          'alert_states',
-          update,
-          where: 'alert_id = ?',
-          whereArgs: [alertId],
-        );
-      }
-    }, ErrorContext.saveAlertState);
-  }
 
   Future<void> generateAlerts(int idFoyer) async {
     return _executeDbOperation((db) async {
@@ -1030,6 +1039,44 @@ class DatabaseService {
       return imported;
     }, ErrorContext.importPricesFromCSV);
   }
+
+  // ===== ALERT STATE OPERATIONS =====
+
+  /// Save an alert state to the database
+  Future<void> saveAlertState(AlertState state) async {
+    return _executeDbOperation((db) async {
+      await db.insert(
+        'alert_states',
+        state.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }, ErrorContext.saveAlertState);
+  }
+
+  /// Get an alert state by alert ID
+  Future<AlertState?> getAlertState(int alertId) async {
+    return _executeDbOperation((db) async {
+      final List<Map<String, dynamic>> maps = await db.query(
+        'alert_states',
+        where: 'alert_id = ?',
+        whereArgs: [alertId],
+      );
+      
+      if (maps.isEmpty) return null;
+      return AlertState.fromMap(maps.first);
+    }, ErrorContext.getAlertState);
+  }
+
+  /// Get all alert states as a map for efficient lookup
+  Future<Map<int, AlertState>> getAllAlertStates() async {
+    return _executeDbOperation((db) async {
+      final List<Map<String, dynamic>> maps = await db.query('alert_states');
+      return {
+        for (var map in maps)
+          map['alert_id'] as int: AlertState.fromMap(map)
+      };
+    }, ErrorContext.getAlertStates);
+  }
 }
 
 enum ErrorContext {
@@ -1048,6 +1095,7 @@ enum ErrorContext {
   getTotalObjetCount,
   getExpiringSoonObjetCount,
   getObjetsWithAlerts,
+  searchObjets,
   getBudgetMensuel,
   getAlerts,
   getAlert,
@@ -1062,6 +1110,7 @@ enum ErrorContext {
   inventory, // Added
   sync, // Added
   getAlertStates,
+  getAlertState,
   saveAlertState,
   // Price operations
   searchPrice,

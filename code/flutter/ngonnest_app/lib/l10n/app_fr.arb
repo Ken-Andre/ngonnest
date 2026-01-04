@@ -282,5 +282,50 @@
   "introSkip": "Passer",
   "introNext": "Suivant",
   "introStart": "Commencer",
-  "dashboardAddProductHint": "Commencez ici !"
+  "dashboardAddProductHint": "Commencez ici !",
+
+  "packagingTitle": "Conditionnement",
+  "packagingTypeLabel": "Type de conditionnement",
+  "packagingValueHint": "Ex: 1.0",
+  "packagingTypeUnit": "Pièce/Unité",
+  "packagingTypePiece": "Pièce",
+  "packagingTypeKg": "Kg",
+  "packagingTypeLiter": "Litre",
+  "packagingTypeBottle": "Bouteille",
+  "packagingTypeBag": "Sac",
+  "packagingTypeBox": "Boîte",
+  "packagingTypeOther": "Autre",
+
+  "unitPriceLabel": "Prix unitaire",
+  "totalPriceLabel": "Prix total",
+  "priceEstimatedApplied": "Prix estimé appliqué",
+
+  "categoryLabel": "Catégorie",
+  "productNameLabel": "Nom du produit",
+  "productTypeLabel": "Type de produit",
+  "consumableLabel": "Consommable",
+  "durableLabel": "Durable",
+  "quantityDurableLabel": "Quantité durable",
+  "frequencyLabel": "Fréquence d'achat (jours)",
+  "expiryDateLabel": "Date d'expiration (optionnel)",
+  "purchaseDateLabel": "Date d'achat (optionnel)",
+  "selectDateHint": "Sélectionner une date",
+  "saveProductCta": "Enregistrer le produit",
+  "chooseCategoryHint": "Choisir une catégorie",
+  "infoComplementairesLabel": "Informations complémentaires",
+  "infoComplementairesHint": "Ex: Code iCloud, numéro de série, date de garantie...",
+  "familyRecommendationApply": "Appliquer",
+
+  "addSummaryWithPrice": "Ajout de {quantity} {unit} de {product} — {totalPrice}",
+  "@addSummaryWithPrice": {
+    "placeholders": {
+      "quantity": {"type": "String"},
+      "unit": {"type": "String"},
+      "product": {"type": "String"},
+      "totalPrice": {"type": "String"}
+    }
+  },
+  "genericProduct": "produit",
+  "unitGeneric": "unités",
+  "priceUnknown": "—"
 }

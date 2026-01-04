@@ -1443,6 +1443,209 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Start here!'**
   String get dashboardAddProductHint;
+
+  /// No description provided for @packagingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Packaging'**
+  String get packagingTitle;
+
+  /// No description provided for @packagingTypeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Packaging type'**
+  String get packagingTypeLabel;
+
+  /// No description provided for @packagingValueHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Ex: 1.0'**
+  String get packagingValueHint;
+
+  /// No description provided for @packagingTypeUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'Piece/Unit'**
+  String get packagingTypeUnit;
+
+  /// No description provided for @packagingTypePiece.
+  ///
+  /// In en, this message translates to:
+  /// **'Piece'**
+  String get packagingTypePiece;
+
+  /// No description provided for @packagingTypeKg.
+  ///
+  /// In en, this message translates to:
+  /// **'Kg'**
+  String get packagingTypeKg;
+
+  /// No description provided for @packagingTypeLiter.
+  ///
+  /// In en, this message translates to:
+  /// **'Liter'**
+  String get packagingTypeLiter;
+
+  /// No description provided for @packagingTypeBottle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bottle'**
+  String get packagingTypeBottle;
+
+  /// No description provided for @packagingTypeBag.
+  ///
+  /// In en, this message translates to:
+  /// **'Bag'**
+  String get packagingTypeBag;
+
+  /// No description provided for @packagingTypeBox.
+  ///
+  /// In en, this message translates to:
+  /// **'Box'**
+  String get packagingTypeBox;
+
+  /// No description provided for @packagingTypeOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get packagingTypeOther;
+
+  /// No description provided for @unitPriceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit price'**
+  String get unitPriceLabel;
+
+  /// No description provided for @totalPriceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Total price'**
+  String get totalPriceLabel;
+
+  /// No description provided for @priceEstimatedApplied.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated price applied'**
+  String get priceEstimatedApplied;
+
+  /// No description provided for @categoryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get categoryLabel;
+
+  /// No description provided for @productNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Product name'**
+  String get productNameLabel;
+
+  /// No description provided for @productTypeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Product type'**
+  String get productTypeLabel;
+
+  /// No description provided for @consumableLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Consumable'**
+  String get consumableLabel;
+
+  /// No description provided for @durableLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Durable'**
+  String get durableLabel;
+
+  /// No description provided for @quantityDurableLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Durable quantity'**
+  String get quantityDurableLabel;
+
+  /// No description provided for @frequencyLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase frequency (days)'**
+  String get frequencyLabel;
+
+  /// No description provided for @expiryDateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Expiry date (optional)'**
+  String get expiryDateLabel;
+
+  /// No description provided for @purchaseDateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase date (optional)'**
+  String get purchaseDateLabel;
+
+  /// No description provided for @selectDateHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a date'**
+  String get selectDateHint;
+
+  /// No description provided for @saveProductCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Save product'**
+  String get saveProductCta;
+
+  /// No description provided for @chooseCategoryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a category'**
+  String get chooseCategoryHint;
+
+  /// No description provided for @infoComplementairesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Additional information'**
+  String get infoComplementairesLabel;
+
+  /// No description provided for @infoComplementairesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Ex: iCloud code, serial number, warranty date...'**
+  String get infoComplementairesHint;
+
+  /// No description provided for @familyRecommendationApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get familyRecommendationApply;
+
+  /// No description provided for @addSummaryWithPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Adding {quantity} {unit} of {product} — {totalPrice}'**
+  String addSummaryWithPrice(
+    String quantity,
+    String unit,
+    String product,
+    String totalPrice,
+  );
+
+  /// No description provided for @genericProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'product'**
+  String get genericProduct;
+
+  /// No description provided for @unitGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'units'**
+  String get unitGeneric;
+
+  /// No description provided for @priceUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'—'**
+  String get priceUnknown;
 }
 
 class _AppLocalizationsDelegate

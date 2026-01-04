@@ -81,17 +81,6 @@ void main() {
     test('update() should update objet with provided changes', () async {
       // Arrange
       const newName = 'Savon liquide';
-      final expectedUpdatedObjet = Objet(
-        id: testObjet.id,
-        idFoyer: testObjet.idFoyer,
-        nom: newName,
-        categorie: testObjet.categorie,
-        type: testObjet.type,
-        quantiteInitiale: testObjet.quantiteInitiale,
-        quantiteRestante: testObjet.quantiteRestante,
-        unite: testObjet.unite,
-        seuilAlerteQuantite: testObjet.seuilAlerteQuantite,
-      );
 
       when(
         mockDatabaseService.getObjet(testId),
@@ -168,7 +157,6 @@ void main() {
 
     test('getAll() should filter by category when provided', () async {
       // Arrange
-      final category = 'hygiène';
       when(
         mockDatabaseService.getObjets(
           idFoyer: testIdFoyer,
@@ -387,6 +375,320 @@ void main() {
       verify(mockDatabaseService.getObjet(objetId)).called(1);
       verify(mockDatabaseService.updateObjet(any)).called(1);
       verify(mockDatabaseService.deleteObjet(objetId)).called(1);
+    });
+  });
+
+  group('Task 1.4 - Inventory CRUD Complete Offline Tests', () {
+    const testIdFoyer = 1;
+    final testProduct = Objet(
+      idFoyer: testIdFoyer,
+      nom: 'Riz',
+      categorie: 'cuisine',
+      type: TypeObjet.consommable,
+      quantiteInitiale: 5.0,
+      quantiteRestante: 3.0,
+      unite: 'kg',
+      seuilAlerteQuantite: 1.0,
+    );
+
+    // Test 1.4.T1: addProduct() insère bien en DB
+    test('1.4.T1: addProduct() should insert product in database', () async {
+      // Arrange
+      const expectedId = 42;
+      when(mockDatabaseService.insertObjet(any))
+          .thenAnswer((_) async => expectedId);
+
+      // Act
+      final result = await inventoryRepository.addProduct(testProduct);
+
+      // Assert
+      expect(result, expectedId);
+      verify(mockDatabaseService.insertObjet(any)).called(1);
+    });
+
+    // Test 1.4.T1: Validation tests for addProduct
+    test('1.4.T1: addProduct() should validate nom is not empty', () async {
+      // Arrange
+      final invalidProduct = Objet(
+        idFoyer: testIdFoyer,
+        nom: '', // Empty name
+        categorie: 'cuisine',
+        type: TypeObjet.consommable,
+        quantiteInitiale: 5.0,
+        quantiteRestante: 3.0,
+        unite: 'kg',
+      );
+
+      // Act & Assert
+      expect(
+        () => inventoryRepository.addProduct(invalidProduct),
+        throwsArgumentError,
+      );
+      verifyNever(mockDatabaseService.insertObjet(any));
+    });
+
+    test('1.4.T1: addProduct() should validate quantiteInitiale > 0', () async {
+      // Arrange
+      final invalidProduct = Objet(
+        idFoyer: testIdFoyer,
+        nom: 'Riz',
+        categorie: 'cuisine',
+        type: TypeObjet.consommable,
+        quantiteInitiale: 0.0, // Invalid: must be > 0
+        quantiteRestante: 0.0,
+        unite: 'kg',
+      );
+
+      // Act & Assert
+      expect(
+        () => inventoryRepository.addProduct(invalidProduct),
+        throwsArgumentError,
+      );
+      verifyNever(mockDatabaseService.insertObjet(any));
+    });
+
+    test('1.4.T1: addProduct() should validate quantiteRestante >= 0', () async {
+      // Arrange
+      final invalidProduct = Objet(
+        idFoyer: testIdFoyer,
+        nom: 'Riz',
+        categorie: 'cuisine',
+        type: TypeObjet.consommable,
+        quantiteInitiale: 5.0,
+        quantiteRestante: -1.0, // Invalid: must be >= 0
+        unite: 'kg',
+      );
+
+      // Act & Assert
+      expect(
+        () => inventoryRepository.addProduct(invalidProduct),
+        throwsArgumentError,
+      );
+      verifyNever(mockDatabaseService.insertObjet(any));
+    });
+
+    // Test 1.4.T2: updateProduct() modifie le bon produit et renvoie booléen
+    test('1.4.T2: updateProduct() should update product and return true', () async {
+      // Arrange
+      final existingProduct = Objet(
+        id: 1,
+        idFoyer: testIdFoyer,
+        nom: 'Riz',
+        categorie: 'cuisine',
+        type: TypeObjet.consommable,
+        quantiteInitiale: 5.0,
+        quantiteRestante: 3.0,
+        unite: 'kg',
+      );
+
+      final updatedProduct = Objet(
+        id: 1,
+        idFoyer: testIdFoyer,
+        nom: 'Riz Basmati',
+        categorie: 'cuisine',
+        type: TypeObjet.consommable,
+        quantiteInitiale: 5.0,
+        quantiteRestante: 3.0,
+        unite: 'kg',
+      );
+
+      when(mockDatabaseService.getObjet(1))
+          .thenAnswer((_) async => existingProduct);
+      when(mockDatabaseService.updateObjet(any))
+          .thenAnswer((_) async => 1);
+
+      // Act
+      final result = await inventoryRepository.updateProduct(updatedProduct);
+
+      // Assert
+      expect(result, true);
+      verify(mockDatabaseService.getObjet(1)).called(1);
+      verify(mockDatabaseService.updateObjet(any)).called(1);
+    });
+
+    test('1.4.T2: updateProduct() should return false when product not found', () async {
+      // Arrange
+      final productToUpdate = Objet(
+        id: 999,
+        idFoyer: testIdFoyer,
+        nom: 'Riz',
+        categorie: 'cuisine',
+        type: TypeObjet.consommable,
+        quantiteInitiale: 5.0,
+        quantiteRestante: 3.0,
+        unite: 'kg',
+      );
+
+      when(mockDatabaseService.getObjet(999))
+          .thenAnswer((_) async => null);
+
+      // Act
+      final result = await inventoryRepository.updateProduct(productToUpdate);
+
+      // Assert
+      expect(result, false);
+      verify(mockDatabaseService.getObjet(999)).called(1);
+      verifyNever(mockDatabaseService.updateObjet(any));
+    });
+
+    test('1.4.T2: updateProduct() should validate nom is not empty', () async {
+      // Arrange
+      final invalidProduct = Objet(
+        id: 1,
+        idFoyer: testIdFoyer,
+        nom: '', // Empty name
+        categorie: 'cuisine',
+        type: TypeObjet.consommable,
+        quantiteInitiale: 5.0,
+        quantiteRestante: 3.0,
+        unite: 'kg',
+      );
+
+      // Act & Assert
+      expect(
+        () => inventoryRepository.updateProduct(invalidProduct),
+        throwsArgumentError,
+      );
+    });
+
+    // Test 1.4.T3: deleteProduct() supprime correctement
+    test('1.4.T3: deleteProduct() should delete product and return 1', () async {
+      // Arrange
+      const productId = 1;
+      final existingProduct = Objet(
+        id: productId,
+        idFoyer: testIdFoyer,
+        nom: 'Riz',
+        categorie: 'cuisine',
+        type: TypeObjet.consommable,
+        quantiteInitiale: 5.0,
+        quantiteRestante: 3.0,
+        unite: 'kg',
+      );
+
+      when(mockDatabaseService.getObjet(productId))
+          .thenAnswer((_) async => existingProduct);
+      when(mockDatabaseService.deleteObjet(productId))
+          .thenAnswer((_) async => 1);
+
+      // Act
+      final result = await inventoryRepository.deleteProduct(productId);
+
+      // Assert
+      expect(result, 1);
+      verify(mockDatabaseService.getObjet(productId)).called(1);
+      verify(mockDatabaseService.deleteObjet(productId)).called(1);
+    });
+
+    test('1.4.T3: deleteProduct() should return 0 when product not found', () async {
+      // Arrange
+      const productId = 999;
+      when(mockDatabaseService.getObjet(productId))
+          .thenAnswer((_) async => null);
+
+      // Act
+      final result = await inventoryRepository.deleteProduct(productId);
+
+      // Assert
+      expect(result, 0);
+      verify(mockDatabaseService.getObjet(productId)).called(1);
+      verifyNever(mockDatabaseService.deleteObjet(any));
+    });
+
+    // Test 1.4.T4: searchProducts() retourne résultats pertinents avec limite
+    test('1.4.T4: searchProducts() should return relevant results', () async {
+      // Arrange
+      final searchResults = [
+        Objet(
+          id: 1,
+          idFoyer: testIdFoyer,
+          nom: 'Riz Basmati',
+          categorie: 'cuisine',
+          type: TypeObjet.consommable,
+          quantiteInitiale: 5.0,
+          quantiteRestante: 3.0,
+          unite: 'kg',
+        ),
+        Objet(
+          id: 2,
+          idFoyer: testIdFoyer,
+          nom: 'Riz complet',
+          categorie: 'cuisine',
+          type: TypeObjet.consommable,
+          quantiteInitiale: 3.0,
+          quantiteRestante: 2.0,
+          unite: 'kg',
+        ),
+      ];
+
+      when(mockDatabaseService.searchObjets(
+        query: 'riz',
+        idFoyer: testIdFoyer,
+        limit: 100,
+      )).thenAnswer((_) async => searchResults);
+
+      // Act
+      final result = await inventoryRepository.searchProducts(
+        'riz',
+        idFoyer: testIdFoyer,
+      );
+
+      // Assert
+      expect(result.length, 2);
+      expect(result[0].nom, 'Riz Basmati');
+      expect(result[1].nom, 'Riz complet');
+      verify(mockDatabaseService.searchObjets(
+        query: 'riz',
+        idFoyer: testIdFoyer,
+        limit: 100,
+      )).called(1);
+    });
+
+    test('1.4.T4: searchProducts() should return empty list for empty query', () async {
+      // Act
+      final result = await inventoryRepository.searchProducts('');
+
+      // Assert
+      expect(result, isEmpty);
+      // Empty query should return early without calling database
+      // No verification needed as method returns early
+    });
+
+    test('1.4.T4: searchProducts() should respect limit of 100', () async {
+      // Arrange
+      final manyResults = List.generate(
+        150,
+        (i) => Objet(
+          id: i,
+          idFoyer: testIdFoyer,
+          nom: 'Produit $i',
+          categorie: 'cuisine',
+          type: TypeObjet.consommable,
+          quantiteInitiale: 1.0,
+          quantiteRestante: 1.0,
+          unite: 'unité',
+        ),
+      );
+
+      when(mockDatabaseService.searchObjets(
+        query: 'produit',
+        idFoyer: testIdFoyer,
+        limit: 100,
+      )).thenAnswer((_) async => manyResults.take(100).toList());
+
+      // Act
+      final result = await inventoryRepository.searchProducts(
+        'produit',
+        idFoyer: testIdFoyer,
+      );
+
+      // Assert
+      expect(result.length, lessThanOrEqualTo(100));
+      verify(mockDatabaseService.searchObjets(
+        query: 'produit',
+        idFoyer: testIdFoyer,
+        limit: 100,
+      )).called(1);
     });
   });
 }

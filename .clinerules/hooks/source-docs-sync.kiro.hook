@@ -1,0 +1,21 @@
+{
+  "enabled": true,
+  "name": "Source to Docs Sync",
+  "description": "Listens to source code changes in the repository and triggers documentation updates in README.md and memory bank folder",
+  "version": "1",
+  "when": {
+    "type": "userTriggered",
+    "patterns": [
+      "code/**/*.dart",
+      "code/**/*.py",
+      "code/**/*.js",
+      "code/**/*.ts",
+      "code/**/*.java",
+      "code/**/*.kt"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Source code files have been modified. Please review the changes and update the documentation accordingly. Update the README.md file and any relevant documentation in the docs/ folder to reflect the current state of the codebase. Focus on keeping API documentation, usage examples, and feature descriptions up to date."
+  }
+}

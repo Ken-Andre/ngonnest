@@ -280,5 +280,50 @@
   "introSkip": "Omitir",
   "introNext": "Siguiente",
   "introStart": "Comenzar",
-  "dashboardAddProductHint": "¡Empieza aquí!"
+  "dashboardAddProductHint": "¡Empieza aquí!",
+
+  "packagingTitle": "Empaque",
+  "packagingTypeLabel": "Tipo de empaque",
+  "packagingValueHint": "Ej: 1.0",
+  "packagingTypeUnit": "Pieza/Unidad",
+  "packagingTypePiece": "Pieza",
+  "packagingTypeKg": "Kg",
+  "packagingTypeLiter": "Litro",
+  "packagingTypeBottle": "Botella",
+  "packagingTypeBag": "Bolsa",
+  "packagingTypeBox": "Caja",
+  "packagingTypeOther": "Otro",
+
+  "unitPriceLabel": "Precio unitario",
+  "totalPriceLabel": "Precio total",
+  "priceEstimatedApplied": "Precio estimado aplicado",
+
+  "categoryLabel": "Categoría",
+  "productNameLabel": "Nombre del producto",
+  "productTypeLabel": "Tipo de producto",
+  "consumableLabel": "Consumible",
+  "durableLabel": "Duradero",
+  "quantityDurableLabel": "Cantidad duradera",
+  "frequencyLabel": "Frecuencia de compra (días)",
+  "expiryDateLabel": "Fecha de caducidad (opcional)",
+  "purchaseDateLabel": "Fecha de compra (opcional)",
+  "selectDateHint": "Seleccionar una fecha",
+  "saveProductCta": "Guardar producto",
+  "chooseCategoryHint": "Elegir una categoría",
+  "infoComplementairesLabel": "Información adicional",
+  "infoComplementairesHint": "Ej: código iCloud, número de serie, fecha de garantía...",
+  "familyRecommendationApply": "Aplicar",
+
+  "addSummaryWithPrice": "Añadiendo {quantity} {unit} de {product} — {totalPrice}",
+  "@addSummaryWithPrice": {
+    "placeholders": {
+      "quantity": {"type": "String"},
+      "unit": {"type": "String"},
+      "product": {"type": "String"},
+      "totalPrice": {"type": "String"}
+    }
+  },
+  "genericProduct": "producto",
+  "unitGeneric": "unidades",
+  "priceUnknown": "—"
 }

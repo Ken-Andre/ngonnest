@@ -1,0 +1,28 @@
+{
+  "mcpServers": {
+    "github.com/upstash/context7-mcp": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"],
+      "disabled": false,
+      "autoApprove": []
+    },
+    "github.com/campfirein/cipher": {
+      "command": "npx",
+      "args": ["-y", "@byterover/cipher", "--mode", "mcp"],
+      "env": {
+        "MCP_SERVER_MODE": "aggregator"
+      },
+      "disabled": false,
+      "autoApprove": []
+    },
+    "github.com/cline/cline-community": {
+      "command": "npx",
+      "args": ["tsx", "C:\\Users\\yoann\\Documents\\School\\Xp-X4\\Busi\\NgoNest\\ngonnest\\cline-community\\src\\index.ts"],
+      "disabled": false,
+      "autoApprove": [
+        "preview_cline_issue"
+      ],
+      "timeout": 10
+    }
+  }
+}

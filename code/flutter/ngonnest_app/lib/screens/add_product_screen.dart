@@ -19,6 +19,8 @@ import '../services/database_service.dart';
 import '../services/household_service.dart';
 import '../services/navigation_service.dart';
 import '../services/notification_service.dart';
+import '../services/price_service.dart';
+import '../l10n/app_localizations.dart';
 import '../services/product_suggestion_service.dart';
 import '../services/settings_service.dart';
 import '../services/smart_validator.dart';
@@ -67,12 +69,24 @@ class _AddProductScreenState extends State<AddProductScreen> {
   final _packagingSizeController = TextEditingController();
   final _commentairesController =
       TextEditingController(); // Commentaires pour durables
+
+  // Reactive pricing
+  final _totalPriceController = TextEditingController();
+  bool _isUpdatingPrice = false;
+  bool _userEditedUnitPrice = false;
+
+  // Packaging composite
+  String _packagingType = 'unit'; // default: piece/unit
+
   String _selectedCategory = 'hygiène'; // Première catégorie par défaut
   String _selectedDurableCategory =
       'electromenager'; // Catégorie durable sélectionnée avec valeur par défaut
   String _selectedUnit = 'pièces'; // Unité sélectionnée
   DateTime? _expiryDate;
   DateTime? _purchaseDate;
+
+  // Manual precedence for category selection
+  bool _categoryManuallySet = false;
 
   // Validation intelligente
   ValidationResult? _productNameValidation;
@@ -118,6 +132,17 @@ class _AddProductScreenState extends State<AddProductScreen> {
     // Track flow started
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AnalyticsService>().logFlowStarted('add_product');
+    });
+
+    // Reactive pricing listeners
+    _unitPriceController.addListener(() {
+      if (_isUpdatingPrice) return;
+      _userEditedUnitPrice = true;
+      _onUnitPriceChanged(_unitPriceController.text);
+    });
+    _totalPriceController.addListener(() {
+      if (_isUpdatingPrice) return;
+      _onTotalPriceChanged(_totalPriceController.text);
     });
     //     _getHouseholdSize();
   }
@@ -223,6 +248,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
     _initialQuantityController.dispose();
     _frequencyController.dispose();
     _unitPriceController.dispose();
+    _totalPriceController.dispose();
     _packagingSizeController.dispose();
     _commentairesController.dispose();
     super.dispose();
@@ -374,47 +400,41 @@ class _AddProductScreenState extends State<AddProductScreen> {
   }
 
   /// Gère la sélection d'une suggestion de produit
-  void _onSuggestionSelected(ProductSuggestion suggestion) {
+  void _onSuggestionSelected(ProductSuggestion suggestion) async {
     setState(() {
       _productNameController.text = suggestion.name;
-      _selectedCategory = suggestion.category;
+      if (!_categoryManuallySet) {
+        _selectedCategory = suggestion.category;
+      }
       _initialQuantityController.text = suggestion.estimatedQuantity.toString();
       _selectedUnit = suggestion.unit;
+      _packagingType = _inferPackagingTypeFromUnit(suggestion.unit);
     });
-
-    // Afficher un feedback à l'utilisateur
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('✨ ${suggestion.name} ajouté - ${suggestion.reason}'),
-        backgroundColor: Colors.green,
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    await _applyEstimatedPrice(suggestion.name);
+    _syncQuantityToPricing(double.tryParse(_initialQuantityController.text.replaceAll(',', '.')) ?? 0.0);
   }
 
   /// Gère la sélection d'un produit depuis SmartProductSearch
-  void _onProductSelected(ProductTemplate product) {
+  void _onProductSelected(ProductTemplate product) async {
     setState(() {
       _productNameController.text = product.name;
       _selectedProductTemplate = product;
       if (product.defaultQuantity != null) {
         _initialQuantityController.text = product.defaultQuantity.toString();
       }
-      if (product.category != _selectedCategory) {
+      // Auto-fill category only if user hasn't set manually
+      if (!_categoryManuallySet && product.category != _selectedCategory) {
         _selectedCategory = product.category;
       }
+      // Infer packaging type from unit
+      _packagingType = _inferPackagingTypeFromUnit(product.unit);
     });
 
-    // Afficher un message si la catégorie a changé
-    if (product.category != null && product.category != _selectedCategory) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Catégorie mise à jour vers "${product.category}"'),
-          backgroundColor: Colors.blue,
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    }
+    // Apply estimated price after selection
+    await _applyEstimatedPrice(product.name);
+
+    // Update reactive pricing summary
+    _syncQuantityToPricing(double.tryParse(_initialQuantityController.text.replaceAll(',', '.')) ?? 0.0);
   }
 
   Future<void> _saveProduct() async {
@@ -623,6 +643,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
     // Vérifier si on peut revenir en arrière (pile de navigation)
     final canPop = ModalRoute.of(context)?.canPop ?? false;
+    final l10n = AppLocalizations.of(context)!;
 
     return MainNavigationWrapper(
       currentIndex: 2, // Add product is index 2
@@ -701,7 +722,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
               padding: const EdgeInsets.all(20),
               children: [
                 // Product type selector
-                _buildSectionTitle('Type de produit'),
+                _buildSectionTitle(l10n.productTypeLabel),
                 Container(
                   margin: const EdgeInsets.only(bottom: 24),
                   padding: const EdgeInsets.all(4),
@@ -717,7 +738,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   child: Row(
                     children: [
                       _buildTypeOption(
-                        title: 'Consommable',
+                        title: l10n.consumableLabel,
                         subtitle: 'Savon, nourriture, etc.',
                         icon: CupertinoIcons.cube_box_fill,
                         selected: _isConsumable,
@@ -737,7 +758,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                       ),
                       const SizedBox(width: 4),
                       _buildTypeOption(
-                        title: 'Durable',
+                        title: l10n.durableLabel,
                         subtitle: 'Électroménager, meubles',
                         icon: CupertinoIcons.tv_fill,
                         selected: !_isConsumable,
@@ -763,7 +784,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 ),
 
                 // Product name with smart suggestions
-                _buildSectionTitle('Nom du produit'),
+                _buildSectionTitle(l10n.productNameLabel),
                 SmartProductSearch(
                   category: _isConsumable ? _selectedCategory : '',
                   onProductSelected: _onProductSelected,
@@ -888,7 +909,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
                 // Simple Category Selector for consumables
                 if (_isConsumable) ...[
-                  _buildSectionTitle('Catégorie'),
+                  _buildSectionTitle(l10n.categoryLabel),
                   Container(
                     margin: const EdgeInsets.only(bottom: 24),
                     padding: const EdgeInsets.all(16),
@@ -931,10 +952,13 @@ class _AddProductScreenState extends State<AddProductScreen> {
                           ? null
                           : (value) {
                               if (value != null) {
-                                setState(() => _selectedCategory = value);
+                                setState(() {
+                                  _selectedCategory = value;
+                                  _categoryManuallySet = true; // manual prevails
+                                });
                               }
                             },
-                      hint: const Text('Choisir une catégorie'),
+                      hint: Text(l10n.chooseCategoryHint),
                     ),
                   ),
                 ],
@@ -950,6 +974,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                         _initialQuantityController.text = quantity.toString();
                         _selectedUnit = unit;
                       });
+                      _syncQuantityToPricing(quantity);
                     },
                     initialQuantity:
                         _selectedProductTemplate?.defaultQuantity ?? 1.0,
@@ -958,7 +983,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   ),
                 ] else ...[
                   // Quantity for durables (simplified)
-                  _buildSectionTitle('Quantité durable'),
+                  _buildSectionTitle(l10n.quantityDurableLabel),
                   Container(
                     margin: const EdgeInsets.only(bottom: 24),
                     padding: const EdgeInsets.all(16),
@@ -1026,7 +1051,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
                 // Packaging size and unit price for consumables
                 if (_isConsumable) ...[
-                  _buildSectionTitle('Taille du conditionnement'),
+                  _buildSectionTitle(l10n.packagingTitle),
                   Container(
                     margin: const EdgeInsets.only(bottom: 24),
                     padding: const EdgeInsets.all(16),
@@ -1036,9 +1061,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                       border: Border.all(
                         color: _packagingValidation?.isValid == false
                             ? Theme.of(context).colorScheme.error
-                            : Theme.of(
-                                context,
-                              ).colorScheme.outline.withValues(alpha: 0.5),
+                            : Theme.of(context).colorScheme.outline.withValues(alpha: 0.5),
                         width: _packagingValidation?.isValid == false ? 2 : 1,
                       ),
                     ),
@@ -1049,59 +1072,59 @@ class _AddProductScreenState extends State<AddProductScreen> {
                           children: [
                             Icon(
                               CupertinoIcons.cube_box,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurface.withValues(alpha: 0.7),
+                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
-                              child: TextFormField(
-                                controller: _packagingSizeController,
-                                keyboardType:
-                                    const TextInputType.numberWithOptions(
-                                      decimal: true,
-                                    ),
-                                onChanged: null,
-                                decoration: InputDecoration(
-                                  hintText: 'Ex: 1.0',
+                              child: DropdownButtonFormField<String>(
+                                key: const Key('packagingTypeDropdown'),
+                                value: _packagingType,
+                                decoration: const InputDecoration(
                                   border: InputBorder.none,
                                   contentPadding: EdgeInsets.zero,
-                                  hintStyle: TextStyle(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurface
-                                        .withValues(alpha: 0.7),
-                                  ),
                                 ),
-                                style: TextStyle(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurface,
-                                ),
-                                validator: (value) {
-                                  final result =
-                                      SmartValidator.validatePackagingSize(
-                                        value ?? '',
-                                      );
-                                  return result.isValid
-                                      ? null
-                                      : result.userMessage;
+                                items: [
+                                  DropdownMenuItem(value: 'unit', child: Text(l10n.packagingTypeUnit)),
+                                  DropdownMenuItem(value: 'piece', child: Text(l10n.packagingTypePiece)),
+                                  DropdownMenuItem(value: 'kg', child: Text(l10n.packagingTypeKg)),
+                                  DropdownMenuItem(value: 'liter', child: Text(l10n.packagingTypeLiter)),
+                                  DropdownMenuItem(value: 'bottle', child: Text(l10n.packagingTypeBottle)),
+                                  DropdownMenuItem(value: 'bag', child: Text(l10n.packagingTypeBag)),
+                                  DropdownMenuItem(value: 'box', child: Text(l10n.packagingTypeBox)),
+                                  DropdownMenuItem(value: 'other', child: Text(l10n.packagingTypeOther)),
+                                ],
+                                onChanged: _isLoading ? null : (value) {
+                                  if (value == null) return;
+                                  setState(() {
+                                    _packagingType = value;
+                                    if (_isUnitOrPiece(value)) {
+                                      _packagingSizeController.text = '1.0';
+                                    } else if (_packagingSizeController.text.isEmpty) {
+                                      _packagingSizeController.text = '1.0';
+                                    }
+                                  });
                                 },
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              _selectedUnit,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurface.withValues(alpha: 0.7),
-                                fontWeight: FontWeight.w500,
                               ),
                             ),
                           ],
                         ),
+                        if (!_isUnitOrPiece(_packagingType)) ...[
+                          const SizedBox(height: 12),
+                          TextFormField(
+                            key: const Key('packagingValueField'),
+                            controller: _packagingSizeController,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            decoration: InputDecoration(
+                              hintText: l10n.packagingValueHint,
+                              border: const OutlineInputBorder(),
+                              contentPadding: const EdgeInsets.all(12),
+                            ),
+                            validator: (value) {
+                              final result = SmartValidator.validatePackagingSize(value ?? '');
+                              return result.isValid ? null : result.userMessage;
+                            },
+                          ),
+                        ],
                         ErrorFeedbackWidget(
                           validationResult: _packagingValidation,
                           showDebugInfo: _enableDebugMode,
@@ -1111,9 +1134,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
                     ),
                   ),
 
-                  _buildSectionTitle('Prix unitaire (€)'),
+                  _buildSectionTitle(l10n.unitPriceLabel),
                   Container(
-                    margin: const EdgeInsets.only(bottom: 24),
+                    margin: const EdgeInsets.only(bottom: 12),
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.surface,
@@ -1121,77 +1144,69 @@ class _AddProductScreenState extends State<AddProductScreen> {
                       border: Border.all(
                         color: _priceValidation?.isValid == false
                             ? Theme.of(context).colorScheme.error
-                            : Theme.of(
-                                context,
-                              ).colorScheme.outline.withValues(alpha: 0.5),
+                            : Theme.of(context).colorScheme.outline.withValues(alpha: 0.5),
                         width: _priceValidation?.isValid == false ? 2 : 1,
                       ),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
                       children: [
-                        Row(
-                          children: [
-                            Icon(
-                              CupertinoIcons.money_euro,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurface.withValues(alpha: 0.7),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: TextFormField(
-                                controller: _unitPriceController,
-                                keyboardType:
-                                    const TextInputType.numberWithOptions(
-                                      decimal: true,
-                                    ),
-                                onChanged: _validateUnitPrice,
-                                decoration: InputDecoration(
-                                  hintText: 'Ex: 2.99',
-                                  border: InputBorder.none,
-                                  contentPadding: EdgeInsets.zero,
-                                  hintStyle: TextStyle(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurface
-                                        .withValues(alpha: 0.7),
-                                  ),
-                                ),
-                                style: TextStyle(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurface,
-                                ),
-                                validator: (value) {
-                                  final result =
-                                      SmartValidator.validateUnitPrice(
-                                        value ?? '',
-                                      );
-                                  return result.isValid
-                                      ? null
-                                      : result.userMessage;
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              '€',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurface.withValues(alpha: 0.7),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
+                        Icon(
+                          CupertinoIcons.money_euro,
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                         ),
-                        ErrorFeedbackWidget(
-                          validationResult: _priceValidation,
-                          showDebugInfo: _enableDebugMode,
-                          padding: const EdgeInsets.only(top: 8),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextFormField(
+                            key: const Key('unitPriceField'),
+                            controller: _unitPriceController,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            onChanged: _validateUnitPrice,
+                            decoration: const InputDecoration(
+                              hintText: 'Ex: 2.99',
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                          ),
                         ),
+                        const SizedBox(width: 8),
+                        const Text('€'),
+                      ],
+                    ),
+                  ),
+
+                  // Prix total réactif (éditable)
+                  _buildSectionTitle(l10n.totalPriceLabel),
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 24),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          CupertinoIcons.sum,
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextFormField(
+                            key: const Key('totalPriceField'),
+                            controller: _totalPriceController,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            decoration: const InputDecoration(
+                              hintText: 'Ex: 5.98',
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Text('€'),
                       ],
                     ),
                   ),
@@ -1199,7 +1214,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
                 // Frequency for consumables with smart validation
                 if (_isConsumable) ...[
-                  _buildSectionTitle('Fréquence d\'achat (jours)'),
+                  _buildSectionTitle(l10n.frequencyLabel),
                   Container(
                     margin: const EdgeInsets.only(bottom: 24),
                     padding: const EdgeInsets.all(16),
@@ -1284,7 +1299,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
                 // Expiry date for consumables
                 if (_isConsumable) ...[
-                  _buildSectionTitle('Date d\'expiration (optionnel)'),
+                  _buildSectionTitle(l10n.expiryDateLabel),
                   Container(
                     margin: const EdgeInsets.only(bottom: 24),
                     padding: const EdgeInsets.all(16),
@@ -1318,7 +1333,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                           Expanded(
                             child: Text(
                               _expiryDate == null
-                                  ? 'Sélectionner une date'
+                                  ? l10n.selectDateHint
                                   : '${_expiryDate!.day}/${_expiryDate!.month}/${_expiryDate!.year}',
                               style: TextStyle(
                                 color: _expiryDate == null
@@ -1350,7 +1365,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
                 // Purchase date for durables
                 if (!_isConsumable) ...[
-                  _buildSectionTitle('Date d\'achat (optionnel)'),
+                  _buildSectionTitle(l10n.purchaseDateLabel),
                   Container(
                     margin: const EdgeInsets.only(bottom: 32),
                     padding: const EdgeInsets.all(16),
@@ -1384,7 +1399,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                           Expanded(
                             child: Text(
                               _purchaseDate == null
-                                  ? 'Sélectionner une date'
+                                  ? l10n.selectDateHint
                                   : '${_purchaseDate!.day}/${_purchaseDate!.month}/${_purchaseDate!.year}',
                               style: TextStyle(
                                 color: _purchaseDate == null
@@ -1414,21 +1429,23 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   ),
                 ],
 
+                // Mama Summary
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: KeyedSubtree(key: const Key('mamaSummaryText'), child: _buildMamaSummary()),
+                ),
+
                 // Save button
                 SizedBox(
                   width: double.infinity,
                   child: CupertinoButton(
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.primary, // Use theme color
+                    color: Theme.of(context).colorScheme.primary,
                     borderRadius: BorderRadius.circular(12),
                     onPressed: _isSaving
                         ? null
                         : () {
-                            ConsoleLogger.info(
-                              'SAVE BUTTON: Pressed! isSaving: $_isSaving',
-                            );
+                            ConsoleLogger.info('SAVE BUTTON: Pressed! isSaving: $_isSaving');
                             _saveProduct();
                           },
                     child: _isSaving
@@ -1437,19 +1454,15 @@ class _AddProductScreenState extends State<AddProductScreen> {
                             width: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
-                              ),
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
                         : Text(
-                            'Enregistrer le produit',
+                            l10n.saveProductCta,
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onPrimary, // Use theme color
+                              color: Theme.of(context).colorScheme.onPrimary,
                             ),
                           ),
                   ),
@@ -1592,6 +1605,78 @@ class _AddProductScreenState extends State<AddProductScreen> {
   //     ),
   //   );
   // }
+
+  bool _isUnitOrPiece(String t) => t == 'unit' || t == 'piece';
+
+  String _inferPackagingTypeFromUnit(String unit) {
+    final u = unit.toLowerCase();
+    if (u.contains('kg')) return 'kg';
+    if (u.contains('l')) return 'liter';
+    if (u.contains('pièce') || u.contains('piece') || u.contains('unité') || u.contains('unit')) return 'unit';
+    return 'unit';
+  }
+
+  Future<void> _applyEstimatedPrice(String productName) async {
+    try {
+      final priceService = PriceService();
+      final direct = await priceService.getProductPrice(productName);
+      double? estimated;
+      if (direct != null) {
+        estimated = PriceService.localToEuro(direct.priceLocal, direct.currencyCode);
+      } else {
+        estimated = await priceService.estimateObjectPrice(productName, _selectedCategory);
+      }
+      if (estimated != null) {
+        if (_unitPriceController.text.isEmpty || !_userEditedUnitPrice) {
+          _unitPriceController.text = estimated.toStringAsFixed(2);
+        }
+      }
+    } catch (_) {}
+  }
+
+  void _onUnitPriceChanged(String v) {
+    _isUpdatingPrice = true;
+    final unit = double.tryParse(v.replaceAll(',', '.'));
+    final qty = double.tryParse(_initialQuantityController.text.replaceAll(',', '.')) ?? 0.0;
+    _totalPriceController.text = (unit != null && qty > 0) ? (unit * qty).toStringAsFixed(2) : '';
+    _isUpdatingPrice = false;
+  }
+
+  void _onTotalPriceChanged(String v) {
+    _isUpdatingPrice = true;
+    final total = double.tryParse(v.replaceAll(',', '.'));
+    final qty = double.tryParse(_initialQuantityController.text.replaceAll(',', '.')) ?? 0.0;
+    final unit = (total != null && qty > 0) ? (total / qty) : null;
+    _unitPriceController.text = unit?.toStringAsFixed(2) ?? '';
+    _isUpdatingPrice = false;
+  }
+
+  void _syncQuantityToPricing(double quantity) {
+    _isUpdatingPrice = true;
+    final unit = double.tryParse(_unitPriceController.text.replaceAll(',', '.'));
+    _totalPriceController.text = (unit != null && quantity > 0)
+        ? (unit * quantity).toStringAsFixed(2)
+        : '';
+    _isUpdatingPrice = false;
+  }
+
+  Widget _buildMamaSummary() {
+    final l10n = AppLocalizations.of(context)!;
+    final qtyStr = _initialQuantityController.text.isEmpty ? '0' : _initialQuantityController.text;
+    final unit = _selectedUnit.isEmpty ? l10n.unitGeneric : _selectedUnit;
+    final name = _productNameController.text.isEmpty ? l10n.genericProduct : _productNameController.text;
+    final total = double.tryParse(_totalPriceController.text.replaceAll(',', '.')) ?? 0.0;
+    final currency = NumberFormat.simpleCurrency(locale: Localizations.localeOf(context).toString());
+    final totalStr = total > 0 ? currency.format(total) : l10n.priceUnknown;
+
+    return Text(
+      l10n.addSummaryWithPrice(qtyStr, unit, name, totalStr),
+      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontWeight: FontWeight.w600,
+          ),
+    );
+  }
 
   Future<void> _selectDate(
     BuildContext context, {

@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Update Memory Bank on Commit",
+  "description": "Met à jour automatiquement la memory bank avec le contexte du projet, la vision produit et les changements récents après chaque commit",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Des fichiers ont été modifiés dans le dépôt NgonNest. Analyse les changements et mets à jour la memory bank située dans `code/flutter/ngonnest_app/memory_bank/` en suivant ces instructions:\n\n1. **activeContext.md** - Mets à jour:\n   - Recent Changes (dernières 2 semaines)\n   - Current Work Focus et Sprint Status\n   - Next Steps et Immediate Priorities\n   - Active Decisions and Considerations\n   - Learnings and Project Insights basés sur ce commit\n\n2. **progress.md** - Mets à jour:\n   - What Works (fonctionnalités complétées)\n   - What's Left to Build (ajuste les pourcentages de complétion)\n   - Current Status (progression globale)\n   - Known Issues (ajoute ou résous des bugs)\n   - Evolution of Project Decisions si pertinent\n\n3. **techContext.md** - Mets à jour si nécessaire:\n   - Technologies Used (nouvelles dépendances)\n   - Technical Constraints (nouvelles contraintes identifiées)\n   - Development Best Practices (nouveaux patterns)\n\n4. **systemPatterns.md** - Mets à jour si l'architecture change:\n   - Architecture Overview\n   - Component Relationships\n   - Critical Implementation Paths\n   - Performance Optimizations\n\n5. **productContext.md** - Mets à jour si la vision produit évolue:\n   - User Experience Goals\n   - Success Indicators\n\nContexte important:\n- NgonNest est une app Flutter offline-first de gestion d'inventaire domestique pour le Cameroun\n- Architecture: MVVM + Repository Pattern avec Provider\n- Base de données: SQLite (encryption prévue mais pas encore implémentée)\n- Cible: Android 9.0+, utilisateurs camerounais, interface WhatsApp-like\n- MVP en cours: ~60% complet selon progress.md\n\nRéférence les guidelines de AGENTS.md et la vision de product.md pour assurer la cohérence.\n\nNE crée PAS de nouveaux fichiers markdown de résumé. Mets UNIQUEMENT à jour les fichiers existants de la memory bank de manière concise et factuelle."
+  }
+}
