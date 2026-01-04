@@ -253,8 +253,8 @@ class BudgetService extends ChangeNotifier {
   /// Calculate spending for a specific category in a given month
   ///
   /// Now uses reachat_log for actual repurchases AND objet for initial purchases
+  /// Uses case-insensitive matching and category mapping for budget alignment
   /// Returns 0.0 on error to prevent calculation failures
-  /// Handles division by zero and null/missing data gracefully
   /// Requirements: 10.2, 10.3
   Future<double> _calculateCategorySpending(
     String idFoyer,
@@ -284,6 +284,27 @@ class BudgetService extends ChangeNotifier {
       
       final startDateStr = startDate.toIso8601String().split('T')[0];
       final endDateStr = endDate.toIso8601String().split('T')[0];
+      
+      // Build category match list - include the budget category name and any mapped inventory categories
+      // Maps inventory categories to budget categories (case-insensitive)
+      final categoryMatches = _getInventoryCategoriesForBudget(categoryName);
+      
+      // DEBUG: Log all objects matching the category to diagnose date issues
+      final debugResult = await db.rawQuery(
+        '''
+        SELECT id, nom, categorie, date_achat, prix_unitaire, quantite_initiale
+        FROM objet 
+        WHERE id_foyer = ? 
+        AND LOWER(categorie) IN (${categoryMatches.map((_) => '?').join(', ')})
+        ''',
+        [idFoyer, ...categoryMatches],
+      );
+      debugPrint('[BudgetService] DEBUG: Found ${debugResult.length} objects for $categoryName:');
+      for (final obj in debugResult) {
+        debugPrint('  - ${obj['nom']}: cat=${obj['categorie']}, date=${obj['date_achat']}, prix=${obj['prix_unitaire']}, qty=${obj['quantite_initiale']}');
+      }
+      debugPrint('[BudgetService] DEBUG: Query date range: $startDateStr to $endDateStr');
+
 
       // Query 1: Get spending from reachat_log (repurchases)
       final repurchaseResult = await db.rawQuery(
@@ -292,14 +313,14 @@ class BudgetService extends ChangeNotifier {
         FROM reachat_log r
         INNER JOIN objet o ON r.id_objet = o.id
         WHERE o.id_foyer = ? 
-        AND o.categorie = ?
+        AND LOWER(o.categorie) IN (${categoryMatches.map((_) => '?').join(', ')})
         AND date(r.date) >= date(?)
         AND date(r.date) <= date(?)
         AND r.prix_total IS NOT NULL
         ''',
         [
           idFoyer,
-          categoryName,
+          ...categoryMatches,
           startDateStr,
           endDateStr,
         ],
@@ -307,20 +328,27 @@ class BudgetService extends ChangeNotifier {
       
       final repurchaseSpending = (repurchaseResult.first['total_spending'] as num?)?.toDouble() ?? 0.0;
 
-      // Query 2: Get spending from initial purchases (objet.date_achat this month)
+      // Query 2: Get spending from initial purchases
+      // Include products with NULL date_achat ONLY for current month, OR date_achat in queried month
+      final now = DateTime.now();
+      final currentMonth = '${now.year}-${now.month.toString().padLeft(2, '0')}';
+      final isCurrentMonth = month == currentMonth;
+      
       final initialPurchaseResult = await db.rawQuery(
         '''
         SELECT COALESCE(SUM(prix_unitaire * quantite_initiale), 0.0) as total_spending
         FROM objet 
         WHERE id_foyer = ? 
-        AND categorie = ?
-        AND date(date_achat) >= date(?)
-        AND date(date_achat) <= date(?)
+        AND LOWER(categorie) IN (${categoryMatches.map((_) => '?').join(', ')})
+        AND (
+          ${isCurrentMonth ? 'date_achat IS NULL OR' : ''} 
+          (date(date_achat) >= date(?) AND date(date_achat) <= date(?))
+        )
         AND prix_unitaire IS NOT NULL
         ''',
         [
           idFoyer,
-          categoryName,
+          ...categoryMatches,
           startDateStr,
           endDateStr,
         ],
@@ -328,10 +356,12 @@ class BudgetService extends ChangeNotifier {
       
       final initialSpending = (initialPurchaseResult.first['total_spending'] as num?)?.toDouble() ?? 0.0;
 
+
+
       // Total spending = repurchases + initial purchases this month
       final totalSpending = repurchaseSpending + initialSpending;
       
-      debugPrint('[BudgetService] Category $categoryName spending: repurchases=$repurchaseSpending, initial=$initialSpending, total=$totalSpending');
+      debugPrint('[BudgetService] Category $categoryName (matches: $categoryMatches) spending: repurchases=$repurchaseSpending, initial=$initialSpending, total=$totalSpending');
 
       return totalSpending;
     } catch (e, stackTrace) {
@@ -352,6 +382,39 @@ class BudgetService extends ChangeNotifier {
       return 0.0;
     }
   }
+  
+  /// Maps budget category name to list of inventory categories it should include
+  /// Uses lowercase for case-insensitive matching
+  List<String> _getInventoryCategoriesForBudget(String budgetCategoryName) {
+    final lowerName = budgetCategoryName.toLowerCase();
+    
+    // Direct mapping for known categories
+    switch (lowerName) {
+      case 'hygiène':
+        return ['hygiène', 'hygiene'];
+      case 'nettoyage':
+        return ['nettoyage'];
+      case 'cuisine':
+        return ['cuisine'];
+      case 'divers':
+        // "Divers" catches all unmapped categories
+        return [
+          'divers', 
+          'autre', 
+          'bureau', 
+          'maintenance', 
+          'sécurité', 
+          'securité',
+          'securite',
+          'événementiel', 
+          'evenementiel',
+        ];
+      default:
+        // For custom categories, try exact match (lowercase)
+        return [lowerName];
+    }
+  }
+
 
 
   /// Trigger budget alert when spending exceeds limit
