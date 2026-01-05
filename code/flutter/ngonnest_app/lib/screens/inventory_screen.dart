@@ -946,9 +946,104 @@ class _InventoryScreenState extends State<InventoryScreen>
           ),
         ),
         actions: [
+          if (objet.type == TypeObjet.consommable)
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _showRecordPurchaseDialog(objet);
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.primary,
+                textStyle: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              child: const Text('Enregistrer un achat'),
+            ),
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Fermer'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showRecordPurchaseDialog(Objet objet) {
+    final quantityController = TextEditingController(
+      text: objet.quantiteInitiale.toString(),
+    );
+    final priceController = TextEditingController(
+      text: ((objet.prixUnitaire ?? 0.0) * objet.quantiteInitiale).toStringAsFixed(2),
+    );
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Nouvel achat: ${objet.nom}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: quantityController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                labelText: 'Quantité achetée (${objet.unite})',
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: priceController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                labelText: 'Prix total payé (€)',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final quantity = double.tryParse(quantityController.text) ?? 0.0;
+              final price = double.tryParse(priceController.text) ?? 0.0;
+              
+              if (quantity <= 0) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Veuillez entrer une quantité valide')),
+                  );
+                }
+                return;
+              }
+
+              Navigator.pop(context);
+              
+              try {
+                await _inventoryRepository.recordPurchase(objet, quantity, price);
+                await _loadInventory();
+                
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Achat enregistré pour ${objet.nom}'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Erreur lors de l\'enregistrement: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Enregistrer'),
           ),
         ],
       ),

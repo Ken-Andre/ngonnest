@@ -25,20 +25,30 @@ void main() {
     const alertId = 123;
     
     // Save state
-    await databaseService.saveAlertState(alertId, isRead: true, isResolved: false);
+    await databaseService.saveAlertState(AlertState(
+      alertId: alertId,
+      isRead: true,
+      isResolved: false,
+      updatedAt: DateTime.now(),
+    ));
     
     // Retrieve state
-    final states = await databaseService.getAlertStates();
+    final states = await databaseService.getAllAlertStates();
     expect(states.containsKey(alertId), true);
-    expect(states[alertId]!['isRead'], true);
-    expect(states[alertId]!['isResolved'], false);
+    expect(states[alertId]!.isRead, true);
+    expect(states[alertId]!.isResolved, false);
     
     // Update state
-    await databaseService.saveAlertState(alertId, isResolved: true);
+    await databaseService.saveAlertState(AlertState(
+      alertId: alertId,
+      isRead: true,
+      isResolved: true,
+      updatedAt: DateTime.now(),
+    ));
     
     // Retrieve updated state
-    final updatedStates = await databaseService.getAlertStates();
-    expect(updatedStates[alertId]!['isRead'], true); // Should remain true
-    expect(updatedStates[alertId]!['isResolved'], true);
+    final updatedStates = await databaseService.getAllAlertStates();
+    expect(updatedStates[alertId]!.isRead, true); // Should remain true
+    expect(updatedStates[alertId]!.isResolved, true);
   });
 }

@@ -6,7 +6,7 @@ void main() {
     late AlertState alertState;
 
     setUp(() {
-      alertState = const AlertState(
+      alertState = AlertState(
         alertId: 1,
         isRead: false,
         isResolved: false,
@@ -63,21 +63,21 @@ void main() {
     });
 
     test('equality operator works correctly', () {
-      final alertState1 = const AlertState(
+      final alertState1 = AlertState(
         alertId: 1,
         isRead: true,
         isResolved: false,
         updatedAt: DateTime(2025, 12, 4),
       );
 
-      final alertState2 = const AlertState(
+      final alertState2 = AlertState(
         alertId: 1,
         isRead: true,
         isResolved: false,
         updatedAt: DateTime(2025, 12, 4),
       );
 
-      final alertState3 = const AlertState(
+      final alertState3 = AlertState(
         alertId: 2,
         isRead: true,
         isResolved: false,
@@ -89,14 +89,14 @@ void main() {
     });
 
     test('hashCode is consistent', () {
-      final alertState1 = const AlertState(
+      final alertState1 = AlertState(
         alertId: 1,
         isRead: true,
         isResolved: false,
         updatedAt: DateTime(2025, 12, 4),
       );
 
-      final alertState2 = const AlertState(
+      final alertState2 = AlertState(
         alertId: 1,
         isRead: true,
         isResolved: false,

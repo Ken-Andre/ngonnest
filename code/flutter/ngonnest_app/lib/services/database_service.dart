@@ -400,6 +400,12 @@ class DatabaseService {
     }, ErrorContext.deleteObjet);
   }
 
+  Future<int> insertReachatLog(Map<String, dynamic> log) async {
+    return _executeDbOperation((db) {
+      return db.insert('reachat_log', log);
+    }, ErrorContext.insertReachatLog);
+  }
+
   Future<int> getTotalObjetCount(int idFoyer) async {
     return _executeDbOperation((db) async {
       final count = Sqflite.firstIntValue(
@@ -1114,6 +1120,7 @@ enum ErrorContext {
   saveAlertState,
   // Price operations
   searchPrice,
+  insertReachatLog,
   getAllPrices,
   upsertPrice,
   importPricesFromCSV,

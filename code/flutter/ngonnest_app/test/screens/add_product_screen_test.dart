@@ -23,7 +23,7 @@ void main() {
 
     // Enter unit price 2
     final unitFinder = find.byWidgetPredicate(
-      (w) => w is TextFormField && (w.decoration?.hintText == 'Ex: 2.99'),
+      (w) => w is TextField && (w.decoration?.hintText == 'Ex: 2.99'),
     );
     expect(unitFinder, findsOneWidget);
     await tester.enterText(unitFinder, '2');
@@ -38,10 +38,10 @@ void main() {
 
     // Total should be 6
     final totalFinder = find.byWidgetPredicate(
-      (w) => w is TextFormField && (w.decoration?.hintText == 'Ex: 5.98'),
+      (w) => w is TextField && (w.decoration?.hintText == 'Ex: 5.98'),
     );
     expect(totalFinder, findsOneWidget);
-    final totalField = tester.widget<TextFormField>(totalFinder);
+    final totalField = tester.widget<TextField>(totalFinder);
     // Can't read controller text directly; we trust reactive wiring; just ensure field exists
 
     // Now edit total to 10 and expect unit goes to 3.33 for qty 3
@@ -54,7 +54,7 @@ void main() {
 
     // By default packaging type is unit/piece, value input (hint 'Ex: 1.0') should not be visible initially
     final valueFieldFinder = find.byWidgetPredicate(
-      (w) => w is TextFormField && (w.decoration?.hintText == 'Ex: 1.0'),
+      (w) => w is TextField && (w.decoration?.hintText == 'Ex: 1.0'),
     );
 
     // It may be built but conditionally shown; attempt to find dropdown and change to 'Kg' then expect field visible

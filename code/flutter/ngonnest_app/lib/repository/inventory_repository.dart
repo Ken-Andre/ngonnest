@@ -514,6 +514,62 @@ class InventoryRepository {
     }
   }
 
+  /// Record a new purchase for an item
+  /// 1. Adds a log to reachat_log
+  /// 2. Updates the item's remaining quantity
+  /// 3. Updates the item's purchase date
+  /// 4. Triggers budget alerts
+  Future<void> recordPurchase(Objet objet, double quantity, double totalPrice) async {
+    try {
+      // 1. Add log entry
+      await _databaseService.insertReachatLog({
+        'id_objet': objet.id,
+        'date': DateTime.now().toIso8601String(),
+        'quantite': quantity,
+        'prix_total': totalPrice,
+      });
+
+      // 2. Update the product
+      final updatedObjet = objet.copyWith(
+        quantiteRestante: objet.quantiteRestante + quantity,
+        dateAchat: DateTime.now(),
+        dateModification: DateTime.now(),
+      );
+      
+      await updateObjet(updatedObjet);
+
+      // 3. Trigger budget alerts
+      try {
+        await _budgetService.checkBudgetAlertsAfterPurchase(
+          objet.idFoyer.toString(),
+          objet.categorie,
+        );
+      } catch (e, stackTrace) {
+        await ErrorLoggerService.logError(
+          component: 'InventoryRepository',
+          operation: 'recordPurchase.checkBudgetAlertsAfterPurchase',
+          error: e,
+          stackTrace: stackTrace,
+          severity: ErrorSeverity.low,
+        );
+      }
+    } catch (e, stackTrace) {
+      await ErrorLoggerService.logError(
+        component: 'InventoryRepository',
+        operation: 'recordPurchase',
+        error: e,
+        stackTrace: stackTrace,
+        severity: ErrorSeverity.high,
+        metadata: {
+          'objetId': objet.id,
+          'quantity': quantity,
+          'totalPrice': totalPrice,
+        },
+      );
+      rethrow;
+    }
+  }
+
   /// Helper method to detect database connection errors
   /// Used to determine if automatic recovery should be attempted
   static bool _isDatabaseConnectionError(dynamic error) {

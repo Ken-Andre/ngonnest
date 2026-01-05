@@ -97,11 +97,11 @@ class _AddProductScreenState extends State<AddProductScreen> {
   bool _enableDebugMode =
       true; // Active les portes de debuggage en développement
 
-  // Recherche intelligente de produits
   ProductTemplate? _selectedProductTemplate;
   late SmartProductSearch _smartSearch;
+  late BudgetService _budgetService;
 
-  final List<Map<String, String>> _categories = [
+  List<Map<String, String>> _categories = [
     {'id': 'hygiène', 'name': 'Hygiène', 'icon': '🧴', 'color': '#22C55E'},
     {'id': 'nettoyage', 'name': 'Nettoyage', 'icon': '🧹', 'color': '#3B82F6'},
     {'id': 'cuisine', 'name': 'Cuisine', 'icon': '🍳', 'color': '#F59E0B'},
@@ -145,6 +145,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
       _onTotalPriceChanged(_totalPriceController.text);
     });
     //     _getHouseholdSize();
+    
+    _loadBudgetCategories();
   }
 
   @override
@@ -166,6 +168,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
       _databaseService = context.read<DatabaseService>();
       _inventoryRepository = InventoryRepository(_databaseService);
       _foyerRepository = FoyerRepository(_databaseService);
+      _budgetService = context.read<BudgetService>();
 
       // Debug: Check database structure for commentaires column
       _databaseService.debugTableStructure();
@@ -187,6 +190,36 @@ class _AddProductScreenState extends State<AddProductScreen> {
           ),
         );
       }
+    }
+  }
+
+  Future<void> _loadBudgetCategories() async {
+    try {
+      final budgetCategories = await _budgetService.getBudgetCategories();
+      if (budgetCategories.isEmpty) return;
+
+      final List<Map<String, String>> customCategories = [];
+      final standardIds = _categories.map((c) => c['id']?.toLowerCase()).toSet();
+
+      for (final cat in budgetCategories) {
+        final catId = cat.name.toLowerCase();
+        if (!standardIds.contains(catId)) {
+          customCategories.add({
+            'id': catId,
+            'name': cat.name,
+            'icon': '📝', // Icon for custom categories
+            'color': '#9CA3AF', // Gray color for custom
+          });
+        }
+      }
+
+      if (customCategories.isNotEmpty) {
+        setState(() {
+          _categories = [..._categories, ...customCategories];
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading budget categories: $e');
     }
   }
 

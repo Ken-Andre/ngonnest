@@ -38,9 +38,31 @@ class _EditProductScreenState extends State<EditProductScreen> {
   final _formKey = GlobalKey<FormState>();
   late DatabaseService _databaseService;
   late InventoryRepository _inventoryRepository;
+  late BudgetService _budgetService;
 
   bool _isLoading = false;
   bool _isSaving = false;
+
+  List<Map<String, String>> _categories = [
+    {'id': 'hygiène', 'name': 'Hygiène', 'icon': '🧴', 'color': '#22C55E'},
+    {'id': 'nettoyage', 'name': 'Nettoyage', 'icon': '🧹', 'color': '#3B82F6'},
+    {'id': 'cuisine', 'name': 'Cuisine', 'icon': '🍳', 'color': '#F59E0B'},
+    {'id': 'bureau', 'name': 'Bureau', 'icon': '📋', 'color': '#8B5CF6'},
+    {
+      'id': 'maintenance',
+      'name': 'Maintenance',
+      'icon': '🔧',
+      'color': '#EF4444',
+    },
+    {'id': 'sécurité', 'name': 'Sécurité', 'icon': '🛡️', 'color': '#F97316'},
+    {
+      'id': 'événementiel',
+      'name': 'Événementiel',
+      'icon': '🎉',
+      'color': '#EC4899',
+    },
+    {'id': 'autre', 'name': 'Autre', 'icon': '📦', 'color': '#6B7280'},
+  ];
 
   // Form fields
   late TextEditingController _productNameController;
@@ -57,6 +79,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
     super.initState();
     _initializeControllers();
     _initializeServices();
+    _loadBudgetCategories();
   }
 
   void _initializeControllers() {
@@ -80,6 +103,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
     try {
       _databaseService = context.read<DatabaseService>();
       _inventoryRepository = InventoryRepository(_databaseService);
+      _budgetService = context.read<BudgetService>();
     } catch (e, stackTrace) {
       if (kDebugMode) {
         print('Init Error: $e');
@@ -184,7 +208,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
     } catch (e, stackTrace) {
       await ErrorLoggerService.logError(
         component: 'EditProductScreen',
-        operation: 'saveProduct', // Verified this is correct
+        operation: 'saveProduct',
         error: e,
         stackTrace: stackTrace,
         severity: ErrorSeverity.high,
@@ -203,6 +227,48 @@ class _EditProductScreenState extends State<EditProductScreen> {
       if (mounted) {
         setState(() => _isSaving = false);
       }
+    }
+  }
+
+  Future<void> _loadBudgetCategories() async {
+    try {
+      final budgetCategories = await _budgetService.getBudgetCategories();
+      if (budgetCategories.isEmpty) return;
+
+      final List<Map<String, String>> customCategories = [];
+      final standardIds = _categories.map((c) => c['id']?.toLowerCase()).toSet();
+
+      for (final cat in budgetCategories) {
+        final catId = cat.name.toLowerCase();
+        if (!standardIds.contains(catId)) {
+          customCategories.add({
+            'id': catId,
+            'name': cat.name,
+            'icon': '📝', // Icon for custom categories
+            'color': '#9CA3AF', // Gray color for custom
+          });
+        }
+      }
+
+      // Special case: if current product category is not in the list, add it too
+      final currentCatId = widget.objet.categorie.toLowerCase();
+      if (!standardIds.contains(currentCatId) &&
+          !customCategories.any((c) => c['id'] == currentCatId)) {
+        customCategories.add({
+          'id': currentCatId,
+          'name': widget.objet.categorie,
+          'icon': '🏷️',
+          'color': '#9CA3AF',
+        });
+      }
+
+      if (customCategories.isNotEmpty) {
+        setState(() {
+          _categories = [..._categories, ...customCategories];
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading budget categories: $e');
     }
   }
 
@@ -284,10 +350,47 @@ class _EditProductScreenState extends State<EditProductScreen> {
                 ),
 
                 _buildSectionTitle('Catégorie'),
-                _buildTextField(
-                  controller: TextEditingController(text: _selectedCategory),
-                  hintText: 'Catégorie',
-                  readOnly: true,
+                Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5),
+                    ),
+                  ),
+                  child: DropdownButtonFormField<String>(
+                    value: _categories.any((c) => c['id'] == _selectedCategory.toLowerCase())
+                        ? _selectedCategory.toLowerCase()
+                        : null,
+                    decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    items: _categories.map((category) {
+                      return DropdownMenuItem<String>(
+                        value: category['id']!,
+                        child: Row(
+                          children: [
+                            Text(
+                              category['icon']!,
+                              style: const TextStyle(fontSize: 16),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(category['name']!),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() {
+                          _selectedCategory = value;
+                        });
+                      }
+                    },
+                  ),
                 ),
 
                 _buildSectionTitle('Quantité restante'),

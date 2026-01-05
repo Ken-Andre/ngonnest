@@ -388,16 +388,19 @@ class BudgetService extends ChangeNotifier {
   List<String> _getInventoryCategoriesForBudget(String budgetCategoryName) {
     final lowerName = budgetCategoryName.toLowerCase();
     
-    // Direct mapping for known categories
+    // Direct mapping for known 4-pillar categories (Vision Éducation Financière)
     switch (lowerName) {
       case 'hygiène':
+      case 'hygiene':
         return ['hygiène', 'hygiene'];
       case 'nettoyage':
-        return ['nettoyage'];
+      case 'menage':
+        return ['nettoyage', 'menage'];
       case 'cuisine':
-        return ['cuisine'];
+      case 'nourriture':
+        return ['cuisine', 'nourriture'];
       case 'divers':
-        // "Divers" catches all unmapped categories
+        // "Divers" is the collector for all standard inventory categories not covered above
         return [
           'divers', 
           'autre', 
@@ -411,6 +414,7 @@ class BudgetService extends ChangeNotifier {
         ];
       default:
         // For custom categories, try exact match (lowercase)
+        // This allows user-created budget categories to map to products with same category name
         return [lowerName];
     }
   }
@@ -523,7 +527,8 @@ class BudgetService extends ChangeNotifier {
       final existing = await getBudgetCategories(month: targetMonth);
       if (existing.isNotEmpty) return;
 
-      // Create default categories based on common household categories
+      // Create default categories based on the 4-pillar Financial Education vision
+      // Percentages: Hygiène (33%), Nettoyage (22%), Cuisine (28%), Divers (17%)
       final defaultCategories = [
         BudgetCategory(name: 'Hygiène', limit: 120.0, month: targetMonth),
         BudgetCategory(name: 'Nettoyage', limit: 80.0, month: targetMonth),
